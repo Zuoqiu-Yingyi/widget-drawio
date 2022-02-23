@@ -435,4 +435,50 @@
 	</script>
 </body>
 
+<script type="module">
+	import {
+    getBlockAttrs,
+} from './siyuan/api.js';
+
+async function open() {
+    var urlParams = (() => {
+        var result = new Object();
+        var params = window.location.search.slice(1).split('&');
+        for (var i = 0; i < params.length; i++) {
+            idx = params[i].indexOf('=');
+            if (idx > 0) {
+                result[params[i].substring(0, idx)] = params[i].substring(idx + 1);
+            }
+        }
+        return result;
+    })();
+
+	var id = urlParams.id;
+	var asset;
+
+    if (id == null) {
+        let node = window.frameElement.parentElement.parentElement;
+        if (node != null) {
+            id = node.getAttribute('data-node-id');
+            asset = node.getAttribute('custom-data-assets');
+            let href = `${window.location.origin}${window.location.pathname}?id=${id}#U${window.location.origin}/${asset}`;
+            // console.log(href);
+            window.location.href = href;
+        }
+    } else {
+		if (window.location.hash == '') {
+			let data = await getBlockAttrs(id);
+            // console.log(data);
+            asset = data['custom-data-assets'];
+            let href = `${window.location.href}#U${window.location.origin}/${asset}`;
+			// console.log(href);
+            window.location.href = href;
+        }
+    }
+    // console.log(window.location);
+}
+
+setTimeout(open, 0);
+</script>
+
 </html>
