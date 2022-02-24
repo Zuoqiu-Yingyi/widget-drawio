@@ -696,6 +696,7 @@ signOut=注销
 simple=简单
 simpleArrow=简单箭头
 simpleViewer=Simple Viewer
+siyuan=思源笔记
 size=大小
 sketch=Sketch
 solid=实线

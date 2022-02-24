@@ -647,7 +647,7 @@ App.main = function(callback, createUi)
 				if (CryptoJS.MD5(content).toString() != '0fed8c83fc7187e0b39310c4aa3e6d63')
 				{
 					console.log('Change bootstrap script MD5 in the previous line:', CryptoJS.MD5(content).toString());
-					alert('[Dev] Bootstrap script change requires update of CSP');
+					// alert('[Dev] Bootstrap script change requires update of CSP');
 				}
 			}
 			
@@ -659,7 +659,7 @@ App.main = function(callback, createUi)
 				if (CryptoJS.MD5(content).toString() != 'd53805dd6f0bbba2da4966491ca0a505')
 				{
 					console.log('Change main script MD5 in the previous line:', CryptoJS.MD5(content).toString());
-					alert('[Dev] Main script change requires update of CSP');
+					// alert('[Dev] Main script change requires update of CSP');
 				}
 			}
 		}

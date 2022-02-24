@@ -203,7 +203,7 @@ var StorageDialog = function(editorUi, fn, rowLimit)
 	var addButtons = function()
 	{
 		count = 0;
-		
+
 		if (typeof window.DriveClient === 'function')
 		{
 			addLogo(IMAGE_PATH + '/google-drive-logo.svg', mxResources.get('googleDrive'), App.MODE_GOOGLE, 'drive');
@@ -4137,6 +4137,102 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 	buttons.style.textAlign = 'center';
 	var count = 0;
 
+	// 思源笔记保存
+	function siyuanSave(img, title)
+	{
+		var button = document.createElement('a');
+		button.style.overflow = 'hidden';
+		
+		var logo = document.createElement('img');
+		logo.src = img;
+		logo.setAttribute('border', '0');
+		logo.setAttribute('align', 'absmiddle');
+		logo.style.width = '60px';
+		logo.style.height = '60px';
+		logo.style.paddingBottom = '6px';
+		button.style.display = 'inline-block';
+		button.className = 'geBaseButton';
+		button.style.position = 'relative';
+		button.style.margin = '4px';
+		button.style.padding = '8px 8px 10px 8px';
+		button.style.whiteSpace = 'nowrap';
+		
+		button.appendChild(logo);
+		
+		button.style.color = 'gray';
+		button.style.fontSize = '11px';
+		
+		var label = document.createElement('div');
+		button.appendChild(label);
+		mxUtils.write(label, title);
+		
+		mxEvent.addListener(button, 'click', async () => {
+			let id = window.frameElement != null 
+				? window.frameElement.parentElement.parentElement.getAttribute('data-node-id')
+				: null || (new URL(window.location.href)).searchParams.get('id') || null;
+			// console.log(id);
+			if (id != null) {
+				
+				change(App.MODE_DEVICE);
+				let file_name = nameInput.value;
+				// console.log(file_name);
+				// console.log(data);
+				// console.log(base64Encoded);
+				// console.log(editorUi);
+				// console.log(editorUi.getFileData());
+				// console.log(editorUi.editor.getGraphXml());
+				let xml = (new XMLSerializer()).serializeToString(editorUi.editor.getGraphXml());
+				// console.log(xml);
+				let blob = new Blob([xml], {type: "application/xml"});
+				let file = new File([blob], file_name, { lastModified: Date.now() });
+				let data = new FormData();
+				data.append("assetsDirPath", "/assets/");
+				data.append("file[]", file);
+				fetch("/api/asset/upload", {
+					body: data,
+					method: "POST",
+					// headers: { Authorization: "Token " + this.apitoken },
+				}).then((response) => {
+					return response.json();
+				}).then((data) => {
+					// console.log(data);
+					let asset = data.data.succMap[file_name];
+					console.log(asset);
+					if (!asset.endsWith(file_name)) {
+						// 文件名更改
+						console.log(file_name, asset);
+						fetch('/api/attr/setBlockAttrs', {
+							body: JSON.stringify({
+								id: id,
+								attrs: {
+									'custom-data-assets': asset,
+								}
+							}),
+							method: 'POST',
+						}).then((_) => {
+							let name = asset.substring(asset.lastIndexOf('/')+1, asset.lastIndexOf('.'));
+							console.log(editorUi);
+							editorUi.getCurrentFile().rename(name);
+							editorUi.hideDialog();
+							// let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
+							// console.log(href);
+							// window.location.href = href;
+						})
+					}
+				});
+			}
+		});
+
+		buttons.appendChild(button);
+		
+		if (++count == rowLimit)
+		{
+			mxUtils.br(buttons);
+			count = 0;
+		}
+	};
+
+
 	function addLogo(img, title, mode, clientName)
 	{
 		var button = document.createElement('a');
@@ -4250,6 +4346,10 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 
 	if (!editorUi.isOfflineApp() && !editorUi.isOffline())
 	{
+		// 保存
+		// console.log('siyuanSave');
+		siyuanSave(IMAGE_PATH + '/siyuan-log.png', mxResources.get('siyuan') || 'Siyuan Note');
+
 		if (typeof window.DriveClient === 'function')
 		{
 			var googleOption = document.createElement('option');
