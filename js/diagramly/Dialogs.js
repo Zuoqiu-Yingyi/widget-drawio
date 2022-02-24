@@ -4167,19 +4167,17 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 		mxUtils.write(label, title);
 		
 		mxEvent.addListener(button, 'click', async () => {
-			let id = window.frameElement != null 
+			let id = (window.frameElement != null
 				? window.frameElement.parentElement.parentElement.getAttribute('data-node-id')
-				: null || (new URL(window.location.href)).searchParams.get('id') || null;
+				: null)
+				|| (new URL(window.location.href)).searchParams.get('id')
+				|| null;
 			// console.log(id);
 			if (id != null) {
-				
 				change(App.MODE_DEVICE);
 				let file_name = nameInput.value;
 				// console.log(file_name);
-				// console.log(data);
-				// console.log(base64Encoded);
 				// console.log(editorUi);
-				// console.log(editorUi.getFileData());
 				// console.log(editorUi.editor.getGraphXml());
 				let xml = (new XMLSerializer()).serializeToString(editorUi.editor.getGraphXml());
 				// console.log(xml);
@@ -4200,7 +4198,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 					console.log(asset);
 					if (!asset.endsWith(file_name)) {
 						// 文件名更改
-						console.log(file_name, asset);
+						// console.log(file_name, asset);
 						fetch('/api/attr/setBlockAttrs', {
 							body: JSON.stringify({
 								id: id,
@@ -4211,14 +4209,14 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 							method: 'POST',
 						}).then((_) => {
 							let name = asset.substring(asset.lastIndexOf('/')+1, asset.lastIndexOf('.'));
-							console.log(editorUi);
+							// console.log(editorUi);
 							editorUi.getCurrentFile().rename(name);
-							editorUi.hideDialog();
 							// let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
 							// console.log(href);
 							// window.location.href = href;
 						})
 					}
+					editorUi.hideDialog();
 				});
 			}
 		});
