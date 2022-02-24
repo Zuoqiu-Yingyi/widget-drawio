@@ -180,14 +180,10 @@ EditorUi.prototype.patchPages = function(pages, diff, markPages, resolver, updat
 		}
 		else
 		{
-			// Updates root if page already in UI
-			page.root = newPage.root;
-
-			if (this.currentPage == page)
-			{
-				this.editor.graph.model.setRoot(page.root);
-			}
-			else if (markPages)
+			this.patchPage(page, this.diffPages([page], [newPage]),
+				resolverLookup[page.getId()], updateEdgeParents);
+			
+			if (markPages)
 			{
 				page.needsUpdate = true;
 			}
@@ -229,7 +225,7 @@ EditorUi.prototype.patchViewState = function(page, diff)
 		{
 			try
 			{
-				page.viewState[key] = JSON.parse(diff[key]);
+				this.patchViewStateProperty(page, diff, key);
 			}
 			catch(e) {} //Ignore TODO Is this correct, we encountered an undefined value for a key (extFonts)
 		}
@@ -239,6 +235,14 @@ EditorUi.prototype.patchViewState = function(page, diff)
 			this.editor.graph.setViewState(page.viewState, true);
 		}
 	}
+};
+
+/**
+ * Removes all labels, user objects and styles from the given node in-place.
+ */
+EditorUi.prototype.patchViewStateProperty = function(page, diff, key)
+{
+	page.viewState[key] = JSON.parse(diff[key]);
 };
 
 /**
@@ -652,7 +656,6 @@ EditorUi.prototype.getPagesForNode = function(node, nodeName)
 	}
 	else if (node.nodeName == 'mxGraphModel')
 	{
-		var graph = this.editor.graph;
 		var page = new DiagramPage(node.ownerDocument.createElement('diagram'));
 		page.setName(mxResources.get('pageWithNumber', [1]));
 		mxUtils.setTextContent(page.node, Graph.compressNode(node, true));
@@ -667,94 +670,96 @@ EditorUi.prototype.getPagesForNode = function(node, nodeName)
  */
 EditorUi.prototype.diffPages = function(oldPages, newPages)
 {
-	var graph = this.editor.graph;
 	var inserted = [];
 	var removed = [];
 	var result = {};
 	var lookup = {};
 	var diff = {};
 	var prev = null;
-	
-	for (var i = 0; i < newPages.length; i++)
-	{
-		lookup[newPages[i].getId()] = {page: newPages[i], prev: prev};
-		prev = newPages[i];
-	}
 
-	prev = null;
-	
-	for (var i = 0; i < oldPages.length; i++)
+	if (oldPages != null && newPages != null)
 	{
-		var id = oldPages[i].getId();
-		var newPage = lookup[id];
+		for (var i = 0; i < newPages.length; i++)
+		{
+			lookup[newPages[i].getId()] = {page: newPages[i], prev: prev};
+			prev = newPages[i];
+		}
+
+		prev = null;
 		
-		if (newPage == null)
+		for (var i = 0; i < oldPages.length; i++)
 		{
-			removed.push(id);
-		}
-		else
-		{
-			var temp = this.diffPage(oldPages[i], newPage.page);
-			var pageDiff = {};
+			var id = oldPages[i].getId();
+			var newPage = lookup[id];
 			
-			if (Object.keys(temp).length > 0)
+			if (newPage == null)
 			{
-				pageDiff.cells = temp;
+				removed.push(id);
 			}
-			
-			var view = this.diffViewState(oldPages[i], newPage.page);
-			
-			if (Object.keys(view).length > 0)
+			else
 			{
-				pageDiff.view = view;
-			}
-			
-			if (((newPage.prev != null) ? prev == null : prev != null) ||
-				(prev != null && newPage.prev != null &&
-				prev.getId() != newPage.prev.getId()))
-			{
-				pageDiff.previous = (newPage.prev != null) ? newPage.prev.getId() : '';
-			}
-			
-			// FIXME: Check why names can be null in newer files
-			// ignore in hash and do not diff null names for now
-			if (newPage.page.getName() != null &&
-				oldPages[i].getName() != newPage.page.getName())
-			{
-				pageDiff.name = newPage.page.getName();
-			}
-			
-			if (Object.keys(pageDiff).length > 0)
-			{
-				diff[id] = pageDiff;
-			}
-		}
+				var temp = this.diffPage(oldPages[i], newPage.page);
+				var pageDiff = {};
 
-		delete lookup[oldPages[i].getId()];
-		prev = oldPages[i];
-	}
-	
-	for (var id in lookup)
-	{
-		var newPage = lookup[id];
-		inserted.push({data: mxUtils.getXml(newPage.page.node),
-			previous: (newPage.prev != null) ?
-			newPage.prev.getId() : ''});
-	}
-	
-	if (Object.keys(diff).length > 0)
-	{
-		result[EditorUi.DIFF_UPDATE] = diff;
-	}
-	
-	if (removed.length > 0)
-	{
-		result[EditorUi.DIFF_REMOVE] = removed;
-	}
-	
-	if (inserted.length > 0)
-	{
-		result[EditorUi.DIFF_INSERT] = inserted;
+				if (!mxUtils.isEmptyObject(temp))
+				{
+					pageDiff.cells = temp;
+				}
+				
+				var view = this.diffViewState(oldPages[i], newPage.page);
+				
+				if (!mxUtils.isEmptyObject(view))
+				{
+					pageDiff.view = view;
+				}
+				
+				if (((newPage.prev != null) ? prev == null : prev != null) ||
+					(prev != null && newPage.prev != null &&
+					prev.getId() != newPage.prev.getId()))
+				{
+					pageDiff.previous = (newPage.prev != null) ? newPage.prev.getId() : '';
+				}
+				
+				// FIXME: Check why names can be null in newer files
+				// ignore in hash and do not diff null names for now
+				if (newPage.page.getName() != null &&
+					oldPages[i].getName() != newPage.page.getName())
+				{
+					pageDiff.name = newPage.page.getName();
+				}
+				
+				if (!mxUtils.isEmptyObject(pageDiff))
+				{
+					diff[id] = pageDiff;
+				}
+			}
+
+			delete lookup[oldPages[i].getId()];
+			prev = oldPages[i];
+		}
+		
+		for (var id in lookup)
+		{
+			var newPage = lookup[id];
+			inserted.push({data: mxUtils.getXml(newPage.page.node),
+				previous: (newPage.prev != null) ?
+				newPage.prev.getId() : ''});
+		}
+		
+		if (!mxUtils.isEmptyObject(diff))
+		{
+			result[EditorUi.DIFF_UPDATE] = diff;
+		}
+		
+		if (removed.length > 0)
+		{
+			result[EditorUi.DIFF_REMOVE] = removed;
+		}
+		
+		if (inserted.length > 0)
+		{
+			result[EditorUi.DIFF_INSERT] = inserted;
+		}
 	}
 
 	return result;
@@ -806,7 +811,7 @@ EditorUi.prototype.diffCellRecursive = function(cell, prev, lookup, diff, remove
 			temp.previous = (newCell.prev != null) ? newCell.prev.getId() : '';
 		}
 		
-		if (Object.keys(temp).length > 0)
+		if (!mxUtils.isEmptyObject(temp))
 		{
 			diff[cell.getId()] = temp;
 		}
@@ -846,7 +851,7 @@ EditorUi.prototype.diffPage = function(oldPage, newPage)
 		inserted.push(this.getJsonForCell(newCell.cell, newCell.prev));
 	}
 
-	if (Object.keys(diff).length > 0)
+	if (!mxUtils.isEmptyObject(diff))
 	{
 		result[EditorUi.DIFF_UPDATE] = diff;
 	}
@@ -882,18 +887,46 @@ EditorUi.prototype.diffViewState = function(oldPage, newPage)
 	{
 		for (var key in this.viewStateProperties)
 		{
-			// LATER: Check if normalization is needed for
-			// object attribute order to compare JSON
-			var old = JSON.stringify(source[key]);
-			var now = JSON.stringify(target[key]);
-			
-			if (old != now)
-			{
-				result[key] = now;
-			}
+			this.diffViewStateProperty(source, target, key, result);
 		}
 	}
 	
+	return result;
+};
+
+/**
+ * Removes all labels, user objects and styles from the given node in-place.
+ */
+EditorUi.prototype.diffViewStateProperty = function(source, target, key, result)
+{
+	// LATER: Check if normalization is needed for
+	// object attribute order to compare JSON
+	var old = JSON.stringify(this.getViewStateProperty(source, key));
+	var now = JSON.stringify(this.getViewStateProperty(target, key));
+	
+	if (old != now)
+	{
+		result[key] = now;
+	}
+};
+
+/**
+ * Ignores image data for background pages and normalizes extFonts.
+ */
+EditorUi.prototype.getViewStateProperty = function(viewState, key)
+{
+	var result = viewState[key];
+
+	if (key == 'backgroundImage' && result != null &&
+		result.originalSrc != null)
+	{
+		delete result.src;
+	}
+	else if (key == 'extFonts' && result == null)
+	{
+		result = [];
+	}
+
 	return result;
 };
 

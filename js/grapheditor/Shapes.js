@@ -260,21 +260,29 @@
 	
 	TableShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
-		// LATER: Split background to add striping
+		// LATER: Split background to add striping, paint rows and cells
 		//paintTableBackground(this.state, c, x, y, w, h);
+		var collapsed = (this.state != null) ? this.state.view.graph.
+			isCellCollapsed(this.state.cell) : false;
+		var horizontal = this.isHorizontal();
 		var start = this.getTitleSize();
 		
-		if (start == 0)
+		if (start == 0 || this.outline)
 		{
-			mxRectangleShape.prototype.paintBackground.apply(this, arguments);
+			PartialRectangleShape.prototype.paintVertexShape.apply(this, arguments);
 		}
 		else
 		{
 			mxSwimlane.prototype.paintVertexShape.apply(this, arguments);
 			c.translate(-x, -y);
 		}
-		
-		this.paintForeground(c, x, y, w, h);
+
+		if (!collapsed && !this.outline &&
+			((horizontal && start < h) ||
+			(!horizontal && start < w)))
+		{
+			this.paintForeground(c, x, y, w, h);
+		}
 	};
 
 	TableShape.prototype.paintForeground = function(c, x, y, w, h)
@@ -314,17 +322,50 @@
 			TableLineShape.prototype.paintTableLine(c, lines[i], x, y);
 		}
 	}
+	
+	TableShape.prototype.configurePointerEvents = function(c)
+	{
+		var start = this.getTitleSize();
+
+		if (start == 0)
+		{
+			c.pointerEvents = false;
+		}
+		else
+		{
+			mxSwimlane.prototype.configurePointerEvents.apply(this, arguments);
+		}
+	};
 
 	mxCellRenderer.registerShape('table', TableShape);
+
+	// Table Row Shape
+	function TableRowShape()
+	{
+		TableShape.call(this);
+	};
 	
+	mxUtils.extend(TableRowShape, TableShape);
+
+	TableRowShape.prototype.paintForeground = function()
+	{
+		// overridden to do nothing
+	};
+	
+	mxCellRenderer.registerShape('tableRow', TableRowShape);
+
 	// Cube Shape, supports size style
 	function CubeShape()
 	{
 		mxCylinder.call(this);
 	};
+
 	mxUtils.extend(CubeShape, mxCylinder);
+
 	CubeShape.prototype.size = 20;
+
 	CubeShape.prototype.darkOpacity = 0;
+
 	CubeShape.prototype.darkOpacity2 = 0;
 	
 	CubeShape.prototype.paintVertexShape = function(c, x, y, w, h)
@@ -386,6 +427,7 @@
 			c.stroke();
 		}
 	};
+
 	CubeShape.prototype.getLabelMargins = function(rect)
 	{
 		if (mxUtils.getValue(this.style, 'boundedLbl', false))
@@ -401,6 +443,7 @@
 	mxCellRenderer.registerShape('cube', CubeShape);
 	
 	var tan30 = Math.tan(mxUtils.toRadians(30));
+
 	var tan30Dx = (0.5 - tan30) / 2;
 
 	mxCellRenderer.registerShape('isoRectangle', IsoRectangleShape);
@@ -410,7 +453,9 @@
 	{
 		mxCylinder.call(this);
 	};
+
 	mxUtils.extend(WaypointShape, mxCylinder);
+
 	WaypointShape.prototype.size = 6;
 	
 	WaypointShape.prototype.paintVertexShape = function(c, x, y, w, h)
@@ -432,8 +477,11 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(IsoRectangleShape, mxActor);
+
 	IsoRectangleShape.prototype.size = 20;
+
 	IsoRectangleShape.prototype.redrawPath = function(path, x, y, w, h)
 	{
 		var m = Math.min(w, h / tan30);
@@ -455,8 +503,11 @@
 	{
 		mxCylinder.call(this);
 	};
+
 	mxUtils.extend(IsoCubeShape, mxCylinder);
+
 	IsoCubeShape.prototype.size = 20;
+
 	IsoCubeShape.prototype.redrawPath = function(path, x, y, w, h, isForeground)
 	{
 		var m = Math.min(w, h / (0.5 + tan30));
@@ -491,6 +542,7 @@
 	{
 		mxCylinder.call(this);
 	};
+
 	mxUtils.extend(DataStoreShape, mxCylinder);
 
 	DataStoreShape.prototype.redrawPath = function(c, x, y, w, h, isForeground)
@@ -543,6 +595,7 @@
 			c.close();
 		}
 	};
+
 	DataStoreShape.prototype.getLabelMargins = function(rect)
 	{
 		return new mxRectangle(0, 2.5 * Math.min(rect.height / 2,
@@ -556,8 +609,11 @@
 	{
 		mxCylinder.call(this);
 	};
+
 	mxUtils.extend(NoteShape, mxCylinder);
+
 	NoteShape.prototype.size = 30;
+
 	NoteShape.prototype.darkOpacity = 0;
 	
 	NoteShape.prototype.paintVertexShape = function(c, x, y, w, h)
@@ -630,7 +686,9 @@
 	{
 		mxShape.call(this);
 	};
+
 	mxUtils.extend(IsoCubeShape2, mxShape);
+
 	IsoCubeShape2.prototype.isoAngle = 15;
 	
 	IsoCubeShape2.prototype.paintVertexShape = function(c, x, y, w, h)
@@ -777,7 +835,9 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(SwitchShape, mxActor);
+
 	SwitchShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var curve = 0.5;
@@ -796,10 +856,15 @@
 	{
 		mxCylinder.call(this);
 	};
+
 	mxUtils.extend(FolderShape, mxCylinder);
+
 	FolderShape.prototype.tabWidth = 60;
+
 	FolderShape.prototype.tabHeight = 20;
+
 	FolderShape.prototype.tabPosition = 'right';
+
 	FolderShape.prototype.arcSize = 0.1;
 	
 	FolderShape.prototype.paintVertexShape = function(c, x, y, w, h)
@@ -936,7 +1001,9 @@
 	{
 		mxCylinder.call(this);
 	};
+
 	mxUtils.extend(UMLStateShape, mxCylinder);
+
 	UMLStateShape.prototype.arcSize = 0.1;
 
 	UMLStateShape.prototype.paintVertexShape = function(c, x, y, w, h)
@@ -1036,12 +1103,16 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(CardShape, mxActor);
+
 	CardShape.prototype.size = 30;
+
 	CardShape.prototype.isRoundable = function()
 	{
 		return true;
 	};
+
 	CardShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var s = Math.max(0, Math.min(w, Math.min(h, parseFloat(mxUtils.getValue(this.style, 'size', this.size)))));
@@ -1058,8 +1129,11 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(TapeShape, mxActor);
+
 	TapeShape.prototype.size = 0.4;
+
 	TapeShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var dy = h * Math.max(0, Math.min(1, parseFloat(mxUtils.getValue(this.style, 'size', this.size))));
@@ -1110,8 +1184,11 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(DocumentShape, mxActor);
+
 	DocumentShape.prototype.size = 0.3;
+
 	DocumentShape.prototype.getLabelMargins = function(rect)
 	{
 		if (mxUtils.getValue(this.style, 'boundedLbl', false))
@@ -1122,6 +1199,7 @@
 		
 		return null;
 	};
+
 	DocumentShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var dy = h * Math.max(0, Math.min(1, parseFloat(mxUtils.getValue(this.style, 'size', this.size))));
@@ -1260,13 +1338,18 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(ParallelogramShape, mxActor);
+
 	ParallelogramShape.prototype.size = 0.2;
+
 	ParallelogramShape.prototype.fixedSize = 20;
+
 	ParallelogramShape.prototype.isRoundable = function()
 	{
 		return true;
 	};
+
 	ParallelogramShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var fixed = mxUtils.getValue(this.style, 'fixedSize', '0') != '0';
@@ -1285,13 +1368,18 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(TrapezoidShape, mxActor);
+
 	TrapezoidShape.prototype.size = 0.2;
+
 	TrapezoidShape.prototype.fixedSize = 20;
+
 	TrapezoidShape.prototype.isRoundable = function()
 	{
 		return true;
 	};
+
 	TrapezoidShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		
@@ -1310,8 +1398,11 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(CurlyBracketShape, mxActor);
+
 	CurlyBracketShape.prototype.size = 0.5;
+
 	CurlyBracketShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		c.setFillColor(null);
@@ -1619,8 +1710,11 @@
 	{
 		mxRectangleShape.call(this);
 	};
+
 	mxUtils.extend(ProcessShape, mxRectangleShape);
+
 	ProcessShape.prototype.size = 0.1;
+
 	ProcessShape.prototype.fixedSize = false;
 	
 	ProcessShape.prototype.isHtmlAllowed = function()
@@ -1699,13 +1793,16 @@
 	{
 		mxRectangleShape.call(this);
 	};
+
 	mxUtils.extend(TransparentShape, mxRectangleShape);
+
 	TransparentShape.prototype.paintBackground = function(c, x, y, w, h)
 	{
 		c.setFillColor(mxConstants.NONE);
 		c.rect(x, y, w, h);
 		c.fill();
 	};
+
 	TransparentShape.prototype.paintForeground = function(c, x, y, w, h) 	{ };
 
 	mxCellRenderer.registerShape('transparent', TransparentShape);
@@ -1715,20 +1812,28 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(CalloutShape, mxHexagon);
+
 	CalloutShape.prototype.size = 30;
+
 	CalloutShape.prototype.position = 0.5;
+
 	CalloutShape.prototype.position2 = 0.5;
+
 	CalloutShape.prototype.base = 20;
+
 	CalloutShape.prototype.getLabelMargins = function()
 	{
 		return new mxRectangle(0, 0, 0, parseFloat(mxUtils.getValue(
 			this.style, 'size', this.size)) * this.scale);
 	};
+
 	CalloutShape.prototype.isRoundable = function()
 	{
 		return true;
 	};
+
 	CalloutShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var arcSize = mxUtils.getValue(this.style, mxConstants.STYLE_ARCSIZE, mxConstants.LINE_ARCSIZE) / 2;
@@ -1750,13 +1855,18 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(StepShape, mxActor);
+
 	StepShape.prototype.size = 0.2;
+
 	StepShape.prototype.fixedSize = 20;
+
 	StepShape.prototype.isRoundable = function()
 	{
 		return true;
 	};
+
 	StepShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var fixed = mxUtils.getValue(this.style, 'fixedSize', '0') != '0';
@@ -1775,9 +1885,13 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(HexagonShape, mxHexagon);
+
 	HexagonShape.prototype.size = 0.25;
+
 	HexagonShape.prototype.fixedSize = 20;
+
 	HexagonShape.prototype.isRoundable = function()
 	{
 		return true;
@@ -1799,11 +1913,14 @@
 	{
 		mxRectangleShape.call(this);
 	};
+
 	mxUtils.extend(PlusShape, mxRectangleShape);
+
 	PlusShape.prototype.isHtmlAllowed = function()
 	{
 		return false;
 	};
+
 	PlusShape.prototype.paintForeground = function(c, x, y, w, h)
 	{
 		var border = Math.min(w / 5, h / 5) + 1;
@@ -1864,7 +1981,9 @@
 	{
 		mxRectangleShape.call(this);
 	};
+
 	mxUtils.extend(ExtendedShape, mxRectangleShape);
+
 	ExtendedShape.prototype.isHtmlAllowed = function()
 	{
 		return false;
@@ -1985,7 +2104,9 @@
 	{
 		mxCylinder.call(this);
 	};
+
 	mxUtils.extend(MessageShape, mxCylinder);
+
 	MessageShape.prototype.redrawPath = function(path, x, y, w, h, isForeground)
 	{
 		if (isForeground)
@@ -2012,7 +2133,9 @@
 	{
 		mxShape.call(this);
 	};
+
 	mxUtils.extend(UmlActorShape, mxShape);
+
 	UmlActorShape.prototype.paintBackground = function(c, x, y, w, h)
 	{
 		c.translate(x, y);
@@ -2050,10 +2173,12 @@
 		mxShape.call(this);
 	};
 	mxUtils.extend(UmlBoundaryShape, mxShape);
+
 	UmlBoundaryShape.prototype.getLabelMargins = function(rect)
 	{
 		return new mxRectangle(rect.width / 6, 0, 0, 0);
 	};
+
 	UmlBoundaryShape.prototype.paintBackground = function(c, x, y, w, h)
 	{
 		c.translate(x, y);
@@ -2084,7 +2209,9 @@
 	{
 		mxEllipse.call(this);
 	};
+
 	mxUtils.extend(UmlEntityShape, mxEllipse);
+
 	UmlEntityShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
 		mxEllipse.prototype.paintVertexShape.apply(this, arguments);
@@ -2103,7 +2230,9 @@
 	{
 		mxShape.call(this);
 	};
+
 	mxUtils.extend(UmlDestroyShape, mxShape);
+
 	UmlDestroyShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
 		c.translate(x, y);
@@ -2124,11 +2253,14 @@
 	{
 		mxShape.call(this);
 	};
+
 	mxUtils.extend(UmlControlShape, mxShape);
+
 	UmlControlShape.prototype.getLabelBounds = function(rect)
 	{
 		return new mxRectangle(rect.x, rect.y + rect.height / 8, rect.width, rect.height * 7 / 8);
 	};
+
 	UmlControlShape.prototype.paintBackground = function(c, x, y, w, h)
 	{
 		c.translate(x, y);
@@ -2162,12 +2294,16 @@
 	{
 		mxRectangleShape.call(this);
 	};
+
 	mxUtils.extend(UmlLifeline, mxRectangleShape);
+
 	UmlLifeline.prototype.size = 40;
+
 	UmlLifeline.prototype.isHtmlAllowed = function()
 	{
 		return false;
 	};
+
 	UmlLifeline.prototype.getLabelBounds = function(rect)
 	{
 		var size = Math.max(0, Math.min(rect.height, parseFloat(
@@ -2175,6 +2311,7 @@
 		
 		return new mxRectangle(rect.x, rect.y, rect.width, size);
 	};
+
 	UmlLifeline.prototype.paintBackground = function(c, x, y, w, h)
 	{
 		var size = Math.max(0, Math.min(h, parseFloat(mxUtils.getValue(this.style, 'size', this.size))));
@@ -2221,16 +2358,22 @@
 	{
 		mxShape.call(this);
 	};
+
 	mxUtils.extend(UmlFrame, mxShape);
+
 	UmlFrame.prototype.width = 60;
+
 	UmlFrame.prototype.height = 30;
+
 	UmlFrame.prototype.corner = 10;
+
 	UmlFrame.prototype.getLabelMargins = function(rect)
 	{
 		return new mxRectangle(0, 0,
 			rect.width - (parseFloat(mxUtils.getValue(this.style, 'width', this.width) * this.scale)),
 			rect.height - (parseFloat(mxUtils.getValue(this.style, 'height', this.height) * this.scale)));
 	};
+
 	UmlFrame.prototype.paintBackground = function(c, x, y, w, h)
 	{
 		var co = this.corner;
@@ -2644,8 +2787,11 @@
 	{
 		mxShape.call(this);
 	};
+
 	mxUtils.extend(LollipopShape, mxShape);
+
 	LollipopShape.prototype.size = 10;
+
 	LollipopShape.prototype.paintBackground = function(c, x, y, w, h)
 	{
 		var sz = parseFloat(mxUtils.getValue(this.style, 'size', this.size));
@@ -2668,9 +2814,13 @@
 	{
 		mxShape.call(this);
 	};
+
 	mxUtils.extend(RequiresShape, mxShape);
+
 	RequiresShape.prototype.size = 10;
+
 	RequiresShape.prototype.inset = 2;
+
 	RequiresShape.prototype.paintBackground = function(c, x, y, w, h)
 	{
 		var sz = parseFloat(mxUtils.getValue(this.style, 'size', this.size));
@@ -2698,6 +2848,7 @@
 	{
 		mxShape.call(this);
 	};
+
 	mxUtils.extend(RequiredInterfaceShape, mxShape);
 	
 	RequiredInterfaceShape.prototype.paintBackground = function(c, x, y, w, h)
@@ -2719,8 +2870,11 @@
 	{
 		mxShape.call(this);
 	};
+
 	mxUtils.extend(ProvidedRequiredInterfaceShape, mxShape);
+
 	ProvidedRequiredInterfaceShape.prototype.inset = 2;
+
 	ProvidedRequiredInterfaceShape.prototype.paintBackground = function(c, x, y, w, h)
 	{
 		var inset = parseFloat(mxUtils.getValue(this.style, 'inset', this.inset)) + this.strokewidth;
@@ -2744,9 +2898,13 @@
 	{
 		mxCylinder.call(this);
 	};
+
 	mxUtils.extend(ModuleShape, mxCylinder);
+
 	ModuleShape.prototype.jettyWidth = 20;
+
 	ModuleShape.prototype.jettyHeight = 10;
+
 	ModuleShape.prototype.redrawPath = function(path, x, y, w, h, isForeground)
 	{
 		var dx = parseFloat(mxUtils.getValue(this.style, 'jettyWidth', this.jettyWidth));
@@ -2794,9 +2952,13 @@
 	{
 		mxCylinder.call(this);
 	};
+
 	mxUtils.extend(ComponentShape, mxCylinder);
+
 	ComponentShape.prototype.jettyWidth = 32;
+
 	ComponentShape.prototype.jettyHeight = 12;
+
 	ComponentShape.prototype.redrawPath = function(path, x, y, w, h, isForeground)
 	{
 		var dx = parseFloat(mxUtils.getValue(this.style, 'jettyWidth', this.jettyWidth));
@@ -2844,7 +3006,9 @@
 	{
 		mxRectangleShape.call(this);
 	};
+
 	mxUtils.extend(AssociativeEntity, mxRectangleShape);
+
 	AssociativeEntity.prototype.paintForeground = function(c, x, y, w, h)
 	{
 		var hw = w / 2;
@@ -2866,8 +3030,11 @@
 	{
 		mxDoubleEllipse.call(this);
 	};
+
 	mxUtils.extend(StateShape, mxDoubleEllipse);
+
 	StateShape.prototype.outerStroke = true;
+
 	StateShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
 		var inset = Math.min(4, Math.min(w / 5, h / 5));
@@ -2893,7 +3060,9 @@
 	{
 		StateShape.call(this);
 	};
+
 	mxUtils.extend(StartStateShape, StateShape);
+
 	StartStateShape.prototype.outerStroke = false;
 	
 	mxCellRenderer.registerShape('startState', StartStateShape);
@@ -2904,7 +3073,9 @@
 		mxArrowConnector.call(this);
 		this.spacing = 0;
 	};
+
 	mxUtils.extend(LinkShape, mxArrowConnector);
+
 	LinkShape.prototype.defaultWidth = 4;
 	
 	LinkShape.prototype.isOpenEnded = function()
@@ -2931,8 +3102,11 @@
 		mxArrowConnector.call(this);
 		this.spacing = 0;
 	};
+
 	mxUtils.extend(FlexArrowShape, mxArrowConnector);
+
 	FlexArrowShape.prototype.defaultWidth = 10;
+
 	FlexArrowShape.prototype.defaultArrowWidth = 20;
 
 	FlexArrowShape.prototype.getStartArrowWidth = function()
@@ -2958,8 +3132,11 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(ManualInputShape, mxActor);
+
 	ManualInputShape.prototype.size = 30;
+
 	ManualInputShape.prototype.isRoundable = function()
 	{
 		return true;
@@ -2980,13 +3157,18 @@
 	{
 		mxRectangleShape.call(this);
 	};
+
 	mxUtils.extend(InternalStorageShape, mxRectangleShape);
+
 	InternalStorageShape.prototype.dx = 20;
+
 	InternalStorageShape.prototype.dy = 20;
+
 	InternalStorageShape.prototype.isHtmlAllowed = function()
 	{
 		return false;
 	};
+
 	InternalStorageShape.prototype.paintForeground = function(c, x, y, w, h)
 	{
 		mxRectangleShape.prototype.paintForeground.apply(this, arguments);
@@ -3022,8 +3204,11 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(CornerShape, mxActor);
+
 	CornerShape.prototype.dx = 20;
+
 	CornerShape.prototype.dy = 20;
 	
 	// Corner
@@ -3046,6 +3231,7 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(CrossbarShape, mxActor);
 	
 	CrossbarShape.prototype.redrawPath = function(c, x, y, w, h)
@@ -3070,8 +3256,11 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(TeeShape, mxActor);
+
 	TeeShape.prototype.dx = 20;
+
 	TeeShape.prototype.dy = 20;
 	
 	// Corner
@@ -3096,9 +3285,13 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(SingleArrowShape, mxActor);
+
 	SingleArrowShape.prototype.arrowWidth = 0.3;
+
 	SingleArrowShape.prototype.arrowSize = 0.2;
+
 	SingleArrowShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var aw = h * Math.max(0, Math.min(1, parseFloat(mxUtils.getValue(this.style, 'arrowWidth', this.arrowWidth))));
@@ -3120,7 +3313,9 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(DoubleArrowShape, mxActor);
+
 	DoubleArrowShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var aw = h * Math.max(0, Math.min(1, parseFloat(mxUtils.getValue(this.style, 'arrowWidth', SingleArrowShape.prototype.arrowWidth))));
@@ -3143,9 +3338,13 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(DataStorageShape, mxActor);
+
 	DataStorageShape.prototype.size = 0.1;
+
 	DataStorageShape.prototype.fixedSize = 20;
+
 	DataStorageShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var fixed = mxUtils.getValue(this.style, 'fixedSize', '0') != '0';
@@ -3168,7 +3367,9 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(OrShape, mxActor);
+
 	OrShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		c.moveTo(0, 0);
@@ -3185,7 +3386,9 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(XorShape, mxActor);
+
 	XorShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		c.moveTo(0, 0);
@@ -3203,12 +3406,16 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(LoopLimitShape, mxActor);
+
 	LoopLimitShape.prototype.size = 20;
+
 	LoopLimitShape.prototype.isRoundable = function()
 	{
 		return true;
 	};
+
 	LoopLimitShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var s = Math.min(w / 2, Math.min(h, parseFloat(mxUtils.getValue(this.style, 'size', this.size))));
@@ -3225,8 +3432,11 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(OffPageConnectorShape, mxActor);
+
 	OffPageConnectorShape.prototype.size = 3 / 8;
+
 	OffPageConnectorShape.prototype.isRoundable = function()
 	{
 		return true;
@@ -3247,7 +3457,9 @@
 	{
 		mxEllipse.call(this);
 	};
+
 	mxUtils.extend(TapeDataShape, mxEllipse);
+
 	TapeDataShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
 		mxEllipse.prototype.paintVertexShape.apply(this, arguments);
@@ -3266,7 +3478,9 @@
 	{
 		mxEllipse.call(this);
 	};
+
 	mxUtils.extend(OrEllipseShape, mxEllipse);
+
 	OrEllipseShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
 		mxEllipse.prototype.paintVertexShape.apply(this, arguments);
@@ -3292,7 +3506,9 @@
 	{
 		mxEllipse.call(this);
 	};
+
 	mxUtils.extend(SumEllipseShape, mxEllipse);
+
 	SumEllipseShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
 		mxEllipse.prototype.paintVertexShape.apply(this, arguments);
@@ -3319,7 +3535,9 @@
 	{
 		mxRhombus.call(this);
 	};
+
 	mxUtils.extend(SortShape, mxRhombus);
+
 	SortShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
 		mxRhombus.prototype.paintVertexShape.apply(this, arguments);
@@ -3339,7 +3557,9 @@
 	{
 		mxEllipse.call(this);
 	};
+
 	mxUtils.extend(CollateShape, mxEllipse);
+
 	CollateShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
 		c.begin();
@@ -3364,30 +3584,33 @@
 	{
 		mxEllipse.call(this);
 	};
+
 	mxUtils.extend(DimensionShape, mxEllipse);
+
 	DimensionShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
+		var sw = c.state.strokeWidth / 2;
 		// Arrow size
-		var al = 10;
+		var al = 10 + 2 * sw;
 		var cy = y + h - al / 2;
 		
 		c.begin();
 		c.moveTo(x, y);
 		c.lineTo(x, y + h);
-		c.moveTo(x, cy);
-		c.lineTo(x + al, cy - al / 2);
-		c.moveTo(x, cy);
-		c.lineTo(x + al, cy + al / 2);
-		c.moveTo(x, cy);
-		c.lineTo(x + w, cy);
+		c.moveTo(x + sw, cy);
+		c.lineTo(x + sw + al, cy - al / 2);
+		c.moveTo(x + sw, cy);
+		c.lineTo(x + sw + al, cy + al / 2);
+		c.moveTo(x + sw, cy);
+		c.lineTo(x + w - sw, cy);
 
 		// Opposite side
 		c.moveTo(x + w, y);
 		c.lineTo(x + w, y + h);
-		c.moveTo(x + w, cy);
-		c.lineTo(x + w - al, cy - al / 2);
-		c.moveTo(x + w, cy);
-		c.lineTo(x + w - al, cy + al / 2);
+		c.moveTo(x + w - sw, cy);
+		c.lineTo(x + w - al - sw, cy - al / 2);
+		c.moveTo(x + w - sw, cy);
+		c.lineTo(x + w - al - sw, cy + al / 2);
 		c.end();
 		c.stroke();
 	};
@@ -3399,7 +3622,11 @@
 	{
 		mxEllipse.call(this);
 	};
+
 	mxUtils.extend(PartialRectangleShape, mxEllipse);
+
+	PartialRectangleShape.prototype.drawHidden = true;
+
 	PartialRectangleShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
 		if (!this.outline)
@@ -3410,57 +3637,70 @@
 		if (this.style != null)
 		{
 			var pointerEvents = c.pointerEvents;
+			var filled = this.fill != null && this.fill != mxConstants.NONE;
 			var events = mxUtils.getValue(this.style, mxConstants.STYLE_POINTER_EVENTS, '1') == '1';
 			
-			if (!events && (this.fill == null || this.fill == mxConstants.NONE))
+			if (!events && !filled)
 			{
 				c.pointerEvents = false;
 			}
 
-			c.rect(x, y, w, h);
-			c.fill();
+			var top = mxUtils.getValue(this.style, 'top', '1') == '1';
+			var left = mxUtils.getValue(this.style, 'left', '1') == '1';
+			var right = mxUtils.getValue(this.style, 'right', '1') == '1';
+			var bottom = mxUtils.getValue(this.style, 'bottom', '1') == '1';
 
-			c.pointerEvents = pointerEvents;
-			c.setStrokeColor(this.stroke);
-			c.setLineCap('square');
-			c.begin();
-			c.moveTo(x, y);
-			
-			if (this.outline || mxUtils.getValue(this.style, 'top', '1') == '1')
+			if (this.drawHidden || filled || this.outline || top || right || bottom || left)
 			{
-				c.lineTo(x + w, y);
+				c.rect(x, y, w, h);
+				c.fill();
+
+				c.pointerEvents = pointerEvents;
+				c.setStrokeColor(this.stroke);
+				c.setLineCap('square');
+				c.begin();
+				c.moveTo(x, y);
+				
+				if (this.outline || top)
+				{
+					c.lineTo(x + w, y);
+				}
+				else
+				{
+					c.moveTo(x + w, y);
+				}
+				
+				if (this.outline || right)
+				{
+					c.lineTo(x + w, y + h);
+				}
+				else
+				{
+					c.moveTo(x + w, y + h);
+				}
+				
+				if (this.outline || bottom)
+				{
+					c.lineTo(x, y + h);
+				}
+				else
+				{
+					c.moveTo(x, y + h);
+				}
+				
+				if (this.outline || left)
+				{
+					c.lineTo(x, y);
+				}
+				
+				c.end();
+				c.stroke();
+				c.setLineCap('flat');
 			}
 			else
 			{
-				c.moveTo(x + w, y);
+				c.setStrokeColor(this.stroke);
 			}
-			
-			if (this.outline || mxUtils.getValue(this.style, 'right', '1') == '1')
-			{
-				c.lineTo(x + w, y + h);
-			}
-			else
-			{
-				c.moveTo(x + w, y + h);
-			}
-			
-			if (this.outline || mxUtils.getValue(this.style, 'bottom', '1') == '1')
-			{
-				c.lineTo(x, y + h);
-			}
-			else
-			{
-				c.moveTo(x, y + h);
-			}
-			
-			if (this.outline || mxUtils.getValue(this.style, 'left', '1') == '1')
-			{
-				c.lineTo(x, y);
-			}
-						
-			c.end();
-			c.stroke();
-			c.setLineCap('flat');
 		}
 	};
 
@@ -3471,7 +3711,9 @@
 	{
 		mxEllipse.call(this);
 	};
+
 	mxUtils.extend(LineEllipseShape, mxEllipse);
+
 	LineEllipseShape.prototype.paintVertexShape = function(c, x, y, w, h)
 	{
 		mxEllipse.prototype.paintVertexShape.apply(this, arguments);
@@ -3501,7 +3743,9 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(DelayShape, mxActor);
+
 	DelayShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var dx = Math.min(w, h / 2);
@@ -3521,8 +3765,11 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(CrossShape, mxActor);
+
 	CrossShape.prototype.size = 0.2;
+
 	CrossShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var m = Math.min(h, w);
@@ -3555,8 +3802,11 @@
 	{
 		mxActor.call(this);
 	};
+
 	mxUtils.extend(DisplayShape, mxActor);
+
 	DisplayShape.prototype.size = 0.25;
+
 	DisplayShape.prototype.redrawPath = function(c, x, y, w, h)
 	{
 		var dx = Math.min(w, h / 2);
@@ -5125,12 +5375,14 @@
 			
 			StyleFormatPanel.prototype.getCustomColors = function()
 			{
-				var ss = this.format.getSelectionState();
+				var ss = this.editorUi.getSelectionState();
 				var result = styleFormatPanelGetCustomColors.apply(this, arguments);
 				
 				if (ss.style.shape == 'umlFrame')
 				{
-					result.push({title: mxResources.get('laneColor'), key: 'swimlaneFillColor', defaultValue: '#ffffff'});
+					result.push({title: mxResources.get('laneColor'),
+						key: 'swimlaneFillColor',
+						defaultValue: 'default'});
 				}
 				
 				return result;
@@ -5694,7 +5946,7 @@
 						state.style['width'] = Math.round(w * 2) / state.view.scale;
 						
 						// Applies to opposite side
-						if (mxEvent.isControlDown(me.getEvent()))
+						if (mxEvent.isShiftDown(me.getEvent()) || mxEvent.isControlDown(me.getEvent()))
 						{
 							state.style[mxConstants.STYLE_ENDSIZE] = state.style[mxConstants.STYLE_STARTSIZE];
 						}
@@ -5725,7 +5977,7 @@
 						state.style['startWidth'] = Math.max(0, Math.round(w * 2) - state.shape.getEdgeWidth()) / state.view.scale;
 						
 						// Applies to opposite side
-						if (mxEvent.isControlDown(me.getEvent()))
+						if (mxEvent.isShiftDown(me.getEvent()) || mxEvent.isControlDown(me.getEvent()))
 						{
 							state.style[mxConstants.STYLE_ENDSIZE] = state.style[mxConstants.STYLE_STARTSIZE];
 							state.style['endWidth'] = state.style['startWidth'];
@@ -5765,7 +6017,7 @@
 						state.style['width'] = Math.round(w * 2) / state.view.scale;
 						
 						// Applies to opposite side
-						if (mxEvent.isControlDown(me.getEvent()))
+						if (mxEvent.isShiftDown(me.getEvent()) || mxEvent.isControlDown(me.getEvent()))
 						{
 							state.style[mxConstants.STYLE_STARTSIZE] = state.style[mxConstants.STYLE_ENDSIZE];
 						}
@@ -5796,7 +6048,7 @@
 						state.style['endWidth'] = Math.max(0, Math.round(w * 2) - state.shape.getEdgeWidth()) / state.view.scale;
 						
 						// Applies to opposite side
-						if (mxEvent.isControlDown(me.getEvent()))
+						if (mxEvent.isShiftDown(me.getEvent()) || mxEvent.isControlDown(me.getEvent()))
 						{
 							state.style[mxConstants.STYLE_STARTSIZE] = state.style[mxConstants.STYLE_ENDSIZE];
 							state.style['startWidth'] = state.style['endWidth'];
@@ -5829,7 +6081,7 @@
 					var size = parseFloat(mxUtils.getValue(state.style, mxConstants.STYLE_STARTSIZE, mxConstants.DEFAULT_STARTSIZE));
 					handles.push(createArcHandle(state, size / 2));
 				}
-				
+
 				// Start size handle must be last item in handles for hover to work in tables (see mouse event handler in Graph)
 				handles.push(createHandle(state, [mxConstants.STYLE_STARTSIZE], function(bounds)
 				{
@@ -5851,31 +6103,29 @@
 							Math.round(Math.max(0, Math.min(bounds.width, pt.x - bounds.x)));
 				}, false, null, function(me)
 				{
-					if (mxEvent.isControlDown(me.getEvent()))
+					var graph = state.view.graph;
+					
+					if (!mxEvent.isShiftDown(me.getEvent()) && !mxEvent.isControlDown(me.getEvent()) &&
+						(graph.isTableRow(state.cell) || graph.isTableCell(state.cell)))
 					{
-						var graph = state.view.graph;
+						var dir = graph.getSwimlaneDirection(state.style);
+						var parent = graph.model.getParent(state.cell);
+						var cells = graph.model.getChildCells(parent, true);
+						var temp = [];
 						
-						if (graph.isTableRow(state.cell) || graph.isTableCell(state.cell))
+						for (var i = 0; i < cells.length; i++)
 						{
-							var dir = graph.getSwimlaneDirection(state.style);
-							var parent = graph.model.getParent(state.cell);
-							var cells = graph.model.getChildCells(parent, true);
-							var temp = []; 
-							
-							for (var i = 0; i < cells.length; i++)
+							// Finds siblings with the same direction and to set start size
+							if (cells[i] != state.cell && graph.isSwimlane(cells[i]) &&
+								graph.getSwimlaneDirection(graph.getCurrentCellStyle(
+								cells[i])) == dir)
 							{
-								// Finds siblings with the same direction and to set start size
-								if (cells[i] != state.cell && graph.isSwimlane(cells[i]) &&
-									graph.getSwimlaneDirection(graph.getCurrentCellStyle(
-									cells[i])) == dir)
-								{
-									temp.push(cells[i]);
-								}
+								temp.push(cells[i]);
 							}
-							
-							graph.setCellStyles(mxConstants.STYLE_STARTSIZE,
-								state.style[mxConstants.STYLE_STARTSIZE], temp);
 						}
+						
+						graph.setCellStyles(mxConstants.STYLE_STARTSIZE,
+							state.style[mxConstants.STYLE_STARTSIZE], temp);
 					}					
 				}));
 				

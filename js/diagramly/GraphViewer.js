@@ -1460,6 +1460,8 @@ GraphViewer.prototype.addToolbar = function()
 						layersDialog.style.backgroundColor = '#eee';
 						layersDialog.style.fontFamily = Editor.defaultHtmlFont;
 						layersDialog.style.fontSize = '11px';
+						layersDialog.style.overflowY = 'auto';
+						layersDialog.style.maxHeight = (this.graph.container.clientHeight - this.toolbarHeight - 10) + 'px'
 						layersDialog.style.zIndex = this.toolbarZIndex + 1;
 						mxUtils.setOpacity(layersDialog, 80);
 						var origin = mxUtils.getDocumentScrollOrigin(document);
@@ -1692,7 +1694,7 @@ GraphViewer.prototype.addToolbar = function()
 
 GraphViewer.prototype.disableButton = function(token)
 {
-	var def = this.graphConfig['toolbar-buttons'][token];
+	var def = this.graphConfig['toolbar-buttons']? this.graphConfig['toolbar-buttons'][token] : null;
 			
 	if (def != null)
 	{

@@ -294,14 +294,12 @@ App.PUSHER_CLUSTER = 'eu';
 /**
  * Specifies the URL for the pusher API.
  */
-App.PUSHER_URL = 'https://js.pusher.com/4.3/pusher.min.js';
+App.PUSHER_URL = 'https://js.pusher.com/7.0.3/pusher.min.js';
 
 /**
- * Socket.io library 
+ * SimplePeer library 
  */
-App.SOCKET_IO_URL = window.DRAWIO_BASE_URL + '/js/socket.io/socket.io.min.js';
-App.SIMPLE_PEER_URL = window.DRAWIO_BASE_URL + '/js/socket.io/simplepeer9.10.0.min.js';
-App.SOCKET_IO_SRV = 'http://localhost:3030';
+ App.SIMPLE_PEER_URL = window.DRAWIO_BASE_URL + '/js/simplepeer/simplepeer9.10.0.min.js';
 
 /**
  * Google APIs to load. The realtime API is needed to notify collaborators of conversion
@@ -635,7 +633,8 @@ App.main = function(callback, createUi)
 	if (window.mxscript != null)
 	{
 		// Checks for script content changes to avoid CSP errors in production
-		if (urlParams['dev'] == '1' && CryptoJS != null && App.mode != App.MODE_DROPBOX && App.mode != App.MODE_TRELLO)
+		if (urlParams['dev'] == '1' && !mxClient.IS_CHROMEAPP && !EditorUi.isElectronApp &&
+			CryptoJS != null && App.mode != App.MODE_DROPBOX && App.mode != App.MODE_TRELLO)
 		{
 			var scripts = document.getElementsByTagName('script');
 			
@@ -644,10 +643,10 @@ App.main = function(callback, createUi)
 			{
 				var content = mxUtils.getTextContent(scripts[0]);
 				
-				if (CryptoJS.MD5(content).toString() != '0fed8c83fc7187e0b39310c4aa3e6d63')
+				if (CryptoJS.MD5(content).toString() != '1f536e2400baaa30261b8c3976d6fe06')
 				{
 					console.log('Change bootstrap script MD5 in the previous line:', CryptoJS.MD5(content).toString());
-					// alert('[Dev] Bootstrap script change requires update of CSP');
+					alert('[Dev] Bootstrap script change requires update of CSP');
 				}
 			}
 			
@@ -659,7 +658,7 @@ App.main = function(callback, createUi)
 				if (CryptoJS.MD5(content).toString() != 'd53805dd6f0bbba2da4966491ca0a505')
 				{
 					console.log('Change main script MD5 in the previous line:', CryptoJS.MD5(content).toString());
-					// alert('[Dev] Main script change requires update of CSP');
+					alert('[Dev] Main script change requires update of CSP');
 				}
 			}
 		}
@@ -695,16 +694,16 @@ App.main = function(callback, createUi)
 		
 		// Loads Pusher API
 		if (('ArrayBuffer' in window) && !mxClient.IS_CHROMEAPP && !EditorUi.isElectronApp &&
-			DrawioFile.SYNC == 'auto' && (urlParams['embed'] != '1' || urlParams['embedRT'] == '1') && urlParams['local'] != '1' &&
+			DrawioFile.SYNC == 'auto' && (urlParams['embed'] != '1' ||
+			urlParams['embedRT'] == '1') && urlParams['local'] != '1' &&
 			(urlParams['chrome'] != '0' || urlParams['rt'] == '1') &&
 			urlParams['stealth'] != '1' && urlParams['offline'] != '1')
 		{
 			// TODO: Check if async loading is fast enough
 			mxscript(App.PUSHER_URL);
 			
-			if (urlParams['rtCursors'] == '1')
+			if (urlParams['fast-sync'] == '1')
 			{
-				mxscript(App.SOCKET_IO_URL);
 				mxscript(App.SIMPLE_PEER_URL);
 			}
 		}
@@ -3266,8 +3265,7 @@ App.prototype.start = function()
 						{
 							var id = this.getDiagramId();
 							
-							
-							if (EditorUi.enableDrafts && (urlParams['mode'] == null || EditorUi.isElectronApp) &&
+							if (EditorUi.enableDrafts && urlParams['mode'] == null &&
 								this.getServiceName() == 'draw.io' && (id == null || id.length == 0) &&
 								!this.editor.isChromelessView())
 							{
@@ -3294,11 +3292,11 @@ App.prototype.start = function()
 									}
 								}));
 							}
-							else if (urlParams['splash'] != '0')
+							else if (urlParams['splash'] != '0' || urlParams['mode'] != null)
 							{
 								this.loadFile();
 							}
-							else
+							else if (!EditorUi.isElectronApp)
 							{
 								this.createFile(this.defaultFilename, this.getFileData(), null, null, null, null, null, true);
 							}
@@ -3373,7 +3371,7 @@ App.prototype.start = function()
 						}), null, null, null, null, urlParams['browser'] == '1',
 							null, null, true, rowLimit, null, null, null,
 							this.editor.fileExtensions);
-						this.showDialog(dlg.container, 400, (serviceCount > rowLimit) ? 390 : 270,
+						this.showDialog(dlg.container, 420, (serviceCount > rowLimit) ? 390 : 280,
 							true, false, mxUtils.bind(this, function(cancel)
 						{
 							if (cancel && this.getCurrentFile() == null)
@@ -3465,8 +3463,9 @@ App.prototype.start = function()
 					// Removes open URL parameter. Hash is also updated in Init to load client.
 					if (urlParams['open'] != null && window.history && window.history.replaceState)
 					{
+						
 						window.history.replaceState(null, null, window.location.pathname +
-							this.getSearch(['open']));
+							this.getSearch(['open', 'sketch']));
 						window.location.hash = urlParams['open'];
 					}
 					
@@ -3505,6 +3504,54 @@ App.prototype.loadDraft = function(xml, success)
 	}), null, null, true);
 };
 
+App.prototype.filterDrafts = function(filePath, guid, callback)
+{
+	var drafts = [];
+
+	function result()
+	{
+		callback(drafts);
+	};
+
+	try
+	{
+		this.getDatabaseItems(mxUtils.bind(this, function(items)
+		{
+			// Collects orphaned drafts
+			for (var i = 0; i < items.length; i++)
+			{
+				try
+				{
+					var key = items[i].key;
+					
+					if (key != null && key.substring(0, 7) == '.draft_')
+					{
+						var obj = JSON.parse(items[i].data);
+						
+						if (obj != null && obj.type == 'draft' && obj.aliveCheck != guid && 
+							((filePath == null && obj.fileObject == null) ||
+								(obj.fileObject != null && obj.fileObject.path == filePath)))	
+						{
+							obj.key = key;
+							drafts.push(obj);
+						}
+					}
+				}
+				catch (e)
+				{
+					// ignore
+				}
+			}
+
+			result();
+		}, result));
+	}
+	catch (e)
+	{
+		result();
+	}
+};
+
 /**
  * Checks for orphaned drafts.
  */
@@ -3520,34 +3567,8 @@ App.prototype.checkDrafts = function()
 		{
 			localStorage.removeItem('.draft-alive-check');
 
-			this.getDatabaseItems(mxUtils.bind(this, function(items)
+			this.filterDrafts(null, guid, mxUtils.bind(this, function(drafts)
 			{
-				// Collects orphaned drafts
-				var drafts = [];
-				
-				for (var i = 0; i < items.length; i++)
-				{
-					try
-					{
-						var key = items[i].key;
-						
-						if (key != null && key.substring(0, 7) == '.draft_')
-						{
-							var obj = JSON.parse(items[i].data);
-							
-							if (obj != null && obj.type == 'draft' && obj.aliveCheck != guid)
-							{
-								obj.key = key;
-								drafts.push(obj);
-							}
-						}
-					}
-					catch (e)
-					{
-						// ignore
-					}
-				}
-				
 				if (drafts.length == 1)
 				{
 					this.loadDraft(drafts[0].data, mxUtils.bind(this, function()
@@ -3599,16 +3620,6 @@ App.prototype.checkDrafts = function()
 					dlg.init();
 				}
 				else if (urlParams['splash'] != '0')
-				{
-					this.loadFile();
-				}
-				else
-				{
-					this.createFile(this.defaultFilename, this.getFileData(), null, null, null, null, null, true);
-				}
-			}), mxUtils.bind(this, function()
-			{
-				if (urlParams['splash'] != '0')
 				{
 					this.loadFile();
 				}
@@ -4550,7 +4561,7 @@ App.prototype.saveFile = function(forceDialog, success)
 				this.hideDialog();
 			}), mxResources.get('saveAs'), mxResources.get('download'), null, null, allowTab,
 				null, true, rowLimit, null, null, null, this.editor.fileExtensions, false);
-			this.showDialog(dlg.container, 400, (serviceCount > rowLimit) ? 390 : 270, true, true);
+			this.showDialog(dlg.container, 420, (serviceCount > rowLimit) ? 390 : 280, true, true);
 			dlg.init();
 		}
 	}
@@ -4606,17 +4617,24 @@ App.prototype.loadTemplate = function(url, onload, onerror, templateFilename, as
 					onload(xml);
 				}, onerror, filterFn);
 			}
-			else if (!this.isOffline() && new XMLHttpRequest().upload && this.isRemoteFileFormat(data, filterFn))
+			else if (new XMLHttpRequest().upload && this.isRemoteFileFormat(data, filterFn))
 			{
-				// Asynchronous parsing via server
-				this.parseFile(new Blob([data], {type: 'application/octet-stream'}), mxUtils.bind(this, function(xhr)
+				if (this.isExternalDataComms())
 				{
-					if (xhr.readyState == 4 && xhr.status >= 200 && xhr.status <= 299 &&
-						xhr.responseText.substring(0, 13) == '<mxGraphModel')
+					// Asynchronous parsing via server
+					this.parseFileData(data, mxUtils.bind(this, function(xhr)
 					{
-						onload(xhr.responseText);
-					}
-				}), url);
+						if (xhr.readyState == 4 && xhr.status >= 200 && xhr.status <= 299 &&
+							xhr.responseText.substring(0, 13) == '<mxGraphModel')
+						{
+							onload(xhr.responseText);
+						}
+					}), url);
+				}
+				else
+				{
+					this.showError(mxResources.get('error'), mxResources.get('notInOffline'), null, onerror);
+				}
 			}
 			else if (this.isLucidChartData(data))
 			{
@@ -6629,7 +6647,7 @@ App.prototype.convertFile = function(url, filename, mimeType, extension, success
 				}
 				else if (Graph.fileSupport && new XMLHttpRequest().upload && this.isRemoteFileFormat(data, url))
 				{
-					this.parseFile(new Blob([data], {type: 'application/octet-stream'}), mxUtils.bind(this, function(xhr)
+					this.parseFileData(data, mxUtils.bind(this, function(xhr)
 					{
 						if (xhr.readyState == 4)
 						{
@@ -6909,6 +6927,9 @@ App.prototype.updateHeader = function()
 		
 		mxEvent.addListener(this.toggleFormatElement, 'click', mxUtils.bind(this, function(evt)
 		{
+			EditorUi.logEvent({category: 'TOOLBAR-ACTION-',
+				action: 'formatPanel'});
+		
 			this.actions.get('formatPanel').funct();
 			mxEvent.consume(evt);
 		}));
@@ -6968,6 +6989,9 @@ App.prototype.updateHeader = function()
 		mxEvent.addListener(this.fullscreenElement, 'click', mxUtils.bind(this, function(evt)
 		{
 			var visible = this.fullscreenMode;
+
+			EditorUi.logEvent({category: 'TOOLBAR-ACTION-',
+				action: 'fullscreen' , currentstate: visible});
 			
 			if (uiTheme != 'atlas' && urlParams['embed'] != '1')
 			{
@@ -7023,6 +7047,8 @@ App.prototype.updateHeader = function()
 			// Toggles compact mode
 			mxEvent.addListener(this.toggleElement, 'click', mxUtils.bind(this, function(evt)
 			{
+				EditorUi.logEvent({category: 'TOOLBAR-ACTION-',
+					action: 'toggleUI'});
 				this.toggleCompactMode();
 				mxEvent.consume(evt);
 			}));

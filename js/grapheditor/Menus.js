@@ -258,13 +258,16 @@ Menus.prototype.init = function()
 	})));
 	this.put('align', new Menu(mxUtils.bind(this, function(menu, parent)
 	{
-		menu.addItem(mxResources.get('leftAlign'), null, function() { graph.alignCells(mxConstants.ALIGN_LEFT); }, parent);
-		menu.addItem(mxResources.get('center'), null, function() { graph.alignCells(mxConstants.ALIGN_CENTER); }, parent);
-		menu.addItem(mxResources.get('rightAlign'), null, function() { graph.alignCells(mxConstants.ALIGN_RIGHT); }, parent);
+		var ss = this.editorUi.getSelectionState();
+		var enabled = ss.vertices.length > 1;
+		menu.addItem(mxResources.get('leftAlign'), null, function() { graph.alignCells(mxConstants.ALIGN_LEFT); }, parent, null, enabled);
+		menu.addItem(mxResources.get('center'), null, function() { graph.alignCells(mxConstants.ALIGN_CENTER); }, parent, null, enabled);
+		menu.addItem(mxResources.get('rightAlign'), null, function() { graph.alignCells(mxConstants.ALIGN_RIGHT); }, parent, null, enabled);
 		menu.addSeparator(parent);
-		menu.addItem(mxResources.get('topAlign'), null, function() { graph.alignCells(mxConstants.ALIGN_TOP); }, parent);
-		menu.addItem(mxResources.get('middle'), null, function() { graph.alignCells(mxConstants.ALIGN_MIDDLE); }, parent);
-		menu.addItem(mxResources.get('bottomAlign'), null, function() { graph.alignCells(mxConstants.ALIGN_BOTTOM); }, parent);
+		menu.addItem(mxResources.get('topAlign'), null, function() { graph.alignCells(mxConstants.ALIGN_TOP); }, parent, null, enabled);
+		menu.addItem(mxResources.get('middle'), null, function() { graph.alignCells(mxConstants.ALIGN_MIDDLE); }, parent, null, enabled);
+		menu.addItem(mxResources.get('bottomAlign'), null, function() { graph.alignCells(mxConstants.ALIGN_BOTTOM); }, parent, null, enabled);
+		this.addMenuItems(menu, ['-', 'snapToGrid'], parent);
 	})));
 	this.put('distribute', new Menu(mxUtils.bind(this, function(menu, parent)
 	{
@@ -315,7 +318,48 @@ Menus.prototype.init = function()
 			this.editorUi.showDialog(dlg.container, 300, 80, true, true);
 			dlg.init();
 		});
-		
+
+		var runTreeLayout = mxUtils.bind(this, function(layout)
+		{
+			var tmp = graph.getSelectionCell();
+			var roots = null;
+			
+			if (tmp == null || graph.getModel().getChildCount(tmp) == 0)
+			{
+				if (graph.getModel().getEdgeCount(tmp) == 0)
+				{
+					roots = graph.findTreeRoots(graph.getDefaultParent());
+				}
+			}
+			else
+			{
+				roots = graph.findTreeRoots(tmp);
+			}
+
+			if (roots != null && roots.length > 0)
+			{
+				tmp = roots[0];
+			}
+			
+			if (tmp != null)
+			{
+				this.editorUi.executeLayout(function()
+				{
+					layout.execute(graph.getDefaultParent(), tmp);
+
+					if (!graph.isSelectionEmpty())
+					{
+						tmp = graph.getModel().getParent(tmp);
+						
+						if (graph.getModel().isVertex(tmp))
+						{
+							graph.updateGroupBounds([tmp], graph.gridSize * 2, true);
+						}
+					}
+				}, true);
+			}
+		});
+
 		menu.addItem(mxResources.get('horizontalFlow'), null, mxUtils.bind(this, function()
 		{
 			var layout = new mxHierarchicalLayout(graph, mxConstants.DIRECTION_WEST);
@@ -339,130 +383,48 @@ Menus.prototype.init = function()
 		menu.addSeparator(parent);
 		menu.addItem(mxResources.get('horizontalTree'), null, mxUtils.bind(this, function()
 		{
-			var tmp = graph.getSelectionCell();
-			var roots = null;
-			
-			if (tmp == null || graph.getModel().getChildCount(tmp) == 0)
-			{
-				if (graph.getModel().getEdgeCount(tmp) == 0)
-				{
-					roots = graph.findTreeRoots(graph.getDefaultParent());
-				}
-			}
-			else
-			{
-				roots = graph.findTreeRoots(tmp);
-			}
+			var layout = new mxCompactTreeLayout(graph, true);
+			layout.edgeRouting = false;
+			layout.levelDistance = 30;
 
-			if (roots != null && roots.length > 0)
+			promptSpacing(layout.levelDistance, mxUtils.bind(this, function(spacing)
 			{
-				tmp = roots[0];
-			}
-			
-			if (tmp != null)
-			{
-				var layout = new mxCompactTreeLayout(graph, true);
-				layout.edgeRouting = false;
-				layout.levelDistance = 30;
-				
-				promptSpacing(layout.levelDistance, mxUtils.bind(this, function(newValue)
+				if (!isNaN(spacing))
 				{
-					layout.levelDistance = newValue;
-					
-					this.editorUi.executeLayout(function()
-		    		{
-						layout.execute(graph.getDefaultParent(), tmp);
-		    		}, true);
-				}));
-			}
+					layout.levelDistance = spacing;
+					runTreeLayout(layout);
+				}
+			}));
 		}), parent);
 		menu.addItem(mxResources.get('verticalTree'), null, mxUtils.bind(this, function()
 		{
-			var tmp = graph.getSelectionCell();
-			var roots = null;
-			
-			if (tmp == null || graph.getModel().getChildCount(tmp) == 0)
-			{
-				if (graph.getModel().getEdgeCount(tmp) == 0)
-				{
-					roots = graph.findTreeRoots(graph.getDefaultParent());
-				}
-			}
-			else
-			{
-				roots = graph.findTreeRoots(tmp);
-			}
+			var layout = new mxCompactTreeLayout(graph, false);
+			layout.edgeRouting = false;
+			layout.levelDistance = 30;
 
-			if (roots != null && roots.length > 0)
+			promptSpacing(layout.levelDistance, mxUtils.bind(this, function(spacing)
 			{
-				tmp = roots[0];
-			}
-			
-			if (tmp != null)
-			{
-				var layout = new mxCompactTreeLayout(graph, false);
-				layout.edgeRouting = false;
-				layout.levelDistance = 30;
-				
-				promptSpacing(layout.levelDistance, mxUtils.bind(this, function(newValue)
+				if (!isNaN(spacing))
 				{
-					layout.levelDistance = newValue;
-					
-					this.editorUi.executeLayout(function()
-		    		{
-						layout.execute(graph.getDefaultParent(), tmp);
-		    		}, true);
-				}));
-			}
+					layout.levelDistance = spacing;
+					runTreeLayout(layout);
+				}
+			}));
 		}), parent);
 		menu.addItem(mxResources.get('radialTree'), null, mxUtils.bind(this, function()
 		{
-			var tmp = graph.getSelectionCell();
-			var roots = null;
-			
-			if (tmp == null || graph.getModel().getChildCount(tmp) == 0)
-			{
-				if (graph.getModel().getEdgeCount(tmp) == 0)
-				{
-					roots = graph.findTreeRoots(graph.getDefaultParent());
-				}
-			}
-			else
-			{
-				roots = graph.findTreeRoots(tmp);
-			}
+			var layout = new mxRadialTreeLayout(graph);
+			layout.levelDistance = 80;
+			layout.autoRadius = true;
 
-			if (roots != null && roots.length > 0)
+			promptSpacing(layout.levelDistance, mxUtils.bind(this, function(spacing)
 			{
-				tmp = roots[0];
-			}
-			
-			if (tmp != null)
-			{
-				var layout = new mxRadialTreeLayout(graph, false);
-				layout.levelDistance = 80;
-				layout.autoRadius = true;
-				
-				promptSpacing(layout.levelDistance, mxUtils.bind(this, function(newValue)
+				if (!isNaN(spacing))
 				{
-					layout.levelDistance = newValue;
-					
-					this.editorUi.executeLayout(function()
-		    		{
-		    			layout.execute(graph.getDefaultParent(), tmp);
-		    			
-		    			if (!graph.isSelectionEmpty())
-		    			{
-			    			tmp = graph.getModel().getParent(tmp);
-			    			
-			    			if (graph.getModel().isVertex(tmp))
-			    			{
-			    				graph.updateGroupBounds([tmp], graph.gridSize * 2, true);
-			    			}
-		    			}
-		    		}, true);
-				}));
-			}
+					layout.levelDistance = spacing;
+					runTreeLayout(layout);
+				}
+			}));
 		}), parent);
 		menu.addSeparator(parent);
 		menu.addItem(mxResources.get('organic'), null, mxUtils.bind(this, function()
@@ -648,6 +610,19 @@ Menus.prototype.addInsertTableCellItem = function(menu, parent)
 	var cell = graph.getSelectionCell();
 	var style = graph.getCurrentCellStyle(cell);
 
+	if (graph.getSelectionCount() > 1)
+	{
+		if (graph.isTableCell(cell))
+		{
+			cell = graph.model.getParent(cell);
+		}
+
+		if (graph.isTableRow(cell))
+		{
+			cell = graph.model.getParent(cell);
+		}
+	}
+
 	var isTable = graph.isTable(cell) ||
 		graph.isTableRow(cell) ||
 		graph.isTableCell(cell);
@@ -827,6 +802,17 @@ Menus.prototype.addInsertTableCellItem = function(menu, parent)
 				}
 			}), null, 'geIcon geSprite geSprite-deleterow');
 			elt.setAttribute('title', mxResources.get('deleteRow'));
+			
+			var ss = this.editorUi.getSelectionState();
+			
+			if (ss.mergeCell != null)
+			{
+				this.addMenuItem(menu, 'mergeCells');
+			}
+			else if (ss.style['colspan'] > 1 || ss.style['rowspan'] > 1)
+			{
+				this.addMenuItem(menu, 'unmergeCells');
+			}
 		}
 	}
 };	
@@ -1605,10 +1591,17 @@ Menus.prototype.addPopupMenuCellEditItems = function(menu, cell, evt, parent)
 	this.addMenuItems(menu, ['-', 'editStyle', 'editData', 'editLink'], parent, evt);
 	
 	// Shows edit image action if there is an image in the style
-	if (this.editorUi.editor.graph.getModel().isVertex(cell) && mxUtils.getValue(state.style, mxConstants.STYLE_IMAGE, null) != null)
+	if (graph.getModel().isVertex(cell) && mxUtils.getValue(state.style, mxConstants.STYLE_IMAGE, null) != null)
 	{
 		menu.addSeparator();
 		this.addMenuItem(menu, 'image', parent, evt).firstChild.nextSibling.innerHTML = mxResources.get('editImage') + '...';
+		this.addMenuItem(menu, 'crop', parent, evt);
+	}
+
+	if ((graph.getModel().isVertex(cell) && graph.getModel().getChildCount(cell) == 0)
+			|| graph.isContainer(cell)) //Allow vertex only excluding group (but allowing container [e.g, swimlanes])
+	{
+		this.addMenuItem(menu, 'editConnectionPoints', parent, evt);
 	}
 };
  

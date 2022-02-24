@@ -207,6 +207,15 @@ DrawioFile.prototype.synchronizeFile = function(success, error)
 	{
 		if (this.sync != null)
 		{
+			// Removes unsaved remote changes
+			if (this.ownPages != null && this.ui.pages != null)
+			{
+				var patch = this.ui.diffPages(
+					this.ui.pages, this.ownPages);
+				this.patch([patch]);
+				this.snapshot = this.ui.getXmlFileData();
+			}
+
 			this.sync.fileChanged(success, error);
 		}
 		else
@@ -347,8 +356,15 @@ DrawioFile.prototype.mergeFile = function(file, success, error, diffShadow)
 				{
 					// Patches the current document
 					this.patch(patches,
-						(DrawioFile.LAST_WRITE_WINS) ?
+						(this.ownPages == null &&
+						DrawioFile.LAST_WRITE_WINS) ?
 						this.backupPatch : null);
+
+					// Patches the own pages
+					if (this.sync != null)
+					{
+						this.sync.patchOwnPages(patches);
+					}
 				}
 			}
 		}
@@ -685,9 +701,12 @@ DrawioFile.prototype.ignorePatches = function(patches)
 {
 	var ignore = true;
 	
-	for (var i = 0; i < patches.length && ignore; i++)
+	if (patches != null)
 	{
-		ignore = ignore && Object.keys(patches[i]).length == 0;
+		for (var i = 0; i < patches.length && ignore; i++)
+		{
+			ignore = ignore && mxUtils.isEmptyObject(patches[i]);
+		}
 	}
 	
 	return ignore;
@@ -858,7 +877,31 @@ DrawioFile.prototype.save = function(revision, success, error, unloading, overwr
  */
 DrawioFile.prototype.updateFileData = function()
 {
-	this.setData(this.ui.getFileData(null, null, null, null, null, null, null, null, this, !this.isCompressed()));
+	var actualPages = this.ui.pages;
+
+	if (this.ownPages != null)
+	{
+		// Uses ownPgaes for getting file data below
+		this.ui.pages = this.ownPages;
+
+		// Updates view state in own current page
+		if (this.ui.currentPage != null)
+		{
+			var ownPage = this.ui.getPageById(
+				this.ui.currentPage.getId(),
+				this.ownPages);
+
+			if (ownPage != null)
+			{
+				ownPage.viewState = this.ui.editor.graph.getViewState();
+				ownPage.needsUpdate = true;
+			}
+		}
+	}
+
+	this.setData(this.ui.getFileData(null, null, null, null,
+		null, null, null, null, this, !this.isCompressed()));
+	this.ui.pages = actualPages;
 };
 
 /**
@@ -1140,7 +1183,15 @@ DrawioFile.prototype.open = function()
 		// only if the file has not been modified and reopened
 		if (!this.isModified())
 		{
-			this.shadowData = mxUtils.getXml(this.ui.getXmlFileData());
+			var data = this.ui.getXmlFileData();
+			
+			if (this.isFastSyncEnabled() && this.isFastSyncSupported())
+			{
+				this.ownPages = this.ui.getPagesForNode(data);
+				this.snapshot = data;
+			}
+
+			this.shadowData = mxUtils.getXml(data);
 			this.shadowPages = null;
 		}
 	}
@@ -1157,6 +1208,31 @@ DrawioFile.prototype.open = function()
  * Hook for subclassers.
  */
 DrawioFile.prototype.isSyncSupported = function()
+{
+	return false;
+};
+
+/**
+ * Returns true if all changes should be sent out immediately.
+ */
+DrawioFile.prototype.isFastSyncSupported = function()
+{
+	return false;
+};
+
+/**
+ * Returns true if all changes should be sent out immediately.
+ */
+DrawioFile.prototype.isFastSyncEnabled = function()
+{
+	return urlParams['fast-sync'] == '1';
+};
+
+/**
+ * Returns true if the notification to update should be sent
+ * together with the save request.
+ */
+DrawioFile.prototype.isOptimisticSync = function()
 {
 	return false;
 };
@@ -1212,9 +1288,9 @@ DrawioFile.prototype.patchDescriptor = function(desc, patch)
  */
 DrawioFile.prototype.startSync = function()
 {
-	if ((DrawioFile.SYNC == 'auto' && urlParams['stealth'] != '1') &&
-		(urlParams['rt'] == '1' || !this.ui.editor.chromeless ||
-		this.ui.editor.editable))
+	if (((DrawioFile.SYNC == 'auto' || DrawioFile.SYNC == 'fast')  &&
+		urlParams['stealth'] != '1') && (urlParams['rt'] == '1' ||
+		!this.ui.editor.chromeless || this.ui.editor.editable))
 	{
 		if (this.sync == null)
 		{
@@ -1444,6 +1520,7 @@ DrawioFile.prototype.saveDraft = function()
 			modified: new Date().getTime(),
 			data: this.ui.getFileData(),
 			title: this.getTitle(),
+			fileObject: this.fileObject,
 			aliveCheck: this.ui.draftAliveCheck};
 		this.ui.setDatabaseItem('.draft_' + this.draftId,
 			JSON.stringify(draft));
@@ -1624,18 +1701,18 @@ DrawioFile.prototype.showRefreshDialog = function(success, error, message)
 			this.showRefreshDialog(success, error);
 		}), message);
 		
-		this.ui.showError(mxResources.get('error') + ' (' + message + ')',
+		this.ui.showError(mxResources.get('warning') + ' (' + message + ')',
 			mxResources.get('fileChangedSyncDialog'),
 			mxResources.get('makeCopy'), mxUtils.bind(this, function()
 		{
 			this.copyFile(success, error);
-		}), null, mxResources.get('synchronize'), mxUtils.bind(this, function()
+		}), null, mxResources.get('merge'), mxUtils.bind(this, function()
 		{
 			this.reloadFile(success, error);
 		}), mxResources.get('cancel'), mxUtils.bind(this, function()
 		{
 			this.ui.hideDialog();
-		}), 360, 150);
+		}), 380, 130);
 	}
 };
 
@@ -1657,7 +1734,7 @@ DrawioFile.prototype.showCopyDialog = function(success, error, overwrite)
 		mxResources.get('cancel'), mxUtils.bind(this, function()
 	{
 		this.ui.hideDialog();
-	}), 360, 150);
+	}), 380, 150);
 };
 
 /**
@@ -1668,12 +1745,12 @@ DrawioFile.prototype.showConflictDialog = function(overwrite, synchronize)
 	this.ui.showError(mxResources.get('externalChanges'),
 		mxResources.get('fileChangedSyncDialog'),
 		mxResources.get('overwrite'), overwrite, null,
-		mxResources.get('synchronize'), synchronize,
+		mxResources.get('merge'), synchronize,
 		mxResources.get('cancel'), mxUtils.bind(this, function()
 	{
 		this.ui.hideDialog();
 		this.handleFileError(null, false);
-	}), 340, 150);
+	}), 380, 130);
 };
 
 /**
@@ -1878,7 +1955,7 @@ DrawioFile.prototype.handleConflictError = function(err, manual)
 			}), error);
 		}
 	})
-	
+
 	if (DrawioFile.SYNC == 'none')
 	{
 		this.showCopyDialog(success, error, overwrite);
@@ -1932,7 +2009,7 @@ DrawioFile.prototype.fileChanged = function()
 {
 	this.lastChanged = new Date();
 	this.setModified(true);
-	
+
 	if (this.isAutosave())
 	{
 		if (this.savingStatusKey != null)
@@ -1946,9 +2023,6 @@ DrawioFile.prototype.fileChanged = function()
 		{
 			this.ageStart = new Date();
 		}
-		
-		//Send changes immidiately if P2P is enabled
-		this.sendFileChanges();
 		
 		this.autosave(this.autosaveDelay, this.maxAutosaveDelay, mxUtils.bind(this, function(resp)
 		{
@@ -1980,15 +2054,11 @@ DrawioFile.prototype.fileChanged = function()
 			this.addUnsavedStatus();
 		}
 	}
-};
 
-/**
- * Returns true if the notification to update should be sent
- * together with the save request.
- */
-DrawioFile.prototype.isOptimisticSync = function()
-{
-	return false;
+	if (this.sync != null)
+	{
+		this.sync.localFileChanged();
+	}
 };
 
 /**
@@ -2027,30 +2097,6 @@ DrawioFile.prototype.fileSaving = function()
 	if (urlParams['test'] == '1')
 	{
 		EditorUi.debug('DrawioFile.fileSaving', [this]);
-	}
-};
-
-DrawioFile.prototype.sendFileChanges = function()
-{
-	try
-	{
-		if (this.p2pCollab != null && this.sync != null)
-		{
-			//TODO Should we check for modified?
-			this.updateFileData(); //TODO Calling this function ealy could have side effects + overhead of calling it twice (here and in save)
-			this.sync.sendFileChanges(this.ui.getPagesForNode(
-				mxUtils.parseXml(this.getData()).documentElement),
-				this.desc);
-				
-			if (urlParams['test'] == '1')
-			{
-				EditorUi.debug('DrawioFile.sendFileChanges', [this]);
-			}
-		}
-	}
-	catch (e)
-	{
-		console.log(e);
 	}
 };
 

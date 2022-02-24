@@ -44,7 +44,7 @@
 			var params = window.location.search.slice(1).split('&');
 
 			for (var i = 0; i < params.length; i++) {
-				idx = params[i].indexOf('=');
+				var idx = params[i].indexOf('=');
 
 				if (idx > 0) {
 					result[params[i].substring(0, idx)] = params[i].substring(idx + 1);
@@ -213,14 +213,12 @@
 		// Changes paths for local development environment
 		if (urlParams['dev'] == '1') {
 			// Used to request grapheditor/mxgraph sources in dev mode
-			// var mxDevUrl = document.location.protocol + '//devhost.jgraph.com/drawio/src/main';
-			var mxDevUrl = `${window.location.origin}${window.location.pathname}`;
+			var mxDevUrl = document.location.protocol + '//devhost.jgraph.com/drawio/src/main';
 
 			// Used to request draw.io sources in dev mode
-			// var drawDevUrl = document.location.protocol + '//devhost.jgraph.com/drawio/src/main/webapp/';
-			var drawDevUrl = `${window.location.origin}${window.location.pathname}`;
-			var geBasePath = drawDevUrl + './js/grapheditor';
-			var mxBasePath = mxDevUrl + './mxgraph';
+			var drawDevUrl = document.location.protocol + '//devhost.jgraph.com/drawio/src/main/webapp/';
+			var geBasePath = drawDevUrl + '/js/grapheditor';
+			var mxBasePath = mxDevUrl + '/mxgraph';
 
 			if (document.location.protocol == 'file:') {
 				geBasePath = './js/grapheditor';
@@ -231,23 +229,25 @@
 				mxForceIncludes = true;
 			}
 
-			mxscript(drawDevUrl + './js/PreConfig.js');
-			mxscript(drawDevUrl + './js/diagramly/Init.js');
-			mxscript(geBasePath + './Init.js');
-			mxscript(mxBasePath + './mxClient.js');
+			mxForceIncludes = false;
+
+			mxscript(drawDevUrl + 'js/PreConfig.js');
+			mxscript(drawDevUrl + 'js/diagramly/Init.js');
+			mxscript(geBasePath + '/Init.js');
+			mxscript(mxBasePath + '/mxClient.js');
 
 			// Adds all JS code that depends on mxClient. This indirection via Devel.js is
 			// required in some browsers to make sure mxClient.js (and the files that it
 			// loads asynchronously) are available when the code loaded in Devel.js runs.
-			mxscript(drawDevUrl + './js/diagramly/Devel.js');
+			mxscript(drawDevUrl + 'js/diagramly/Devel.js');
 
 			// Electron
 			if (mxIsElectron) {
-				mxscript('./js/diagramly/DesktopLibrary.js');
-				mxscript('./js/diagramly/ElectronApp.js');
+				mxscript('js/diagramly/DesktopLibrary.js');
+				mxscript('js/diagramly/ElectronApp.js');
 			}
 
-			mxscript(drawDevUrl + './js/PostConfig.js');
+			mxscript(drawDevUrl + 'js/PostConfig.js');
 		} else {
 			(function () {
 				var hostName = window.location.hostname;
@@ -257,34 +257,34 @@
 					(hostName.substring(hostName.length - 13, hostName.length) === '.diagrams.net');
 
 				function loadAppJS() {
-					mxscript('./js/app.min.js', function () {
+					mxscript('js/app.min.js', function () {
 						mxScriptsLoaded = true;
 						checkAllLoaded();
 
 						// Electron
 						if (mxIsElectron) {
-							mxscript('./js/diagramly/DesktopLibrary.js', function () {
-								mxscript('./js/diagramly/ElectronApp.js', function () {
-									mxscript('./js/extensions.min.js', function () {
-										mxscript('./js/stencils.min.js', function () {
-											mxscript('./js/shapes-14-6-5.min.js',
+							mxscript('js/diagramly/DesktopLibrary.js', function () {
+								mxscript('js/diagramly/ElectronApp.js', function () {
+									mxscript('js/extensions.min.js', function () {
+										mxscript('js/stencils.min.js', function () {
+											mxscript('js/shapes-14-6-5.min.js',
 												function () {
 													mxscript(
-														'./js/PostConfig.js'
-													);
+														'js/PostConfig.js'
+														);
 												});
 										});
 									});
 								});
 							});
 						} else if (!supportedDomain) {
-							mxscript('./js/PostConfig.js');
+							mxscript('js/PostConfig.js');
 						}
 					});
 				};
 
 				if (!supportedDomain || mxIsElectron) {
-					mxscript('./js/PreConfig.js', loadAppJS);
+					mxscript('js/PreConfig.js', loadAppJS);
 				} else {
 					loadAppJS();
 				}
@@ -305,7 +305,6 @@
 	<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
 	<link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
 	<link rel="mask-icon" href="images/safari-pinned-tab.svg" color="#d89000">
-	<link rel="stylesheet" type="text/css" href="js/croppie/croppie.min.css">
 	<link rel="stylesheet" type="text/css" href="styles/grapheditor.css">
 	<link rel="preconnect" href="https://storage.googleapis.com">
 	<link rel="canonical" href="https://app.diagrams.net">
@@ -439,51 +438,50 @@
 
 <script type="module">
 	import {
-    getBlockAttrs,
+	getBlockAttrs,
 } from './siyuan/api.js';
 
 async function open() {
-    var urlParams = (() => {
-        var result = new Object();
-        var params = window.location.search.slice(1).split('&');
-        for (var i = 0; i < params.length; i++) {
-            idx = params[i].indexOf('=');
-            if (idx > 0) {
-                result[params[i].substring(0, idx)] = params[i].substring(idx + 1);
-            }
-        }
-        return result;
-    })();
-    // console.log(urlParams);
-    // console.log(window.location);
+	var urlParams = (() => {
+		var result = new Object();
+		var params = window.location.search.slice(1).split('&');
+		for (var i = 0; i < params.length; i++) {
+			idx = params[i].indexOf('=');
+			if (idx > 0) {
+				result[params[i].substring(0, idx)] = params[i].substring(idx + 1);
+			}
+		}
+		return result;
+	})();
+	// console.log(urlParams);
+	// console.log(window.location);
 
 	var id = urlParams.id;
 
-    if (id == null) {
-        let node = window.frameElement != null ? window.frameElement.parentElement.parentElement : null;
-        if (node != null) {
-            id = node.getAttribute('data-node-id');
-            let asset = node.getAttribute('custom-data-assets');
+	if (id == null) {
+		let node = window.frameElement != null ? window.frameElement.parentElement.parentElement : null;
+		if (node != null) {
+			id = node.getAttribute('data-node-id');
+			let asset = node.getAttribute('custom-data-assets');
 
-            let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
-            // console.log(href);
-            window.location.href = href;
-        }
-    } else {
+			let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
+			// console.log(href);
+			window.location.href = href;
+		}
+	} else {
 		if (window.location.hash == '') {
 			let data = await getBlockAttrs(id);
-            // console.log(data);
-            let asset = data['custom-data-assets'];
+			// console.log(data);
+			let asset = data['custom-data-assets'];
 			if (asset != null) {
 				let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
 				// console.log(href);
 				window.location.href = href;
 			}
-        }
-    }
-    // console.log(window.location);
+		}
+	}
 }
-
+// console.log(window.location);
 setTimeout(open, 0);
 </script>
 

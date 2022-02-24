@@ -1,13 +1,10 @@
 const fs = require('fs')
+const fsProm = require('fs/promises');
 const os = require('os');
 const path = require('path')
 const url = require('url')
-const electron = require('electron')
-const {Menu: menu, shell} = require('electron')
-const ipcMain = electron.ipcMain
-const dialog = electron.dialog
-const app = electron.app
-const BrowserWindow = electron.BrowserWindow
+const {Menu: menu, shell, dialog,
+		clipboard, nativeImage, ipcMain, app, BrowserWindow} = require('electron')
 const crc = require('crc');
 const zlib = require('zlib');
 const log = require('electron-log')
@@ -17,14 +14,18 @@ const PDFDocument = require('pdf-lib').PDFDocument;
 const Store = require('electron-store');
 const store = new Store();
 const ProgressBar = require('electron-progressbar');
-const remoteMain = require("@electron/remote/main")
-remoteMain.initialize()
 const disableUpdate = require('./disableUpdate').disableUpdate() || 
 						process.env.DRAWIO_DISABLE_UPDATE === 'true' || 
 						fs.existsSync('/.flatpak-info'); //This file indicates running in flatpak sandbox
 autoUpdater.logger = log
 autoUpdater.logger.transports.file.level = 'info'
 autoUpdater.autoDownload = false
+
+//Command option to disable hardware acceleration
+if (process.argv.indexOf('--disable-acceleration') !== -1)
+{
+	app.disableHardwareAcceleration();
+}
 
 const __DEV__ = process.env.DRAWIO_ENV === 'dev'
 		
@@ -33,6 +34,8 @@ let cmdQPressed = false
 let firstWinLoaded = false
 let firstWinFilePath = null
 let isMac = process.platform === 'darwin'
+let enableSpellCheck = store.get('enableSpellCheck');
+enableSpellCheck = enableSpellCheck != null? enableSpellCheck : isMac;
 
 //Read config file
 var queryObj = {
@@ -49,7 +52,8 @@ var queryObj = {
 	'mode': 'device',
 	'export': 'https://convert.diagrams.net/node/export',
 	'disableUpdate': disableUpdate? 1 : 0,
-	'winCtrls': isMac? 0 : 1
+	'winCtrls': isMac? 0 : 1,
+	'enableSpellCheck': enableSpellCheck? 1 : 0
 };
 
 try
@@ -77,26 +81,27 @@ function createWindow (opt = {})
 		backgroundColor: '#FFF',
 		width: 1600,
 		height: 1200,
+		icon: `${__dirname}/images/drawlogo256.png`,
 		webViewTag: false,
 		'web-security': true,
 		webPreferences: {
-			// preload: path.resolve('./preload.js'),
-			nodeIntegration: true,
-			nodeIntegrationInWorker: true,
-			spellcheck: isMac,
-			contextIsolation: false,
+			preload: `${__dirname}/electron-preload.js`,
+			spellcheck: enableSpellCheck,
+			contextIsolation: true,
 			nativeWindowOpen: true
 		}
 	}, opt)
 
 	let mainWindow = new BrowserWindow(options)
-	remoteMain.enable(mainWindow.webContents)
 	windowsRegistry.push(mainWindow)
 
 	if (__DEV__) 
 	{
 		console.log('createWindow', opt)
 	}
+
+	//Cannot be read before app is ready
+	queryObj['appLang'] = app.getLocale();
 
 	let ourl = url.format(
 	{
@@ -114,6 +119,21 @@ function createWindow (opt = {})
 		mainWindow.webContents.openDevTools()
 	}
 
+	mainWindow.on('maximize', function()
+	{
+		mainWindow.webContents.send('maximize')
+	});
+
+	mainWindow.on('unmaximize', function()
+	{
+		mainWindow.webContents.send('unmaximize')
+	});
+
+	mainWindow.on('resize', function()
+	{
+		mainWindow.webContents.send('resize')
+	});
+
 	mainWindow.on('close', (event) =>
 	{
 		const win = event.sender
@@ -128,7 +148,7 @@ function createWindow (opt = {})
 
 		if (contents != null)
 		{
-			contents.executeJavaScript('if(typeof global.__emt_isModified === \'function\'){global.__emt_isModified()}', true)
+			contents.executeJavaScript('if(typeof window.__emt_isModified === \'function\'){window.__emt_isModified()}', true)
 				.then((isModified) =>
 				{
 					if (__DEV__) 
@@ -149,6 +169,8 @@ function createWindow (opt = {})
 							
 						if (choice === 1)
 						{
+							//If user chose not to save, remove the draft
+							contents.executeJavaScript('window.__emt_removeDraft()', true);
 							win.destroy()
 						}
 						else
@@ -187,28 +209,9 @@ function createWindow (opt = {})
 // Some APIs can only be used after this event occurs.
 app.on('ready', e =>
 {
-	//asynchronous
-	ipcMain.on('asynchronous-message', (event, arg) =>
+	ipcMain.on('newfile', (event, arg) =>
 	{
-		console.log(arg)  // prints "ping"
-		event.sender.send('asynchronous-reply', 'pong')
-	})
-	//synchronous
-	ipcMain.on('winman', (event, arg) =>
-	{
-		if (__DEV__) 
-		{
-			console.log('ipcMain.on winman', arg)
-		}
-		
-		if (arg.action === 'newfile')
-		{
-			event.returnValue = createWindow(arg.opt).id
-			
-			return
-		}
-		
-		event.returnValue = 'pong'
+		createWindow(arg)
 	})
 	
     let argv = process.argv
@@ -245,7 +248,9 @@ app.on('ready', e =>
 			.option('-t, --transparent',
 				'set transparent background for PNG')
 			.option('-e, --embed-diagram',
-				'includes a copy of the diagram (for PNG and PDF formats only)')
+				'includes a copy of the diagram (for PNG, SVG and PDF formats only)')
+			.option('--embed-svg-images',
+				'Embed Images in SVG file (for SVG format only)')
 			.option('-b, --border <border>',
 				'sets the border width around the diagram (default: 0)', parseInt)
 			.option('-s, --scale <scale>',
@@ -280,8 +285,8 @@ app.on('ready', e =>
     	var dummyWin = new BrowserWindow({
 			show : false,
 			webPreferences: {
-				nodeIntegration: true,
-				contextIsolation: false,
+				preload: `${__dirname}/electron-preload.js`,
+				contextIsolation: true,
 				nativeWindowOpen: true
 			}
 		});
@@ -351,6 +356,7 @@ app.on('ready', e =>
 				allPages: format == 'pdf' && options.allPages,
 				scale: (options.crop && (options.scale == null || options.scale == 1)) ? 1.00001: (options.scale || 1), //any value other than 1 crops the pdf
 				embedXml: options.embedDiagram? '1' : '0',
+				embedImages: options.embedSvgImages? '1' : '0',
 				jpegQuality: options.quality,
 				uncompressed: options.uncompressed
 			};
@@ -481,7 +487,8 @@ app.on('ready', e =>
 												{
 													if (outType.isDir)
 													{
-														outFileName = path.join(options.output, path.basename(curFile)) + '.' + format;
+														outFileName = path.join(options.output, path.basename(curFile,
+															path.extname(curFile))) + '.' + format;
 													}
 													else
 													{
@@ -516,7 +523,7 @@ app.on('ready', e =>
 													}
 													
 													fs.writeFileSync(realFileName, data, format == 'vsdx'? 'base64' : null, { flag: 'wx' });
-													console.log(curFile + ' -> ' + outFileName);
+													console.log(curFile + ' -> ' + realFileName);
 												}
 												catch(e)
 												{
@@ -571,6 +578,7 @@ app.on('ready', e =>
 	}
     else if (program.rawArgs.indexOf('-h') > -1 || program.rawArgs.indexOf('--help') > -1 || program.rawArgs.indexOf('-V') > -1 || program.rawArgs.indexOf('--version') > -1) //To prevent execution when help/version arg is used
 	{
+		app.quit();
     	return;
 	}
     
@@ -658,6 +666,14 @@ app.on('ready', e =>
 		loadFinished();
     });
 	
+	function toggleSpellCheck()
+	{
+		enableSpellCheck = !enableSpellCheck;
+		store.set('enableSpellCheck', enableSpellCheck);
+	};
+
+	ipcMain.on('toggleSpellCheck', toggleSpellCheck);
+
     let updateNoAvailAdded = false;
     
 	function checkForUpdatesFn() 
@@ -1200,9 +1216,9 @@ function exportDiagram(event, args, directFinalize)
 	{
 		browser = new BrowserWindow({
 			webPreferences: {
+				preload: `${__dirname}/electron-preload.js`,
 				backgroundThrottling: false,
-				nodeIntegration: true,
-				contextIsolation: false,
+				contextIsolation: true,
 				nativeWindowOpen: true
 			},
 			show : false,
@@ -1248,6 +1264,12 @@ function exportDiagram(event, args, directFinalize)
 
 			function renderingFinishHandler(evt, renderInfo)
 			{
+				if (renderInfo == null)
+				{
+					event.reply('export-error');
+					return;
+				}
+
 				var pageCount = renderInfo.pageCount, bounds = null;
 				//For some reason, Electron 9 doesn't send this object as is without stringifying. Usually when variable is external to function own scope
 				try
@@ -1444,3 +1466,443 @@ function exportDiagram(event, args, directFinalize)
 };
 
 ipcMain.on('export', exportDiagram);
+
+//================================================================
+// Renderer Helper functions
+//================================================================
+
+const { COPYFILE_EXCL } = fs.constants;
+const DRAFT_PREFEX = '~$';
+const DRAFT_EXT = '.dtmp';
+const BKP_PREFEX = '~$';
+const BKP_EXT = '.bkp';
+
+function isConflict(origStat, stat)
+{
+	return stat != null && origStat != null && stat.mtimeMs != origStat.mtimeMs;
+};
+
+function getDraftFileName(fileObject)
+{
+	let filePath = fileObject.path;
+	let draftFileName = '', counter = 1, uniquePart = '';
+
+	do
+	{
+		draftFileName = path.join(path.dirname(filePath), DRAFT_PREFEX + path.basename(filePath) + uniquePart + DRAFT_EXT);
+		uniquePart = '_' + counter++;
+	} while (fs.existsSync(draftFileName));
+
+	return draftFileName;
+};
+
+async function getFileDrafts(fileObject)
+{
+	let filePath = fileObject.path;
+	let draftsPaths = [], drafts = [], draftFileName, counter = 1, uniquePart = '';
+
+	do
+	{
+		draftsPaths.push(draftFileName);
+		draftFileName = path.join(path.dirname(filePath), DRAFT_PREFEX + path.basename(filePath) + uniquePart + DRAFT_EXT);
+		uniquePart = '_' + counter++;
+	} while (fs.existsSync(draftFileName)); //TODO this assume continuous drafts names
+
+	//Skip the first null element
+	for (let i = 1; i < draftsPaths.length; i++)
+	{
+		try
+		{
+			let stat = await fsProm.lstat(draftsPaths[i]);
+			drafts.push({data: await fsProm.readFile(draftsPaths[i], 'utf8'), 
+						created: stat.ctimeMs,
+						modified: stat.mtimeMs,
+						path: draftsPaths[i]});
+		}
+		catch (e){} // Ignore
+	}
+
+	return drafts;
+};
+
+async function saveDraft(fileObject, data)
+{
+	if (data == null || data.length == 0)
+	{
+		throw new Error('empty data'); 
+	}
+	else
+	{
+		var draftFileName = fileObject.draftFileName || getDraftFileName(fileObject);
+		await fsProm.writeFile(draftFileName, data, 'utf8');
+		return draftFileName;
+	}
+}
+
+async function saveFile(fileObject, data, origStat, overwrite, defEnc)
+{
+	var retryCount = 0;
+	var backupCreated = false;
+	var bkpPath = path.join(path.dirname(fileObject.path), BKP_PREFEX + path.basename(fileObject.path) + BKP_EXT);
+
+	var writeFile = async function()
+	{
+		if (data == null || data.length == 0)
+		{
+			throw new Error('empty data');
+		}
+		else
+		{
+			var writeEnc = defEnc || fileObject.encoding;
+			
+			await fsProm.writeFile(fileObject.path, data, writeEnc);
+			let stat2 = await fsProm.stat(fileObject.path);
+			// Workaround for possible writing errors is to check the written
+			// contents of the file and retry 3 times before showing an error
+			let writtenData = await fsProm.readFile(fileObject.path, writeEnc);
+			
+			if (data != writtenData)
+			{
+				retryCount++;
+				
+				if (retryCount < 3)
+				{
+					return await writeFile();
+				}
+				else
+				{
+					throw new Error('all saving trials failed');
+				}
+			}
+			else
+			{
+				if (backupCreated)
+				{
+					fs.unlink(bkpPath, (err) => {}); //Ignore errors!
+				}
+
+				return stat2;
+			}
+		}
+	};
+	
+	async function doSaveFile()
+	{
+		//Copy file to backup file (after conflict and stat is checked)
+		try
+		{
+			await fsProm.copyFile(fileObject.path, bkpPath, COPYFILE_EXCL);
+			backupCreated = true;
+		}
+		catch (e) {} //Ignore
+					
+		return await writeFile();
+	};
+	
+	if (overwrite)
+	{
+		return await doSaveFile();
+	}
+	else
+	{
+		let stat = fs.existsSync(fileObject.path)?
+					await fsProm.stat(fileObject.path) : null;
+
+		if (stat && isConflict(origStat, stat))
+		{
+			new Error('conflict');
+		}
+		else
+		{
+			return await doSaveFile();
+		}
+	}
+};
+
+async function writeFile(path, data, enc)
+{
+	return await fsProm.writeFile(path, data, enc);
+};
+
+function getAppDataFolder()
+{
+	try
+	{
+		var appDataDir = app.getPath('appData');
+		var drawioDir = appDataDir + '/draw.io';
+		
+		if (!fs.existsSync(drawioDir)) //Usually this dir already exists
+		{
+			fs.mkdirSync(drawioDir);
+		}
+		
+		return drawioDir;
+	}
+	catch(e) {}
+	
+	return '.';
+};
+
+function getDocumentsFolder()
+{
+	//On windows, misconfigured Documents folder cause an exception
+	try
+	{
+		return app.getPath('documents');
+	}
+	catch(e) {}
+	
+	return '.';
+};
+
+function checkFileExists(pathParts)
+{
+	let filePath = path.join(...pathParts);
+	return {exists: fs.existsSync(filePath), path: filePath};
+};
+
+async function showOpenDialog(defaultPath, filters, properties)
+{
+	return dialog.showOpenDialogSync({
+		defaultPath: defaultPath,
+		filters: filters,
+		properties: properties
+	});
+};
+
+async function showSaveDialog(defaultPath, filters)
+{
+	return dialog.showSaveDialogSync({
+		defaultPath: defaultPath,
+		filters: filters
+	});
+};
+
+async function installPlugin(filePath)
+{
+	var pluginsDir = path.join(getAppDataFolder(), '/plugins');
+	
+	if (!fs.existsSync(pluginsDir))
+	{
+		fs.mkdirSync(pluginsDir);
+	}
+	
+	var pluginName = path.basename(filePath);
+	var dstFile = path.join(pluginsDir, pluginName);
+	
+	if (fs.existsSync(dstFile))
+	{
+		throw new Error('fileExists');
+	}
+	else
+	{
+		await fsProm.copyFile(filePath, dstFile);
+	}
+
+	return {pluginName: pluginName, selDir: path.dirname(filePath)};
+}
+
+function uninstallPlugin(plugin)
+{
+	var pluginsFile = path.join(getAppDataFolder(), '/plugins', plugin);
+	        	
+	if (fs.existsSync(pluginsFile))
+	{
+		fs.unlinkSync(pluginsFile);
+	}
+}
+
+function dirname(path_p)
+{
+	return path.dirname(path_p);
+}
+
+async function readFile(filename, encoding)
+{
+	return await fsProm.readFile(filename, encoding);
+}
+
+async function fileStat(file)
+{
+	return await fsProm.stat(file);
+}
+
+async function isFileWritable(file)
+{
+	try 
+	{
+		await fsProm.access(file, fs.constants.W_OK);
+		return true;
+	}
+	catch (e)
+	{
+		return false;
+	}
+}
+
+function clipboardAction(method, data)
+{
+	if (method == 'writeText')
+	{
+		clipboard.writeText(data);
+	}
+	else if (method == 'readText')
+	{
+		return clipboard.readText();
+	}
+	else if (method == 'writeImage')
+	{
+		clipboard.write({image: 
+			nativeImage.createFromDataURL(data.dataUrl), html: '<img src="' +
+			data.dataUrl + '" width="' + data.w + '" height="' + data.h + '">'});
+	}
+}
+
+async function deleteFile(file) 
+{
+	await fsProm.unlink(file);
+}
+
+function windowAction(method)
+{
+	let win = BrowserWindow.getFocusedWindow();
+
+	if (win)
+	{
+		if (method == 'minimize')
+		{
+			win.minimize();
+		}
+		else if (method == 'maximize')
+		{
+			win.maximize();
+		}
+		else if (method == 'unmaximize')
+		{
+			win.unmaximize();
+		}
+		else if (method == 'close')
+		{
+			win.close();
+		}
+		else if (method == 'isMaximized')
+		{
+			return win.isMaximized();
+		}
+		else if (method == 'removeAllListeners')
+		{
+			win.removeAllListeners();
+		}
+	}
+}
+
+function openExternal(url)
+{
+	shell.openExternal(url);
+}
+
+function watchFile(path)
+{
+	let win = BrowserWindow.getFocusedWindow();
+
+	if (win)
+	{
+		fs.watchFile(path, (curr, prev) => {
+			try
+			{
+				win.webContents.send('fileChanged', {
+					path: path,
+					curr: curr,
+					prev: prev
+				});
+			}
+			catch (e) {} // Ignore
+		});
+	}
+}
+
+function unwatchFile(path)
+{
+	fs.unwatchFile(path);
+}
+
+ipcMain.on("rendererReq", async (event, args) => 
+{
+	try
+	{
+		let ret = null;
+
+		switch(args.action)
+		{
+		case 'saveFile':
+			ret = await saveFile(args.fileObject, args.data, args.origStat, args.overwrite, args.defEnc);
+			break;
+		case 'writeFile':
+			ret = await writeFile(args.path, args.data, args.enc);
+			break;
+		case 'saveDraft':
+			ret = await saveDraft(args.fileObject, args.data);
+			break;
+		case 'getFileDrafts':
+			ret = await getFileDrafts(args.fileObject);
+			break;
+		case 'getAppDataFolder':
+			ret = await getAppDataFolder();
+			break;
+		case 'getDocumentsFolder':
+			ret = await getDocumentsFolder();
+			break;
+		case 'checkFileExists':
+			ret = await checkFileExists(args.pathParts);
+			break;
+		case 'showOpenDialog':
+			ret = await showOpenDialog(args.defaultPath, args.filters, args.properties);
+			break;
+		case 'showSaveDialog':
+			ret = await showSaveDialog(args.defaultPath, args.filters);
+			break;
+		case 'installPlugin':
+			ret = await installPlugin(args.filePath);
+			break;
+		case 'uninstallPlugin':
+			ret = await uninstallPlugin(args.plugin);
+			break;
+		case 'dirname':
+			ret = await dirname(args.path);
+			break;
+		case 'readFile':
+			ret = await readFile(args.filename, args.encoding);
+			break;
+		case 'clipboardAction':
+			ret = await clipboardAction(args.method, args.data);
+			break;
+		case 'deleteFile':
+			ret = await deleteFile(args.file);
+			break;
+		case 'fileStat':
+			ret = await fileStat(args.file);
+			break;
+		case 'isFileWritable':
+			ret = await isFileWritable(args.file);
+			break;
+		case 'windowAction':
+			ret = await windowAction(args.method);
+			break;
+		case 'openExternal':
+			ret = await openExternal(args.url);
+			break;
+		case 'watchFile':
+			ret = await watchFile(args.path);
+			break;
+		case 'unwatchFile':	
+			ret = await unwatchFile(args.path);
+			break;
+		};
+
+		event.reply('mainResp', {success: true, data: ret, reqId: args.reqId});
+	}
+	catch (e)
+	{
+		event.reply('mainResp', {error: true, msg: e.message, e: e, reqId: args.reqId});
+	}
+});

@@ -92,7 +92,7 @@
 	/**
 	 * Specifies if drafts should be saved in IndexedDB.
 	 */
-	EditorUi.enableDrafts = !mxClient.IS_CHROMEAPP && !EditorUi.isElectronApp &&
+	EditorUi.enableDrafts = !mxClient.IS_CHROMEAPP &&
 		isLocalStorage && urlParams['drafts'] != '0';
 	
 	/**
@@ -397,6 +397,11 @@
 	 * Restores app defaults for UI
 	 */
 	EditorUi.prototype.embedExportBackground = null;
+	
+	/**
+	 * Restores app defaults for UI
+	 */
+	EditorUi.prototype.shareCursorPosition = false;
 
 	/**
 	 * Capability check for canvas export
@@ -508,6 +513,18 @@
 		fn();
 	};
 
+	EditorUi.prototype.setShareCursorPosition = function(value)
+	{
+		this.shareCursorPosition = value;
+
+		this.fireEvent(new mxEventObject('shareCursorPositionChanged'));
+	};
+
+	EditorUi.prototype.isShareCursorPosition = function()
+	{
+		return this.shareCursorPosition;
+	};
+
 	EditorUi.prototype.setMathEnabled = function(value)
 	{
 		this.editor.graph.mathEnabled = value;
@@ -532,11 +549,20 @@
 	};
 
 	/**
-	 * Returns true if no external comms allowed or possible
+	 * Deprecated. Poorly defined, to be replaced with isExternalDataComms and other more granular flags.
+	 * Original idea was it returns true if no external comms allowed or possible
 	 */
 	EditorUi.prototype.isOffline = function(ignoreStealth)
 	{
 		return this.isOfflineApp() || !navigator.onLine || (!ignoreStealth && (urlParams['stealth'] == '1' || urlParams['lockdown'] == '1'));
+	};
+
+	/**
+	 * Returns true if diagram data transmission other than save/load is allowed or possible..
+	 */
+	EditorUi.prototype.isExternalDataComms = function()
+	{
+		return urlParams['offline'] != '1' && !this.isOffline() && !this.isOfflineApp();
 	};
 
 	/**
@@ -1353,13 +1379,13 @@
 										cellDiffs[cellId].style.length + ']';
 								}
 								
-								if (Object.keys(cellDiffs[cellId]).length == 0)
+								if (mxUtils.isEmptyObject(cellDiffs[cellId]))
 								{
 									delete cellDiffs[cellId];
 								}
 							}
 							
-							if (Object.keys(cellDiffs).length == 0)
+							if (mxUtils.isEmptyObject(cellDiffs))
 							{
 								delete diff.cells[key];
 							}
@@ -1369,19 +1395,19 @@
 					anonymizeCellDiffs(EditorUi.DIFF_INSERT);
 					anonymizeCellDiffs(EditorUi.DIFF_UPDATE);
 					
-					if (Object.keys(diff.cells).length == 0)
+					if (mxUtils.isEmptyObject(diff.cells))
 					{
 						delete diff.cells;
 					}
 				}
 	
-				if (Object.keys(diff).length == 0)
+				if (mxUtils.isEmptyObject(diff))
 				{
 					delete patch[EditorUi.DIFF_UPDATE][pageId];
 				}
 			}
 			
-			if (Object.keys(patch[EditorUi.DIFF_UPDATE]).length == 0)
+			if (mxUtils.isEmptyObject(patch[EditorUi.DIFF_UPDATE]))
 			{
 				delete patch[EditorUi.DIFF_UPDATE];
 			}
@@ -1530,6 +1556,7 @@
 					graph.getDefaultStylesheet() :
 					graph.getStylesheet());
 				graph.setBackgroundImage = this.editor.graph.setBackgroundImage;
+				graph.background = this.editor.graph.background;
 				var page = this.pages[0];
 
 				if (this.currentPage == page)
@@ -1864,7 +1891,7 @@
 		try
 		{
 			ignoreSelection = (ignoreSelection != null) ? ignoreSelection : this.editor.graph.isSelectionEmpty();
-			var basename = this.getBaseFilename(!currentPage);
+			var basename = this.getBaseFilename(format == 'remoteSvg'? false : !currentPage);
 			var filename = basename + ((format == 'xml' || (format == 'pdf' &&
 				includeXml)) ? '.drawio' : '') + '.' + format;
 			
@@ -1939,6 +1966,8 @@
 		    }
 			else
 			{
+				var w, h;
+
 				if (format == 'xmlpng')
 				{
 					filename = basename + '.png';
@@ -1946,6 +1975,25 @@
 				else if (format == 'jpeg')
 				{
 					filename = basename + '.jpg';
+				}
+				else if (format == 'remoteSvg')
+				{
+					filename = basename + '.svg';
+					format = 'svg';
+					var b = parseInt(border);
+
+					if (typeof scale === 'string' && scale.indexOf('%') > 0)
+					{
+						scale = parseInt(scale) / 100;
+					}
+
+					if (b > 0)
+					{
+						var graph = this.editor.graph;
+						var bounds = graph.getGraphBounds();
+						w = Math.ceil(bounds.width * scale / graph.view.scale + 2 * b);
+						h = Math.ceil(bounds.height * scale / graph.view.scale + 2 * b);
+					}
 				}
 				
 				this.saveRequest(filename, format, mxUtils.bind(this, function(newTitle, base64)
@@ -1960,7 +2008,7 @@
 						}
 						
 						var req = this.createDownloadRequest(newTitle, format, ignoreSelection, base64,
-							transparent, currentPage, scale, border, grid, includeXml, pageRange);
+							transparent, currentPage, scale, border, grid, includeXml, pageRange, w, h);
 						this.editor.graph.pageVisible = prev;
 						
 						return req;
@@ -1985,7 +2033,7 @@
 	 * @param {number} dy Y-coordinate of the translation.
 	 */
 	EditorUi.prototype.createDownloadRequest = function(filename, format, ignoreSelection,
-		base64, transparent, currentPage, scale, border, grid, includeXml, pageRange)
+		base64, transparent, currentPage, scale, border, grid, includeXml, pageRange, w, h)
 	{
 		var graph = this.editor.graph;
 		var bounds = graph.getGraphBounds();
@@ -2022,7 +2070,10 @@
        	{
        		embed = '1';
        		format = 'png';
-       		
+		}
+		
+		if (format == 'xmlpng' || format == 'svg')
+		{
        		// Finds the current page number
        		if (this.pages != null && this.currentPage != null)
        		{
@@ -2039,7 +2090,7 @@
        	
 		var bg = graph.background;
 		
-		if ((format == 'png' || format == 'pdf') && transparent)
+		if ((format == 'png' || format == 'pdf' || format == 'svg') && transparent)
 		{
 			bg = mxConstants.NONE;
 		}
@@ -2071,7 +2122,9 @@
 			'&filename=' + encodeURIComponent(filename) : '') +
 			'&extras=' + encodeURIComponent(JSON.stringify(extras)) +
 			(scale != null? '&scale=' + scale : '') +
-			(border != null? '&border=' + border : ''));
+			(border != null? '&border=' + border : '') +
+			(w && isFinite(w)? '&w=' + w : '') +
+			(h && isFinite(h)? '&h=' + h : ''));
 	};
 	
 	/**
@@ -2537,7 +2590,8 @@
 			this.setBackgroundImage(null);
 					
 			// Avoids empty hash with no value
-			if (!noDialogs && window.location.hash != null && window.location.hash.length > 0)
+			if (!noDialogs && window.location.hash != null &&
+				window.location.hash.length > 0)
 			{
 				window.location.hash = '';
 			}
@@ -3271,10 +3325,9 @@
 						geo.translate(-bounds.x, -bounds.y);
 					}
 				}
-	
+
 				contentDiv.appendChild(this.sidebar.createVertexTemplateFromCells(
-					cells, bounds.width, bounds.height, title || '', true, false, false));
-	
+					cells, bounds.width, bounds.height, title || '', true, null, false));
 				var xml = Graph.compress(mxUtils.getXml(this.editor.graph.encodeCells(cells)));
 				var entry = {xml: xml, w: bounds.width, h: bounds.height};
 				
@@ -3499,26 +3552,34 @@
 										doImport(xml, 'text/xml');
 									}, null, img);
 								}
-								else if (!this.isOffline() && new XMLHttpRequest().upload && this.isRemoteFileFormat(data, img) && file != null)
+								else if (new XMLHttpRequest().upload && this.isRemoteFileFormat(data, img) && file != null)
 								{
-									this.parseFile(file, mxUtils.bind(this, function(xhr)
+									if (this.isExternalDataComms())
 									{
-										if (xhr.readyState == 4)
+										this.parseFile(file, mxUtils.bind(this, function(xhr)
 										{
-											this.spinner.stop();
-											
-											if (xhr.status >= 200 && xhr.status <= 299)
+											if (xhr.readyState == 4)
 											{
-												doImport(xhr.responseText, 'text/xml');
+												this.spinner.stop();
+												
+												if (xhr.status >= 200 && xhr.status <= 299)
+												{
+													doImport(xhr.responseText, 'text/xml');
+												}
+												else
+												{
+													this.handleError({message: mxResources.get((xhr.status == 413) ?
+														'drawingTooLarge' : 'invalidOrMissingFile')},
+														mxResources.get('errorLoadingFile'));
+												}
 											}
-											else
-											{
-												this.handleError({message: mxResources.get((xhr.status == 413) ?
-				            						'drawingTooLarge' : 'invalidOrMissingFile')},
-				            						mxResources.get('errorLoadingFile'));
-											}
-										}
-									}));
+										}));
+									}
+									else
+									{
+										this.spinner.stop();
+										this.showError(mxResources.get('error'), mxResources.get('notInOffline'));
+									}
 								}
 								else
 								{
@@ -3603,7 +3664,7 @@
 				}
 				
 				content.appendChild(this.sidebar.createVertexTemplate(s + 'image=' +
-					data, img.w, img.h, '', img.title || '', false, false, true));
+					data, img.w, img.h, '', img.title || '', false, null, true));
 			}
 			else if (img.xml != null)
 			{
@@ -3612,7 +3673,7 @@
 				if (cells.length > 0)
 				{
 					content.appendChild(this.sidebar.createVertexTemplateFromCells(
-						cells, img.w, img.h, img.title || '', true, false, true));
+						cells, img.w, img.h, img.title || '', true, null, true));
 				}
 			}
 		}
@@ -3678,10 +3739,16 @@
 
 		Editor.sketchFontFamily = 'Architects Daughter';
 		Editor.sketchFontSource = 'https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter';
+		Editor.sketchFonts = [{'fontFamily': Editor.sketchFontFamily, 'fontUrl': decodeURIComponent(Editor.sketchFontSource)}];
 
 		// Implements the sketch-min UI
 		if (urlParams['sketch'] == '1')
 		{
+			if (typeof Menus !== 'undefined')
+			{
+				Menus.prototype.defaultFonts = Menus.prototype.defaultFonts.concat(Editor.sketchFonts);
+			}
+			
 			Graph.prototype.defaultVertexStyle = {'hachureGap': '4'};
 			Graph.prototype.defaultEdgeStyle = {'edgeStyle': 'none', 'rounded': '0', 'curved': '1',
 				'jettySize': 'auto', 'orthogonalLoop': '1', 'endArrow': 'open', 'startSize': '14', 'endSize': '14',
@@ -3701,10 +3768,10 @@
 	/**
 	 * Overrides image dialog to add image search and Google+.
 	 */
-    EditorUi.prototype.showImageDialog = function(title, value, fn, ignoreExisting, convertDataUri)
+    EditorUi.prototype.showImageDialog = function(title, value, fn, ignoreExisting, convertDataUri, withCrop, initClipPath)
 	{
 		// KNOWN: IE+FF don't return keyboard focus after image dialog (calling focus doesn't help)
-	    var dlg = new ImageDialog(this, title, value, fn, ignoreExisting, convertDataUri);
+	    var dlg = new ImageDialog(this, title, value, fn, ignoreExisting, convertDataUri, withCrop, initClipPath);
 		this.showDialog(dlg.container, (Graph.fileSupport) ? 480 : 360, (Graph.fileSupport) ? 200 : 90, true, true);
 		dlg.init();
 	};
@@ -4322,8 +4389,6 @@
 	EditorUi.prototype.showTextDialog = function(title, text)
 	{
     	var dlg = new TextareaDialog(this, title, text, null, null, mxResources.get('close'));
-    	dlg.textarea.style.width = '600px';
-    	dlg.textarea.style.height = '380px';
 		this.showDialog(dlg.container, 620, 460, true, true, null, null, null, null, true);
 		dlg.init();
 		document.execCommand('selectall', false, null);
@@ -4578,7 +4643,7 @@
 			this.hideDialog();
 		}), mxResources.get('saveAs'), mxResources.get('download'), false, allowBrowser, allowTab,
 			null, count > 1, rowLimit, data, mimeType, base64Encoded);
-		var height = (this.isServices(count)) ? ((count > rowLimit) ? 390 : 270) : 160;
+		var height = (this.isServices(count)) ? ((count > rowLimit) ? 390 : 280) : 160;
 		this.showDialog(dlg.container, 420, height, true, true);
 		dlg.init();
 	};
@@ -4989,7 +5054,7 @@
 		}), mxResources.get('saveAs'), mxResources.get('download'), false, false, allowTab,
 			null, count > 1, rowLimit, data, mimeType, base64Encoded);
 		
-		var height = (this.isServices(count)) ? ((count > 4) ? 390 : 270) : 160;
+		var height = (this.isServices(count)) ? ((count > 4) ? 390 : 280) : 160;
 		this.showDialog(dlg.container, 420, height, true, true);
 		dlg.init();
 	};
@@ -5055,10 +5120,10 @@
 				
 				// Sets or disables alternate text for foreignObjects. Disabling is needed
 				// because PhantomJS seems to ignore switch statements and paint all text.
-				var svgRoot = this.editor.graph.getSvg(bg, scale, border, noCrop,
-					null, ignoreSelection, null, null, (linkTarget == 'blank') ? '_blank' :
-					((linkTarget == 'self') ? '_top' : null), null, true, keepTheme,
-					exportType);
+				var svgRoot = this.editor.graph.getSvg(bg, scale, border, noCrop, null,
+					ignoreSelection, null, null, (linkTarget == 'blank') ? '_blank' :
+					((linkTarget == 'self') ? '_top' : null), null, !embedFonts,
+					keepTheme, exportType);
 				
 				if (addShadow)
 				{
@@ -5210,7 +5275,8 @@
 		}
 		
 		var editSelect = document.createElement('select');
-		editSelect.style.width = '120px';
+		editSelect.style.maxWidth = '200px';
+		editSelect.style.width = 'auto';
 		editSelect.style.marginLeft = '8px';
 		editSelect.style.marginRight = '10px';
 		editSelect.className = 'geBtn';
@@ -5289,6 +5355,7 @@
 
 		var linkSelect = document.createElement('select');
 		linkSelect.style.width = '100px';
+		linkSelect.style.padding = '0px';
 		linkSelect.style.marginLeft = '8px';
 		linkSelect.style.marginRight = '10px';
 		linkSelect.className = 'geBtn';
@@ -6000,7 +6067,8 @@
 		exportSelect.style.marginLeft = '8px';
 
 		var sizes = ['selectionOnly', 'diagram', 'page'];
-			
+		var sizesOpt = {};
+
 		for (var i = 0; i < sizes.length; i++)
 		{
 			if (!graph.isSelectionEmpty() || sizes[i] != 'selectionOnly')
@@ -6009,6 +6077,7 @@
 				mxUtils.write(opt, mxResources.get(sizes[i]));
 				opt.setAttribute('value', sizes[i]);
 				exportSelect.appendChild(opt);
+				sizesOpt[sizes[i]] = opt;
 			}
 		}
 
@@ -6089,35 +6158,7 @@
 		}
 		
 		var shadow = this.addCheckbox(div, mxResources.get('shadow'), graph.shadowVisible);
-		
-		var cb5 = document.createElement('input');
-		cb5.style.marginTop = '16px';
-		cb5.style.marginRight = '8px';
-		cb5.setAttribute('type', 'checkbox');
-		
-		var cb7 = document.createElement('input');
-		cb7.style.marginTop = '16px';
-		cb7.style.marginRight = '8px';
-		cb7.setAttribute('type', 'checkbox');
-		
-		if (this.isOffline() || !this.canvasSupported)
-		{
-			cb5.setAttribute('disabled', 'disabled');
-		}
-		
-		if (embedOption)
-		{
-			div.appendChild(cb5);
-			mxUtils.write(div, mxResources.get('embedImages'));
-			mxUtils.br(div);
-
-			div.appendChild(cb7);
-			mxUtils.write(div, mxResources.get('embedFonts'));
-			mxUtils.br(div);
-			
-			height += 60;
-		}
-		
+				
 		var grid = null;
 		
 		if (format == 'png' || format == 'jpeg')
@@ -6129,6 +6170,86 @@
 		var include = this.addCheckbox(div, mxResources.get('includeCopyOfMyDiagram'), defaultInclude, null, null, format != 'jpeg');
 		include.style.marginBottom = '16px';
 		
+		var cb5 = document.createElement('input');
+		cb5.style.marginBottom = '16px';
+		cb5.style.marginRight = '8px';
+		cb5.setAttribute('type', 'checkbox');
+		
+		if (this.isOffline() || !this.canvasSupported)
+		{
+			cb5.setAttribute('disabled', 'disabled');
+		}
+		
+		var txtSettingsSelect = document.createElement('select');
+		txtSettingsSelect.style.maxWidth = '260px';
+		txtSettingsSelect.style.marginLeft = '8px';
+		txtSettingsSelect.style.marginRight = '10px';
+		txtSettingsSelect.style.marginBottom = '16px';
+		txtSettingsSelect.className = 'geBtn';
+
+		var noneOption = document.createElement('option');
+		noneOption.setAttribute('value', 'none');
+		mxUtils.write(noneOption, mxResources.get('noChange'));
+		txtSettingsSelect.appendChild(noneOption);
+
+		var embedFontsOption = document.createElement('option');
+		embedFontsOption.setAttribute('value', 'embedFonts');
+		mxUtils.write(embedFontsOption, mxResources.get('embedFonts'));
+		txtSettingsSelect.appendChild(embedFontsOption);
+
+		var lblToSvgOption = document.createElement('option');
+		lblToSvgOption.setAttribute('value', 'lblToSvg');
+		mxUtils.write(lblToSvgOption, mxResources.get('lblToSvg'));
+		txtSettingsSelect.appendChild(lblToSvgOption);
+
+		if (this.isOffline())
+		{
+			lblToSvgOption.setAttribute('disabled', 'disabled');
+		}
+
+		mxEvent.addListener(txtSettingsSelect, 'change', mxUtils.bind(this, function()
+		{
+			if (txtSettingsSelect.value == 'lblToSvg')
+			{
+				cb5.checked = true;
+				cb5.setAttribute('disabled', 'disabled');
+				sizesOpt['page'].style.display = 'none';
+
+				if (exportSelect.value == 'page')
+				{
+					exportSelect.value = 'diagram';
+				}
+
+				shadow.checked = false;
+				shadow.setAttribute('disabled', 'disabled');
+
+				linkLost.style.display = 'inline-block';
+				linkSelect.style.display = 'none';
+			}
+			else if (cb5.getAttribute('disabled') == 'disabled')
+			{
+				cb5.checked = false;
+				cb5.removeAttribute('disabled');
+				shadow.removeAttribute('disabled');
+				sizesOpt['page'].style.display = '';
+				linkLost.style.display = 'none';
+				linkSelect.style.display = '';
+			}
+		}));
+
+		if (embedOption)
+		{
+			div.appendChild(cb5);
+			mxUtils.write(div, mxResources.get('embedImages'));
+			mxUtils.br(div);
+
+			mxUtils.write(div, mxResources.get('txtSettings') + ':');
+			div.appendChild(txtSettingsSelect);
+			mxUtils.br(div);
+			
+			height += 60;
+		}
+
 		var linkSelect = document.createElement('select');
 		linkSelect.style.maxWidth = '260px';
 		linkSelect.style.marginLeft = '8px';
@@ -6150,10 +6271,17 @@
 		mxUtils.write(selfOption, mxResources.get('openInThisWindow'));
 		linkSelect.appendChild(selfOption);
 
+		//Inkscape doesn't support links from pdf to svg. Related to https://gitlab.com/inkscape/inbox/-/issues/583
+		var linkLost = document.createElement('div');
+		mxUtils.write(linkLost, mxResources.get('LinksLost'));
+		linkLost.style.margin = '7px';
+		linkLost.style.display = 'none';
+		
 		if (format == 'svg')
 		{
 			mxUtils.write(div, mxResources.get('links') + ':');
 			div.appendChild(linkSelect);
+			div.appendChild(linkLost);
 			mxUtils.br(div);
 			mxUtils.br(div);
 			height += 50;
@@ -6167,7 +6295,8 @@
 			callback(zoomInput.value, transparent.checked, !selection.checked, shadow.checked,
 				include.checked, cb5.checked, borderInput.value, cb6.checked, false,
 				linkSelect.value, (grid != null) ? grid.checked : null, (keepTheme != null) ?
-				keepTheme.checked : null, exportSelect.value, cb7.checked);
+				keepTheme.checked : null, exportSelect.value, txtSettingsSelect.value == 'embedFonts', 
+				txtSettingsSelect.value == 'lblToSvg');
 		}), null, btnLabel, helpLink);
 		this.showDialog(dlg.container, 340, height, true, true, null, null, null, null, true);
 		zoomInput.focus();
@@ -6938,9 +7067,7 @@
 								mapping[diagrams[0].getAttribute('id')] = this.currentPage.getId();
 								
 								// Renames page if diagram has one blank page with default name
-								if (this.pages != null && this.pages.length == 1 &&
-									this.isDiagramEmpty() && this.currentPage.getName() ==
-									mxResources.get('pageWithNumber', [1]))
+								if (this.isBlankFile())
 								{
 									var name = diagrams[0].getAttribute('name');
 									
@@ -7002,6 +7129,16 @@
 								this.updatePageLinksForCell(mapping, cells[i]);
 							}
 						}
+
+						var bgImg = graph.parseBackgroundImage(node.getAttribute('backgroundImage'));
+
+						if (bgImg != null && bgImg.originalSrc != null)
+						{
+							this.updateBackgroundPageLink(mapping, bgImg);
+							var change = new ChangePageSetup(this, null, bgImg);
+							change.ignoreColor = true;
+							graph.model.execute(change);
+						}
 					}
 					
 					if (applyDefaultStyles)
@@ -7041,9 +7178,37 @@
 		for (var i = 0; i < pages.length; i++)
 		{
 			this.updatePageLinksForCell(mapping, pages[i].root);
+
+			if (pages[i].viewState != null)
+			{
+				this.updateBackgroundPageLink(mapping, pages[i].viewState.backgroundImage);
+			}
 		}
 	};
 	
+	/**
+	 * Updates links to pages in shapes and labels.
+	 */
+	EditorUi.prototype.updateBackgroundPageLink = function(mapping, obj)
+	{
+		try
+		{
+			if (obj != null && Graph.isPageLink(obj.originalSrc))
+			{
+				var newId = mapping[obj.originalSrc.substring(obj.originalSrc.indexOf(',') + 1)];
+
+				if (newId != null)
+				{
+					obj.originalSrc = 'data:page/id,' + newId;
+				}
+			}
+		}
+		catch (e)
+		{
+			// ignore background image
+		}
+	};
+
 	/**
 	 * Updates links to pages in shapes and labels.
 	 */
@@ -7413,18 +7578,43 @@
 			{
 				try
 				{
-					EditorUi.logEvent({category: 'LUCIDCHART-IMPORT-FILE',
-						action: 'size_' + data.length});
-					EditorUi.debug('convertLucidChart', data);
-				}
-				catch (e)
-				{
-					// ignore
-				}
-				
-				try
-				{
-					success(LucidImporter.importState(JSON.parse(data)));
+					var obj = JSON.parse(data);
+					success(LucidImporter.importState(obj));
+
+					try
+					{
+						EditorUi.logEvent({category: 'LUCIDCHART-IMPORT-FILE',
+							action: 'size_' + data.length});
+
+							if (window.console != null && urlParams['test'] == '1')
+							{
+								var args = [new Date().toISOString(), 'convertLucidChart', obj];
+
+								if (obj.state != null)
+								{
+									args.push(JSON.parse(obj.state));
+								}
+		
+								if (obj.svgThumbs != null)
+								{
+									for (var i = 0; i < obj.svgThumbs.length; i++)
+									{
+										args.push(Editor.createSvgDataUri(obj.svgThumbs[i]));
+									}
+								}
+
+								if (obj.thumb != null)
+								{
+									args.push(obj.thumb);
+								}
+
+								console.log.apply(console, args);
+							}
+					}
+					catch (e)
+					{
+						// ignore
+					}
 				}
 				catch (e)
 				{
@@ -7489,9 +7679,14 @@
 			{
 				this.loadingMermaid = false;
 				
-				config = (config != null) ? config : EditorUi.defaultMermaidConfig;
+				config = (config != null) ? config : mxUtils.clone(EditorUi.defaultMermaidConfig);
 				config.securityLevel = 'strict';
 				config.startOnLoad = false;
+
+				if (Editor.isDarkMode())
+				{
+					config.theme = 'dark';
+				}
 				
 				mermaid.mermaidAPI.initialize(config);
 	    		
@@ -7771,18 +7966,25 @@
 		// Handles special case for Gliffy data which requires async server-side for parsing
 		if (text != null)
 		{
-			if (Graph.fileSupport && !this.isOffline() && new XMLHttpRequest().upload && this.isRemoteFileFormat(text))
+			if (Graph.fileSupport && new XMLHttpRequest().upload && this.isRemoteFileFormat(text))
 			{
-				// Fixes possible parsing problems with ASCII 160 (non-breaking space)
-				this.parseFile(new Blob([text.replace(/\s+/g,' ')], {type: 'application/octet-stream'}), mxUtils.bind(this, function(xhr)
+				if (this.isOffline())
 				{
-					if (xhr.readyState == 4 && xhr.status >= 200 && xhr.status <= 299)
+					this.showError(mxResources.get('error'), mxResources.get('notInOffline'));
+				}
+				else
+				{
+					// Fixes possible parsing problems with ASCII 160 (non-breaking space)
+					this.parseFileData(text.replace(/\s+/g,' '), mxUtils.bind(this, function(xhr)
 					{
-						this.editor.graph.setSelectionCells(this.insertTextAt(
-							xhr.responseText, dx, dy, true));
-					}
-				}));
-				
+						if (xhr.readyState == 4 && xhr.status >= 200 && xhr.status <= 299)
+						{
+							this.editor.graph.setSelectionCells(this.insertTextAt(
+								xhr.responseText, dx, dy, true));
+						}
+					}));
+				}
+
 				// Returns empty cells array as it is aysynchronous
 				return [];
 			}
@@ -7851,7 +8053,7 @@
 						this.resizeImage(img, text, mxUtils.bind(this, function(data2, w2, h2)
 	    				{
 							graph.setSelectionCell(graph.insertVertex(null, null, '', graph.snap(dx), graph.snap(dy),
-									w2, h2, 'shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;' +
+									w2, h2, 'shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;' +
 									'verticalAlign=top;aspect=fixed;imageAspect=0;image=' + this.convertDataUri(data2) + ';'));
 	    				}), resizeImages, this.maxImageSize);
 					}
@@ -7862,7 +8064,7 @@
 						var h = Math.round(img.height * s);
 						
 						graph.setSelectionCell(graph.insertVertex(null, null, '', graph.snap(dx), graph.snap(dy),
-								w, h, 'shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;' +
+								w, h, 'shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;' +
 								'verticalAlign=top;aspect=fixed;imageAspect=0;image=' + text + ';'));
 					}
 				}), mxUtils.bind(this, function()
@@ -8152,10 +8354,9 @@
 			
 			if (typeof JSZip  !== 'undefined')
 			{
-				JSZip.loadAsync(file)                                   
-		        .then(function(zip) 
+				JSZip.loadAsync(file).then(function(zip) 
 		        {
-		        	if (Object.keys(zip.files).length == 0)
+		        	if (mxUtils.isEmptyObject(zip.files))
 		        	{
 		        		onerror();
 		        	}
@@ -8198,22 +8399,29 @@
 		            	{
 		                	gliffyLatestVer.zipEntry.async("string").then(function(data)
 		                	{
-		                		if (!ui.isOffline() && new XMLHttpRequest().upload && ui.isRemoteFileFormat(data, file.name))
+		                		if (new XMLHttpRequest().upload && ui.isRemoteFileFormat(data, file.name))
 		                		{
-		                			ui.parseFile(new Blob([data], {type: 'application/octet-stream'}), mxUtils.bind(this, function(xhr)
-		                			{
-		                				if (xhr.readyState == 4)
-		                				{
-		                					if (xhr.status >= 200 && xhr.status <= 299)
-		                					{
-		                						success(xhr.responseText);
-		                					}
-		                					else
-		                					{
-		                						onerror();
-		                					}
-		                				}
-		                			}), file.name);
+									if (ui.isOffline())
+									{
+										ui.showError(mxResources.get('error'), mxResources.get('notInOffline'), null, onerror);
+									}
+									else
+									{
+										ui.parseFileData(data, mxUtils.bind(this, function(xhr)
+										{
+											if (xhr.readyState == 4)
+											{
+												if (xhr.status >= 200 && xhr.status <= 299)
+												{
+													success(xhr.responseText);
+												}
+												else
+												{
+													onerror();
+												}
+											}
+										}), file.name);
+									}
 		                		}
 		                		else
 		            			{
@@ -8312,7 +8520,7 @@
 				}
 
 				cells = [graph.insertVertex(null, null, '', dx, dy, w, h,
-					'shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;' +
+					'shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;' +
 					'verticalAlign=top;aspect=fixed;imageAspect=0;image=' + data + ';')];
 			}
 		}
@@ -8329,26 +8537,42 @@
 
 			this.importVisio(file, handleResult);
 		}
-		else if (!this.isOffline() && new XMLHttpRequest().upload && this.isRemoteFileFormat(data, filename))
+		else if (new XMLHttpRequest().upload && this.isRemoteFileFormat(data, filename))
 		{
-			//  LATER: done and async are a hack before making this asynchronous
-			async = true;
-
-			// Returns empty cells array as it is aysynchronous
-			this.parseFile((file != null) ? file : new Blob([data], {type: 'application/octet-stream'}), mxUtils.bind(this, function(xhr)
+			if (this.isOffline())
 			{
-				if (xhr.readyState == 4)
+				this.showError(mxResources.get('error'), mxResources.get('notInOffline'));
+			}
+			else
+			{
+				//  LATER: done and async are a hack before making this asynchronous
+				async = true;
+
+				// Returns empty cells array as it is aysynchronous
+				var parseCallback = mxUtils.bind(this, function(xhr)
 				{
-					if (xhr.status >= 200 && xhr.status <= 299)
+					if (xhr.readyState == 4)
 					{
-						handleResult(xhr.responseText);
+						if (xhr.status >= 200 && xhr.status <= 299)
+						{
+							handleResult(xhr.responseText);
+						}
+						else if (done != null)
+						{
+							done(null);
+						}
 					}
-					else if (done != null)
-					{
-						done(null);
-					}
+				});
+
+				if (data != null)
+				{
+					this.parseFileData(data, parseCallback, filename);
 				}
-			}), filename);
+				else
+				{
+					this.parseFile(file, parseCallback, filename);
+				}
+			}
 		}
 		else if (data.indexOf('PK') == 0 && file != null)
 		{
@@ -8398,7 +8622,9 @@
 			
 			for (var i = 0; i < files.length; i++)
 			{
-				if (files[i].type.substring(0, 6) == 'image/' && files[i].size > thresh)
+				if (files[i].type.substring(0, 9) !== 'image/svg' &&
+					files[i].type.substring(0, 6) === 'image/' &&
+					files[i].size > thresh)
 				{
 					largeImages = true;
 					
@@ -8544,8 +8770,6 @@
 								    				{
 							    						try
 							    						{
-									    					var prefix = data.substring(0, comma + 1);
-									    					
 									    					// Parses SVG and find width and height
 									    					if (root != null)
 									    					{
@@ -8599,7 +8823,7 @@
 										    						var s = Math.min(1, Math.min(maxSize / Math.max(1, w)), maxSize / Math.max(1, h));
 										    						var cells = fn(data, file.type, x + index * gs, y + index * gs, Math.max(
 										    							1, Math.round(w * s)), Math.max(1, Math.round(h * s)), file.name);
-										    						
+																	
 										    						// Hack to fix width and height asynchronously
 										    						if (isNaN(w) || isNaN(h))
 										    						{
@@ -8703,9 +8927,12 @@
 										    					// Refuses to insert images above a certain size as they kill the app
 										    					if (data2 != null && data2.length < maxBytes)
 										    					{
-											    					var s = (!resizeImages || !this.isResampleImageSize(file.size, resampleThreshold)) ? 1 : Math.min(1, Math.min(maxSize / w2, maxSize / h2));
+											    					var s = (!resizeImages || !this.isResampleImageSize(
+																		file.size, resampleThreshold)) ? 1 :
+																		Math.min(1, Math.min(maxSize / w2, maxSize / h2));
 												    				
-											    					return fn(data2, file.type, x + index * gs, y + index * gs, Math.round(w2 * s), Math.round(h2 * s), file.name);
+											    					return fn(data2, file.type, x + index * gs, y + index * gs,
+																		Math.round(w2 * s), Math.round(h2 * s), file.name);
 										    					}
 										    					else
 										    					{
@@ -8788,6 +9015,16 @@
 	};
 
 	/**
+	 * Returns true if the current file is a blank diagram.
+	 */
+	EditorUi.prototype.isBlankFile = function()
+	{
+		return this.pages != null && this.pages.length == 1 &&
+			this.isDiagramEmpty() && this.currentPage.getName() ==
+			mxResources.get('pageWithNumber', [1]);
+	};
+
+	/**
 	 * Parses the file using XHR2 via the server. File can be a blob or file object.
 	 * Filename is an optional parameter for blobs (that do not have a filename).
 	 */
@@ -8838,20 +9075,31 @@
 	EditorUi.prototype.parseFile = function(file, fn, filename)
 	{
 		filename = (filename != null) ? filename : file.name;
-		
-		var formData = new FormData();
-		formData.append('format', 'xml');
-		formData.append('upfile', file, filename);
+
+		var reader = new FileReader();
+
+        reader.onload = mxUtils.bind(this, function()
+		{
+			this.parseFileData(reader.result, fn, filename)
+        });
+
+        reader.readAsText(file);
+	};
+
+	//TODO Use this version of the function instead of creating a Blob then read it again
+	EditorUi.prototype.parseFileData = function(data, fn, filename)
+	{
 
 		var xhr = new XMLHttpRequest();
 		xhr.open('POST', OPEN_URL);
-		
+		xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
 		xhr.onreadystatechange = function()
 		{
 			fn(xhr);
 		};
 		
-		xhr.send(formData);
+		xhr.send('format=xml&filename=' + encodeURIComponent(filename) + '&data=' + encodeURIComponent(data));
 		
 		try
 		{
@@ -8979,6 +9227,17 @@
 		}
 	};
 
+	/**
+	 * Returns the default value for sketch mode.
+	 */
+	EditorUi.prototype.getDefaultSketchMode = function()
+	{
+		var defaultValue = window.location.host == 'ac.draw.io' ? '1' : '0';
+		var roughParam = (urlParams['rough'] != null) ? urlParams['rough'] : defaultValue;
+
+		return roughParam != '0';
+	};
+
 	// Initializes the user interface
 	var editorUiInit = EditorUi.prototype.init;
 	EditorUi.prototype.init = function()
@@ -8990,9 +9249,13 @@
 		{
 			if (urlParams['sketch'] == '1')
 			{
-				this.doSetSketchMode((mxSettings.settings.sketchMode != null &&
-					urlParams['rough'] == null) ? mxSettings.settings.sketchMode :
-					urlParams['rough'] != '0');
+				this.doSetSketchMode((mxSettings.settings.sketchMode != null && urlParams['rough'] == null) ?
+					mxSettings.settings.sketchMode : this.getDefaultSketchMode());
+			}
+
+			if (mxSettings.settings.sidebarTitles != null)
+			{
+				Sidebar.prototype.sidebarTitles = mxSettings.settings.sidebarTitles;
 			}
 
 			this.formatWidth = mxSettings.getFormatWidth();
@@ -9006,6 +9269,20 @@
 			graph.view.defaultGridColor = mxGraphView.prototype.defaultDarkGridColor;
 		}
 		
+		// Stops panning while freehand is active
+		if (Graph.touchStyle)
+		{
+			graph.panningHandler.isPanningTrigger = function(me)
+			{
+				var evt = me.getEvent();
+				
+			 	return (me.getState() == null && (!mxEvent.isMouseEvent(evt) &&
+					!graph.freehand.isDrawing())) ||
+			 		(mxEvent.isPopupTrigger(evt) && (me.getState() == null ||
+			 		mxEvent.isControlDown(evt) || mxEvent.isShiftDown(evt)));
+			};
+		}		
+
 		// Starts editing PlantUML data
 		graph.cellEditor.editPlantUmlData = function(cell, trigger, data)
 		{
@@ -9229,11 +9506,13 @@
 				{
 					var id = ref.substring(comma + 1);
 					var patches = evt.getProperty('patches');
-
+					
 					for (var i = 0; i < patches.length; i++)
 					{
-						if (patches[i][EditorUi.DIFF_UPDATE] != null &&
-							patches[i][EditorUi.DIFF_UPDATE][id] != null)
+						if ((patches[i][EditorUi.DIFF_UPDATE] != null &&
+							patches[i][EditorUi.DIFF_UPDATE][id] != null) ||
+							(patches[i][EditorUi.DIFF_REMOVE] != null &&
+							mxUtils.indexOf(patches[i][EditorUi.DIFF_REMOVE], id) >= 0))
 						{
 							graph.refreshBackgroundImage();
 
@@ -9748,18 +10027,31 @@
 				if (graph.isEnabled())
 				{
 				    var pt = mxUtils.convertPoint(graph.container, mxEvent.getClientX(evt), mxEvent.getClientY(evt));
+					var files = evt.dataTransfer.files;
 					var tr = graph.view.translate;
 					var scale = graph.view.scale;
 					var x = pt.x / scale - tr.x;
 					var y = pt.y / scale - tr.y;
 					
-				    if (evt.dataTransfer.files.length > 0)
+				    if (files.length > 0)
 				    {
-				    	if (mxEvent.isShiftDown(evt))
-				    	{
-				    		this.openFiles(evt.dataTransfer.files, true);
-				    	}
-				    	else
+						// Closes current file if blank and no undoable changes
+						// LATER: Check if file contains diagram data
+						var noImport = files.length == 1 && this.isBlankFile() && !this.canUndo() &&
+							(files[0].type.substring(0, 9) === 'image/svg' ||
+							files[0].type.substring(0, 6) !== 'image/');
+
+						if (urlParams['embed'] != '1' && (mxEvent.isShiftDown(evt) || noImport))
+						{
+							if (!mxEvent.isShiftDown(evt) && noImport &&
+								this.getCurrentFile() != null)
+							{
+								this.fileLoaded(null);
+							}
+
+							this.openFiles(files, true);
+						}
+						else
 				    	{
 							if (mxEvent.isAltDown(evt))
 							{
@@ -9767,7 +10059,7 @@
 								y = null;
 							}
 							
-							this.importFiles(evt.dataTransfer.files, x, y, this.maxImageSize, null, null, null,
+							this.importFiles(files, x, y, this.maxImageSize, null, null, null,
 								null, mxEvent.isControlDown(evt), null, null, mxEvent.isShiftDown(evt), evt);
 				    	}
 		    		}
@@ -9868,7 +10160,7 @@
 			    				var s = Math.min(1, Math.min(maxSize / Math.max(1, w)), maxSize / Math.max(1, h));
 
 			    				graph.setSelectionCell(graph.insertVertex(null, null, '', x, y, w * s, h * s,
-			    					'shape=image;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;' +
+			    					'shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;' +
 			    					'verticalAlign=top;aspect=fixed;imageAspect=0;image=' + uri + ';'));
 			    			}), mxUtils.bind(this, function(img)
 			    			{
@@ -10201,7 +10493,28 @@
 			this.fireEvent(new mxEventObject('pagesVisibleChanged'));
 		}
 	};
-     
+    
+	/**
+	 * Changes Sidebar.sidebarTitles.
+	 */
+	EditorUi.prototype.setSidebarTitles = function(value, remember)
+	{
+		if (this.sidebar.sidebarTitles != value)
+		{
+			this.sidebar.sidebarTitles = value;
+			this.sidebar.refresh();
+
+			// Persist setting
+			if (this.isSettingsEnabled() && remember)
+			{
+				mxSettings.settings.sidebarTitles = value;
+				mxSettings.save();
+			}
+
+			this.fireEvent(new mxEventObject('sidebarTitlesChanged'));
+		}
+	};
+    
 	/**
 	 * Dynamic change of dark mode.
 	 */
@@ -10245,9 +10558,7 @@
 				}
 			};
 
-			this.menus.defaultFonts = Menus.prototype.defaultFonts;
 			this.menus.defaultFontSize = (value) ? 20 : 16;
-
 			graph.defaultVertexStyle = mxUtils.clone(Graph.prototype.defaultVertexStyle);
 			setStyle(graph.defaultVertexStyle, 'fontSize', this.menus.defaultFontSize);
 
@@ -10275,12 +10586,6 @@
 				setStyle(graph.defaultEdgeStyle, 'hachureGap', '4');
 				setStyle(graph.defaultEdgeStyle, 'sourcePerimeterSpacing', '8');
 				setStyle(graph.defaultEdgeStyle, 'targetPerimeterSpacing', '8');
-				
-				this.menus.defaultFonts = [{'fontFamily': Editor.sketchFontFamily,
-						'fontUrl': decodeURIComponent(Editor.sketchFontSource)},
-					{'fontFamily': 'Rock Salt', 'fontUrl': 'https://fonts.googleapis.com/css?family=Rock+Salt'},
-					{'fontFamily': 'Permanent Marker', 'fontUrl': 'https://fonts.googleapis.com/css?family=Permanent+Marker'}].
-					concat(this.menus.defaultFonts);
 			}
 
 			graph.currentVertexStyle = mxUtils.clone(graph.defaultVertexStyle);
@@ -10445,7 +10750,9 @@
 			 * Persists default grid color.
 			 */
 			this.editor.graph.view.gridColor = mxSettings.getGridColor(Editor.isDarkMode());
-			
+			this.editor.graph.view.defaultDarkGridColor = mxSettings.getGridColor(true);
+			this.editor.graph.view.defaultGridColor = mxSettings.getGridColor(false);
+
 			this.addListener('gridColorChanged', mxUtils.bind(this, function(sender, evt)
 			{
 				mxSettings.setGridColor(this.editor.graph.view.gridColor, Editor.isDarkMode());
@@ -10976,15 +11283,22 @@
 												this.openLocalFile(xml, null, true);
 											}
 										}
-										else if (!this.isOffline() && this.isRemoteFileFormat(data))
+										else if (this.isRemoteFileFormat(data))
 										{
-								    		new mxXmlRequest(OPEN_URL, 'format=xml&data=' + encodeURIComponent(data)).send(mxUtils.bind(this, function(req)
+											if (this.isOffline())
 											{
-								    			if (req.getStatus() >= 200 && req.getStatus() <= 299)
-								    			{
-								    				this.openLocalFile(req.getText(), null, true);
-								    			}
-											}));
+												this.showError(mxResources.get('error'), mxResources.get('notInOffline'));
+											}
+											else
+											{
+												new mxXmlRequest(OPEN_URL, 'format=xml&data=' + encodeURIComponent(data)).send(mxUtils.bind(this, function(req)
+												{
+													if (req.getStatus() >= 200 && req.getStatus() <= 299)
+													{
+														this.openLocalFile(req.getText(), null, true);
+													}
+												}));
+											}
 										}
 										else if (/^https?:\/\//.test(data))
 										{
@@ -11158,27 +11472,35 @@
 					handleResult(xml);
 				}));
 			}
-			else if (Graph.fileSupport && !this.isOffline() && new XMLHttpRequest().upload &&
+			else if (Graph.fileSupport && !new XMLHttpRequest().upload &&
 				this.isRemoteFileFormat(data, name))
 			{
-				this.parseFile(file, mxUtils.bind(this, function(xhr)
+				if (this.isOffline())
 				{
-					if (xhr.readyState == 4)
+					this.spinner.stop();
+					this.showError(mxResources.get('error'), mxResources.get('notInOffline'));
+				}
+				else
+				{
+					this.parseFile(file, mxUtils.bind(this, function(xhr)
 					{
-						this.spinner.stop();
-						
-						if (xhr.status >= 200 && xhr.status <= 299)
+						if (xhr.readyState == 4)
 						{
-							handleResult(xhr.responseText);
+							this.spinner.stop();
+							
+							if (xhr.status >= 200 && xhr.status <= 299)
+							{
+								handleResult(xhr.responseText);
+							}
+							else
+							{
+								this.handleError({message: mxResources.get((xhr.status == 413) ?
+									'drawingTooLarge' : 'invalidOrMissingFile')},
+									mxResources.get('errorLoadingFile'));
+							}
 						}
-						else
-						{
-							this.handleError({message: mxResources.get((xhr.status == 413) ?
-        						'drawingTooLarge' : 'invalidOrMissingFile')},
-        						mxResources.get('errorLoadingFile'));
-						}
-					}
-				}));
+					}));
+				}
 			}
 			else if (this.isLucidChartData(data))
 			{
@@ -12618,17 +12940,24 @@
 					this.handleError(e);
 				}), filename);
 			}
-			else if (data != null && typeof data.substring === 'function' && !this.isOffline() && new XMLHttpRequest().upload && this.isRemoteFileFormat(data, ''))
+			else if (data != null && typeof data.substring === 'function' && new XMLHttpRequest().upload && this.isRemoteFileFormat(data, ''))
 			{
-				// Asynchronous parsing via server
-				this.parseFile(new Blob([data], {type: 'application/octet-stream'}), mxUtils.bind(this, function(xhr)
+				if (this.isOffline())
 				{
-					if (xhr.readyState == 4 && xhr.status >= 200 && xhr.status <= 299 &&
-						xhr.responseText.substring(0, 13) == '<mxGraphModel')
+					this.showError(mxResources.get('error'), mxResources.get('notInOffline'));
+				}
+				else
+				{
+					// Asynchronous parsing via server
+					this.parseFileData(data, mxUtils.bind(this, function(xhr)
 					{
-						doLoad(xhr.responseText, evt);
-					}
-				}), '');
+						if (xhr.readyState == 4 && xhr.status >= 200 && xhr.status <= 299 &&
+							xhr.responseText.substring(0, 13) == '<mxGraphModel')
+						{
+							doLoad(xhr.responseText, evt);
+						}
+					}), '');
+				}
 			}
 			else if (data != null && typeof data.substring === 'function' && this.isLucidChartData(data))
 			{
@@ -12834,11 +13163,13 @@
         		var lookups = {};
         		
         		// Default values
+        		var graph = this.editor.graph;
         		var vars = null;
         		var style = null;
         		var styles = null;
         		var stylename = null;
         		var labelname = null;
+				var unknownStyle = null;
         		var labels = null;
         		var parentstyle = 'whiteSpace=wrap;html=1;';
         		var identity = null;
@@ -12852,10 +13183,6 @@
         		var nodespacing = 40;
         		var levelspacing = 100;
         		var padding = 0;
-        		
-        		var graph = this.editor.graph;
-				var view = graph.view;
-				var bds = graph.getGraphBounds();
 
 				// Delayed after optional layout
     			var afterInsert = function()
@@ -12939,6 +13266,10 @@
 		    				else if (key == 'parentstyle')
 		    				{
 		    					parentstyle = value;
+		    				}
+							else if (key == 'unknownStyle' && value != '-')
+		    				{
+		    					unknownStyle = value;
 		    				}
 		    				else if (key == 'stylename' && value.length > 0 && value != '-')
 		    				{
@@ -13128,9 +13459,6 @@
 
 						if (exists)
 						{
-							graph.model.setValue(cell, newCell.value);
-							graph.model.setStyle(cell, newCell.style);
-
 							if (mxUtils.indexOf(cells, cell) < 0)
 							{
 								cells.push(cell);
@@ -13249,7 +13577,7 @@
 
 					var roots = cells.slice();
 					var select = cells.slice();
-	
+					
 					for (var e = 0; e < edges.length; e++)
 					{
 						var edge = edges[e];
@@ -13261,91 +13589,101 @@
 							var insertEdge = mxUtils.bind(this, function(realCell, dataCell, edge)
 							{
 								var tmp = dataCell.getAttribute(edge.from);
-		    					
-		    					if (tmp != null)
+								
+		    					if (tmp != null && tmp != '')
 		    					{
-			    					if (tmp != '')
-			    					{
-			    						var refs = tmp.split(',');
-			    						
-				    					for (var j = 0; j < refs.length; j++)
-				        				{
-				    						var ref = lookups[edge.to][refs[j]];
-				    						
-				    						if (ref != null)
-				    						{
-				    							var label = edge.label;
-				    							
-				    							if (edge.fromlabel != null)
-				    							{
-				    								label = (dataCell.getAttribute(edge.fromlabel) || '') + (label || '');
-				    							}
-				    							
-				    							if (edge.sourcelabel != null)
-				    							{
-				    								label = graph.replacePlaceholders(dataCell,
-														edge.sourcelabel, vars) + (label || '');
-				    							}
-							
-				    							if (edge.tolabel != null)
-				    							{
-				    								label = (label || '') + (ref.getAttribute(edge.tolabel) || '');
-				    							}
-				    											    							
-				    							if (edge.targetlabel != null)
-				    							{
-				    								label = (label || '') + graph.replacePlaceholders(
-														ref, edge.targetlabel, vars);
-				    							}
-							
-				    							var placeholders = ((edge.placeholders == 'target') ==
-				    								!edge.invert) ? ref : realCell;
-				    							var style = (edge.style != null) ?
-				    								graph.replacePlaceholders(placeholders, edge.style, vars) :
-				    								graph.createCurrentEdgeStyle();
+									var refs = tmp.split(',');
+									
+									for (var j = 0; j < refs.length; j++)
+									{
+										var ref = lookups[edge.to][refs[j]];
 
-				    							var edgeCell = graph.insertEdge(null, null, label || '', (edge.invert) ?
-				    								ref : realCell, (edge.invert) ? realCell : ref, style);
-				    							
-				    							// Adds additional edge labels
-				    							if (edge.labels != null)
-				    							{
-				    								for (var k = 0; k < edge.labels.length; k++)
-				    								{
-				    									var def = edge.labels[k];
-				    									var elx = (def.x != null) ? def.x : 0;
-				    									var ely = (def.y != null) ? def.y : 0;
-				    									var st = 'resizable=0;html=1;';
-				    									var el = new mxCell(def.label || k,
-				    										new mxGeometry(elx,  ely, 0, 0), st);
-				    									el.vertex = true;
-				    									el.connectable = false;
-				    									el.geometry.relative = true;
-									
-														if (def.placeholders != null)
-														{
-															el.value = graph.replacePlaceholders(
-																((def.placeholders == 'target') ==
-							    								!edge.invert) ? ref : realCell,
-															el.value, vars)
-														}
-				    									
-				    									if (def.dx != null || def.dy != null)
-				    									{
-				    										el.geometry.offset = new mxPoint(
-				    											(def.dx != null) ? def.dx : 0,
-				    											(def.dy != null) ? def.dy : 0);
-				    									}
-									
-				    									edgeCell.insert(el);
-				    								}
-				    							}
-				    							
-				    							select.push(edgeCell);
-				    							mxUtils.remove((edge.invert) ? realCell : ref, roots);
-				    						}
-				        				}
-			    					}
+										if (ref == null && unknownStyle != null)
+										{
+											ref = new mxCell(refs[j], new mxGeometry(x0, y0, 0, 0), unknownStyle);
+											ref.style = graph.replacePlaceholders(dataCell, ref.style, vars);
+											var refSize = this.editor.graph.getPreferredSizeForCell(ref);
+											ref.geometry.width = refSize.width + padding;
+											ref.geometry.height = refSize.height + padding;
+											lookups[edge.to][refs[j]] = ref;
+											ref.vertex = true;
+											ref.id = refs[j];
+											cells.push(graph.addCell(ref));
+										}
+
+										if (ref != null)
+										{
+											var label = edge.label;
+											
+											if (edge.fromlabel != null)
+											{
+												label = (dataCell.getAttribute(edge.fromlabel) || '') + (label || '');
+											}
+											
+											if (edge.sourcelabel != null)
+											{
+												label = graph.replacePlaceholders(dataCell,
+													edge.sourcelabel, vars) + (label || '');
+											}
+						
+											if (edge.tolabel != null)
+											{
+												label = (label || '') + (ref.getAttribute(edge.tolabel) || '');
+											}
+																							
+											if (edge.targetlabel != null)
+											{
+												label = (label || '') + graph.replacePlaceholders(
+													ref, edge.targetlabel, vars);
+											}
+						
+											var placeholders = ((edge.placeholders == 'target') ==
+												!edge.invert) ? ref : realCell;
+											var edgeStyle = (edge.style != null) ?
+												graph.replacePlaceholders(placeholders, edge.style, vars) :
+												graph.createCurrentEdgeStyle();
+
+											var edgeCell = graph.insertEdge(null, null, label || '', (edge.invert) ?
+												ref : realCell, (edge.invert) ? realCell : ref, edgeStyle);
+											
+											// Adds additional edge labels
+											if (edge.labels != null)
+											{
+												for (var k = 0; k < edge.labels.length; k++)
+												{
+													var def = edge.labels[k];
+													var elx = (def.x != null) ? def.x : 0;
+													var ely = (def.y != null) ? def.y : 0;
+													var st = 'resizable=0;html=1;';
+													var el = new mxCell(def.label || k,
+														new mxGeometry(elx,  ely, 0, 0), st);
+													el.vertex = true;
+													el.connectable = false;
+													el.geometry.relative = true;
+								
+													if (def.placeholders != null)
+													{
+														el.value = graph.replacePlaceholders(
+															((def.placeholders == 'target') ==
+															!edge.invert) ? ref : realCell,
+														el.value, vars)
+													}
+													
+													if (def.dx != null || def.dy != null)
+													{
+														el.geometry.offset = new mxPoint(
+															(def.dx != null) ? def.dx : 0,
+															(def.dy != null) ? def.dy : 0);
+													}
+								
+													edgeCell.insert(el);
+												}
+											}
+											
+											select.push(edgeCell);
+											mxUtils.remove((edge.invert) ? realCell : ref, roots);
+										}
+									}
 		    					}
 							});
 							
@@ -13468,7 +13806,9 @@
 			    			graph.view.validate();
 			    			
 			    			var flowLayout = new mxHierarchicalLayout(graph,
-			    				(layout == 'horizontalflow') ? mxConstants.DIRECTION_WEST : mxConstants.DIRECTION_NORTH);
+			    				(layout == 'horizontalflow') ?
+								mxConstants.DIRECTION_WEST :
+								mxConstants.DIRECTION_NORTH);
 			    			flowLayout.intraCellSpacing = nodespacing;
 			    			flowLayout.parallelEdgeSpacing = edgespacing;
 			    			flowLayout.interRankCellSpacing = levelspacing;
@@ -13786,21 +14126,19 @@
 
 		var graph = this.editor.graph;
 		var file = this.getCurrentFile();
+		var ss = this.getSelectionState();
 		var active = this.isDiagramActive();
-		var editable = graph.getEditableCells(graph.getSelectionCells());
-		var enabled = file != null || urlParams['embed'] == '1';
 
 		this.actions.get('pageSetup').setEnabled(active);
 		this.actions.get('autosave').setEnabled(file != null && file.isEditable() && file.isAutosaveOptional());
 		this.actions.get('guides').setEnabled(active);
-		this.actions.get('editData').setEnabled(editable.length > 0 || graph.isSelectionEmpty());
+		this.actions.get('editData').setEnabled(graph.isEnabled());
 		this.actions.get('shadowVisible').setEnabled(active);
 		this.actions.get('connectionArrows').setEnabled(active);
 		this.actions.get('connectionPoints').setEnabled(active);
 		this.actions.get('copyStyle').setEnabled(active && !graph.isSelectionEmpty());
-		this.actions.get('pasteStyle').setEnabled(active && editable.length > 0);
-		this.actions.get('editGeometry').setEnabled(editable.length > 0 &&
-			graph.getModel().isVertex(editable[0]));
+		this.actions.get('pasteStyle').setEnabled(active && ss.cells.length > 0);
+		this.actions.get('editGeometry').setEnabled(ss.vertices.length >  0);
 		this.actions.get('createShape').setEnabled(active);
 		this.actions.get('createRevision').setEnabled(active);
 		this.actions.get('moveToFolder').setEnabled(file != null);
@@ -13820,7 +14158,8 @@
 			'/' + mxResources.get('replace') : '') + '...';
 		
 		var state = graph.view.getState(graph.getSelectionCell());
-		this.actions.get('editShape').setEnabled(active && state != null && state.shape != null && state.shape.stencil != null);
+		this.actions.get('editShape').setEnabled(active && state != null &&
+			state.shape != null && state.shape.stencil != null);
 	};
 
 	/**

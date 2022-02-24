@@ -552,6 +552,7 @@ Draw.loadPlugin(function(ui)
 		
 		var inner = this.container.querySelector('.geTitle'), urlInput = inner.querySelector('input[type="text"]'), urlCheck = urlInput.previousSibling;
 		
+		urlInput.style.width = '680px';
 		var lbl = document.createElement('div');
 		mxUtils.write(lbl, mxResources.get('confAnchor') + ':');
 		inner.appendChild(lbl);
@@ -889,7 +890,7 @@ Draw.loadPlugin(function(ui)
 	ui.showLinkDialog = function(value, btnLabel, fn)
 	{
 		var dlg = new LinkDialog(this, value, btnLabel, fn, true);
-		this.showDialog(dlg.container, 700, 470, true, true);
+		this.showDialog(dlg.container, 710, 470, true, true);
 		dlg.init();
 	};
 	
@@ -1864,7 +1865,6 @@ Draw.loadPlugin(function(ui)
 		}
 	};
 	
-	var p2pCollab = null;
 	//Add file opening here (or it should be for all in EditorUi?)
 	var origInstallMessageHandler =  ui.installMessageHandler;
 	
@@ -1900,13 +1900,6 @@ Draw.loadPlugin(function(ui)
 					{
 						descriptorChangedListener();
 					}
-					
-					//RT Cursors
-					if (urlParams['rtCursors'] == '1' && p2pCollab != null)
-					{
-						p2pCollab.joinFile(file.getChannelId());
-						file.p2pCollab = p2pCollab;
-					}
 				}
 			});
 			
@@ -1918,10 +1911,4 @@ Draw.loadPlugin(function(ui)
 	{
 		//Cancel set modified of the editor and use the file's one
 	};
-	
-	//P2P RT
-	if (urlParams['rtCursors'] == '1')
-	{
-		p2pCollab = new P2PCollab(ui);
-	}
 });
