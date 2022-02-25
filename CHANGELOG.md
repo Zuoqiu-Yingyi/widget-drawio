@@ -1,5 +1,7 @@
 # 更改日志 | CHANGE LOG
 
+## v0.1.1/2022-02-26
+
 - 修复使用 `https` 协议时文件校验不通过问题 | Fixed an issue where file validation failed when using the `https` protocol.
 - 修复部分资源文件引用路径问题 | Fixed an issue with some resource file reference paths.
 
