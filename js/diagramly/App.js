@@ -643,7 +643,7 @@ App.main = function(callback, createUi)
 			{
 				var content = mxUtils.getTextContent(scripts[0]);
 				
-				if (CryptoJS.MD5(content).toString() != '8445baab47ce600df0a216ded2e4ba30')
+				if (CryptoJS.MD5(content).toString() != '8d30a606a5a4d5fb5186a4989593c4bd')
 				{
 					console.log('Change bootstrap script MD5 in the previous line:', CryptoJS.MD5(content).toString());
 					alert('[Dev] Bootstrap script change requires update of CSP');

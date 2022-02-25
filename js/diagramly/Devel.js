@@ -6,150 +6,150 @@
  * is used for development mode where the JS is in separate
  * files and the mxClient.js loads other files.
  */
-if (!mxIsElectron && location.protocol !== 'http:')
-{
-	(function()
-	{
-		var hashes = 'default-src \'self\'; ' +
-			// storage.googleapis.com is needed for workbox-service-worker
-			'script-src %script-src% \'self\' https://viewer.diagrams.net https://storage.googleapis.com ' +
-			'https://apis.google.com https://*.pusher.com ' +
-			// Below are the SHAs of the two script blocks in index.html.
-			// These must be updated here and in the CDN after changes.
-			//----------------------------------------------------------//
-			//------------- Bootstrap script in index.html -------------//
-			//----------------------------------------------------------//
-			// Version 16.4.4
-			'\'sha256-AVuOIxynOo/05KDLjyp0AoBE+Gt/KE1/vh2pS+yfqes=\' ' +
-			// Version 15.8.3
-			'\'sha256-r/ILW7KMSJxeo9EYqCTzZyCT0PZ9gHN1BLgki7vpR+A=\' ' +
-			// Version 14.6.5
-			'\'sha256-5DtSB5mj34lxcEf+HFWbBLEF49xxJaKnWGDWa/utwQA=\' ' +
-			//---------------------------------------------------------//
-			//------------- App.main script in index.html -------------//
-			//---------------------------------------------------------//
-			// Version 13.8.2
-			'\'sha256-vS/MxlVD7nbY7AnV+0t1Ap338uF7vrcs7y23KjERhKc=\' ' +
-			//---------------------------------------------------------//
-			'; ';
+// if (!mxIsElectron && location.protocol !== 'http:')
+// {
+// 	(function()
+// 	{
+// 		var hashes = 'default-src \'self\'; ' +
+// 			// storage.googleapis.com is needed for workbox-service-worker
+// 			'script-src %script-src% \'self\' https://viewer.diagrams.net https://storage.googleapis.com ' +
+// 			'https://apis.google.com https://*.pusher.com ' +
+// 			// Below are the SHAs of the two script blocks in index.html.
+// 			// These must be updated here and in the CDN after changes.
+// 			//----------------------------------------------------------//
+// 			//------------- Bootstrap script in index.html -------------//
+// 			//----------------------------------------------------------//
+// 			// Version 16.4.4
+// 			'\'sha256-AVuOIxynOo/05KDLjyp0AoBE+Gt/KE1/vh2pS+yfqes=\' ' +
+// 			// Version 15.8.3
+// 			'\'sha256-r/ILW7KMSJxeo9EYqCTzZyCT0PZ9gHN1BLgki7vpR+A=\' ' +
+// 			// Version 14.6.5
+// 			'\'sha256-5DtSB5mj34lxcEf+HFWbBLEF49xxJaKnWGDWa/utwQA=\' ' +
+// 			//---------------------------------------------------------//
+// 			//------------- App.main script in index.html -------------//
+// 			//---------------------------------------------------------//
+// 			// Version 13.8.2
+// 			'\'sha256-vS/MxlVD7nbY7AnV+0t1Ap338uF7vrcs7y23KjERhKc=\' ' +
+// 			//---------------------------------------------------------//
+// 			'; ';
 
-		var styleHashes = '\'sha256-JjkxVHHCCVO0nllPD6hU8bBYSlsikA8TM/o3fhr0bas=\' ' + // index.html
-			'\'sha256-1F7QEyp3oiW4n2eXlhilLpu+H5Wdj4t90pKtEyK/mFE=\' ' + // Minimal.js/Light
-			'\'sha256-V8wOMdVocmGIO0DHZHJsKN6viAFJOJRbsJ7UhdJlmng=\' ' + // Minimal.js/Dark
-			'\'sha256-7kY8ozVqKLIIBwZ24dhdmZkM26PsOlZmEi72RhmZKoM=\' ' + // mxTooltipHandler.js
-			'\'sha256-01chdey79TzZe4ihnvvUXXI5y8MklIcKH+vzDdQvsuU=\' ' + // Editor.js/mathJaxWebkitCss
-			'\'sha256-fGbXK7EYpvNRPca81zPnqJHi2y+34KSgAcZv8mhaSzI=\' ' + // MathJax.js
-			'\'sha256-3hENQqEWUBxdkmJp2kQ2+G0F8NVGzFAVkW5vWDo7ONk=\' ' + // MathJax.js
-			'\'sha256-Z4u/cxrZPHjN20CIXZHTKr+VlqVxrWG8cbbeC2zmPqI=\' ' + // MathJax.js
-			'\'sha256-LDMABiyg2T48kuAV9ouqNCSEqf2OkUdlZK9D9CeZHBs=\' ' + // MathJax.js
-			'\'sha256-XQfwbaSNgLzro3IzkwT0uZLAiBvZzajo0QZx7oW158E=\' ' + // MathJax.js
-			'\'sha256-++XCePvZXKdegIqkwtbudr16Jx87KFh4t/t7UxsbHpw=\' ' + // MathJax.js
-			'\'sha256-v9NOL6IswMbY7zpRZjxkYujhuGRVvZtp1c1MfdnToB4=\' ' + // MathJax.js
-			'\'sha256-5xtuTr9UuyJoTQ76CNLzvSJjS7onwfq73B2rLWCl3aE=\' ' + // MathJax.js
-			'\'sha256-W21B506Ri8aGW3T87iawssPz71NvvbYZfBfzDbBSArU=\' ' + // MathJax.js
-			'\'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=\' ' + // spin.min.js
-			'\'sha256-nzHi23DROym7G011m6y0DyDd9mvQL2hSJ0Gy3g2T/5Q=\' ' + // dropins.js
-			'\'sha256-76P1PZLzT12kfw2hkrLn5vu/cWZgcOYuSYU3RT3rXKA=\' ' + // gapi
-			'\'unsafe-hashes\'; '; // Required for hashes for style attribute
+// 		var styleHashes = '\'sha256-JjkxVHHCCVO0nllPD6hU8bBYSlsikA8TM/o3fhr0bas=\' ' + // index.html
+// 			'\'sha256-1F7QEyp3oiW4n2eXlhilLpu+H5Wdj4t90pKtEyK/mFE=\' ' + // Minimal.js/Light
+// 			'\'sha256-V8wOMdVocmGIO0DHZHJsKN6viAFJOJRbsJ7UhdJlmng=\' ' + // Minimal.js/Dark
+// 			'\'sha256-7kY8ozVqKLIIBwZ24dhdmZkM26PsOlZmEi72RhmZKoM=\' ' + // mxTooltipHandler.js
+// 			'\'sha256-01chdey79TzZe4ihnvvUXXI5y8MklIcKH+vzDdQvsuU=\' ' + // Editor.js/mathJaxWebkitCss
+// 			'\'sha256-fGbXK7EYpvNRPca81zPnqJHi2y+34KSgAcZv8mhaSzI=\' ' + // MathJax.js
+// 			'\'sha256-3hENQqEWUBxdkmJp2kQ2+G0F8NVGzFAVkW5vWDo7ONk=\' ' + // MathJax.js
+// 			'\'sha256-Z4u/cxrZPHjN20CIXZHTKr+VlqVxrWG8cbbeC2zmPqI=\' ' + // MathJax.js
+// 			'\'sha256-LDMABiyg2T48kuAV9ouqNCSEqf2OkUdlZK9D9CeZHBs=\' ' + // MathJax.js
+// 			'\'sha256-XQfwbaSNgLzro3IzkwT0uZLAiBvZzajo0QZx7oW158E=\' ' + // MathJax.js
+// 			'\'sha256-++XCePvZXKdegIqkwtbudr16Jx87KFh4t/t7UxsbHpw=\' ' + // MathJax.js
+// 			'\'sha256-v9NOL6IswMbY7zpRZjxkYujhuGRVvZtp1c1MfdnToB4=\' ' + // MathJax.js
+// 			'\'sha256-5xtuTr9UuyJoTQ76CNLzvSJjS7onwfq73B2rLWCl3aE=\' ' + // MathJax.js
+// 			'\'sha256-W21B506Ri8aGW3T87iawssPz71NvvbYZfBfzDbBSArU=\' ' + // MathJax.js
+// 			'\'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=\' ' + // spin.min.js
+// 			'\'sha256-nzHi23DROym7G011m6y0DyDd9mvQL2hSJ0Gy3g2T/5Q=\' ' + // dropins.js
+// 			'\'sha256-76P1PZLzT12kfw2hkrLn5vu/cWZgcOYuSYU3RT3rXKA=\' ' + // gapi
+// 			'\'unsafe-hashes\'; '; // Required for hashes for style attribute
 		
-		var directives = 'connect-src %connect-src% \'self\' https://*.draw.io https://*.diagrams.net ' +
-			'https://*.googleapis.com wss://p2p-collab-test.jgraph.workers.dev wss://*.pusher.com https://*.pusher.com ' +
-			'https://api.github.com https://raw.githubusercontent.com https://gitlab.com ' +
-			'https://graph.microsoft.com https://*.sharepoint.com  https://*.1drv.com https://api.onedrive.com ' +
-			'https://dl.dropboxusercontent.com ' +
-			'https://*.google.com https://fonts.gstatic.com https://fonts.googleapis.com; ' +
-			// font-src about: is required for MathJax HTML-CSS output with STIX
-			'img-src * data: blob:; media-src * data:; font-src * about:; ' +
-			// www.draw.io required for browser data migration to app.diagrams.net and
-			// viewer.diagrams.net required for iframe embed preview
-			'frame-src %frame-src% \'self\' https://viewer.diagrams.net https://www.draw.io https://*.google.com; ' +
-			'style-src %style-src% \'self\'  https://fonts.googleapis.com ' +
-			// Replaces unsafe-inline style-src with hashes with safe-style-src URL parameter
-			((urlParams['safe-style-src'] == '1') ? styleHashes : '\'unsafe-inline\'; ') +
-			'base-uri \'none\';' +
-			'child-src \'self\';' +
-			'object-src \'none\';';
+// 		var directives = 'connect-src %connect-src% \'self\' https://*.draw.io https://*.diagrams.net ' +
+// 			'https://*.googleapis.com wss://p2p-collab-test.jgraph.workers.dev wss://*.pusher.com https://*.pusher.com ' +
+// 			'https://api.github.com https://raw.githubusercontent.com https://gitlab.com ' +
+// 			'https://graph.microsoft.com https://*.sharepoint.com  https://*.1drv.com https://api.onedrive.com ' +
+// 			'https://dl.dropboxusercontent.com ' +
+// 			'https://*.google.com https://fonts.gstatic.com https://fonts.googleapis.com; ' +
+// 			// font-src about: is required for MathJax HTML-CSS output with STIX
+// 			'img-src * data: blob:; media-src * data:; font-src * about:; ' +
+// 			// www.draw.io required for browser data migration to app.diagrams.net and
+// 			// viewer.diagrams.net required for iframe embed preview
+// 			'frame-src %frame-src% \'self\' https://viewer.diagrams.net https://www.draw.io https://*.google.com; ' +
+// 			'style-src %style-src% \'self\'  https://fonts.googleapis.com ' +
+// 			// Replaces unsafe-inline style-src with hashes with safe-style-src URL parameter
+// 			((urlParams['safe-style-src'] == '1') ? styleHashes : '\'unsafe-inline\'; ') +
+// 			'base-uri \'none\';' +
+// 			'child-src \'self\';' +
+// 			'object-src \'none\';';
 			
-		var csp = hashes + directives;
-		var devCsp = csp.
-			// Adds script tags and loads shapes with eval
-			replace(/%script-src%/g, 'https://www.dropbox.com https://api.trello.com https://devhost.jgraph.com \'unsafe-eval\'').
-			// Adds Trello and Dropbox backend storage
-			replace(/%connect-src%/g, 'https://*.dropboxapi.com https://trello.com https://api.trello.com').
-			// Loads common.css from mxgraph
-			replace(/%style-src%/g, 'https://devhost.jgraph.com').
-			replace(/%frame-src%/g, '').
-			replace(/  /g, ' ');
+// 		var csp = hashes + directives;
+// 		var devCsp = csp.
+// 			// Adds script tags and loads shapes with eval
+// 			replace(/%script-src%/g, 'https://www.dropbox.com https://api.trello.com https://devhost.jgraph.com \'unsafe-eval\'').
+// 			// Adds Trello and Dropbox backend storage
+// 			replace(/%connect-src%/g, 'https://*.dropboxapi.com https://trello.com https://api.trello.com').
+// 			// Loads common.css from mxgraph
+// 			replace(/%style-src%/g, 'https://devhost.jgraph.com').
+// 			replace(/%frame-src%/g, '').
+// 			replace(/  /g, ' ');
 
-		mxmeta(null, devCsp, 'Content-Security-Policy');
+// 		mxmeta(null, devCsp, 'Content-Security-Policy');
 
-		if (urlParams['print-csp'] == '1')
-		{
-			console.log('Content-Security-Policy');
-			var app_diagrams_net = csp.replace(/%script-src%/g, 'https://www.dropbox.com https://api.trello.com').
-				replace(/%connect-src%/g, 'https://*.dropboxapi.com https://api.trello.com').
-				replace(/%frame-src%/g, '').
-					replace(/%style-src%/g, '').
-					replace(/  /g, ' ') + ' frame-ancestors \'self\' https://teams.microsoft.com;';
-			console.log('app.diagrams.net:', app_diagrams_net);
+// 		if (urlParams['print-csp'] == '1')
+// 		{
+// 			console.log('Content-Security-Policy');
+// 			var app_diagrams_net = csp.replace(/%script-src%/g, 'https://www.dropbox.com https://api.trello.com').
+// 				replace(/%connect-src%/g, 'https://*.dropboxapi.com https://api.trello.com').
+// 				replace(/%frame-src%/g, '').
+// 					replace(/%style-src%/g, '').
+// 					replace(/  /g, ' ') + ' frame-ancestors \'self\' https://teams.microsoft.com;';
+// 			console.log('app.diagrams.net:', app_diagrams_net);
 
-			var se_diagrams_net = hashes.replace(/%script-src%/g, '') +
-				'connect-src \'self\' https://*.diagrams.net ' +
-				'https://*.googleapis.com wss://*.pusher.com https://*.pusher.com ' +
-				'https://*.google.com https://fonts.gstatic.com https://fonts.googleapis.com; ' +
-				'img-src * data: blob:; media-src * data:; font-src * about:; ' +
-				'frame-src \'self\' https://viewer.diagrams.net https://*.google.com; ' +
-				'style-src \'self\' https://fonts.googleapis.com ' + styleHashes + ' ' +
-				'object-src \'none\';' +
-				'frame-src \'none\';' +
-				'worker-src https://se.diagrams.net/service-worker.js;'
-			console.log('se.diagrams.net:', se_diagrams_net);
+// 			var se_diagrams_net = hashes.replace(/%script-src%/g, '') +
+// 				'connect-src \'self\' https://*.diagrams.net ' +
+// 				'https://*.googleapis.com wss://*.pusher.com https://*.pusher.com ' +
+// 				'https://*.google.com https://fonts.gstatic.com https://fonts.googleapis.com; ' +
+// 				'img-src * data: blob:; media-src * data:; font-src * about:; ' +
+// 				'frame-src \'self\' https://viewer.diagrams.net https://*.google.com; ' +
+// 				'style-src \'self\' https://fonts.googleapis.com ' + styleHashes + ' ' +
+// 				'object-src \'none\';' +
+// 				'frame-src \'none\';' +
+// 				'worker-src https://se.diagrams.net/service-worker.js;'
+// 			console.log('se.diagrams.net:', se_diagrams_net);
 
-			// TODO remove https://ajax.googleapis.com April 2022. It's old jquery domain
-			var ac_draw_io = csp.replace(/%script-src%/g, 'https://aui-cdn.atlassian.com https://connect-cdn.atl-paas.net https://ajax.googleapis.com https://cdnjs.cloudflare.com').
-					replace(/%frame-src%/g, 'https://www.lucidchart.com https://app.lucidchart.com https://lucid.app blob:').
-					replace(/%style-src%/g, 'https://aui-cdn.atlassian.com https://*.atlassian.net').
-					replace(/%connect-src%/g, '').
-					replace(/  /g, ' ');
-			console.log('ac.draw.io:', ac_draw_io);
+// 			// TODO remove https://ajax.googleapis.com April 2022. It's old jquery domain
+// 			var ac_draw_io = csp.replace(/%script-src%/g, 'https://aui-cdn.atlassian.com https://connect-cdn.atl-paas.net https://ajax.googleapis.com https://cdnjs.cloudflare.com').
+// 					replace(/%frame-src%/g, 'https://www.lucidchart.com https://app.lucidchart.com https://lucid.app blob:').
+// 					replace(/%style-src%/g, 'https://aui-cdn.atlassian.com https://*.atlassian.net').
+// 					replace(/%connect-src%/g, '').
+// 					replace(/  /g, ' ');
+// 			console.log('ac.draw.io:', ac_draw_io);
 
-			var aj_draw_io = csp.replace(/%script-src%/g, 'https://connect-cdn.atl-paas.net').
-					replace(/%frame-src%/g, 'blob:').
-					replace(/%style-src%/g, 'https://aui-cdn.atlassian.com https://*.atlassian.net').
-					replace(/%connect-src%/g, 'https://api.atlassian.com https://api.media.atlassian.com').
-					replace(/  /g, ' ');
-			console.log('aj.draw.io:', aj_draw_io);
+// 			var aj_draw_io = csp.replace(/%script-src%/g, 'https://connect-cdn.atl-paas.net').
+// 					replace(/%frame-src%/g, 'blob:').
+// 					replace(/%style-src%/g, 'https://aui-cdn.atlassian.com https://*.atlassian.net').
+// 					replace(/%connect-src%/g, 'https://api.atlassian.com https://api.media.atlassian.com').
+// 					replace(/  /g, ' ');
+// 			console.log('aj.draw.io:', aj_draw_io);
 
-			console.log('import.diagrams.net:', 'default-src \'self\'; worker-src blob:; img-src \'self\' blob: data: https://www.lucidchart.com ' +
-					'https://app.lucidchart.com https://lucid.app; style-src \'self\' \'unsafe-inline\'; frame-src https://www.lucidchart.com https://app.lucidchart.com https://lucid.app;');
-			console.log('Development:', devCsp);
+// 			console.log('import.diagrams.net:', 'default-src \'self\'; worker-src blob:; img-src \'self\' blob: data: https://www.lucidchart.com ' +
+// 					'https://app.lucidchart.com https://lucid.app; style-src \'self\' \'unsafe-inline\'; frame-src https://www.lucidchart.com https://app.lucidchart.com https://lucid.app;');
+// 			console.log('Development:', devCsp);
 			
-			console.log('Header Worker:', 'let securityHeaders =', JSON.stringify({
-				online: {
-					"Content-Security-Policy" : app_diagrams_net,
-					"Permissions-Policy" : "microphone=()"
-				},
-				se: {
-					"Content-Security-Policy" : se_diagrams_net,
-					"Permissions-Policy" : "microphone=()",
-					"Access-Control-Allow-Origin": "https://se.diagrams.net"
-				},
-				teams: {
-					"Content-Security-Policy" : app_diagrams_net.replace(/ 'sha256-[^']+'/g, ''),
-					"Permissions-Policy" : "microphone=()"
-				},
-				jira: {
-					"Content-Security-Policy" : aj_draw_io,
-					"Permissions-Policy" : "microphone=()"
-				},
-				conf: {
-					"Content-Security-Policy" : ac_draw_io,
-					"Permissions-Policy" : "microphone=()"
-				}
-			}, null, 4));
-		}
-	})();
-}
+// 			console.log('Header Worker:', 'let securityHeaders =', JSON.stringify({
+// 				online: {
+// 					"Content-Security-Policy" : app_diagrams_net,
+// 					"Permissions-Policy" : "microphone=()"
+// 				},
+// 				se: {
+// 					"Content-Security-Policy" : se_diagrams_net,
+// 					"Permissions-Policy" : "microphone=()",
+// 					"Access-Control-Allow-Origin": "https://se.diagrams.net"
+// 				},
+// 				teams: {
+// 					"Content-Security-Policy" : app_diagrams_net.replace(/ 'sha256-[^']+'/g, ''),
+// 					"Permissions-Policy" : "microphone=()"
+// 				},
+// 				jira: {
+// 					"Content-Security-Policy" : aj_draw_io,
+// 					"Permissions-Policy" : "microphone=()"
+// 				},
+// 				conf: {
+// 					"Content-Security-Policy" : ac_draw_io,
+// 					"Permissions-Policy" : "microphone=()"
+// 				}
+// 			}, null, 4));
+// 		}
+// 	})();
+// }
 
 mxscript(drawDevUrl + 'js/cryptojs/aes.min.js');
 mxscript(drawDevUrl + 'js/spin/spin.min.js');

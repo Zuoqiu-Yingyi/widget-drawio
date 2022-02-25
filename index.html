@@ -236,8 +236,8 @@
 
 			mxscript(drawDevUrl + './js/PreConfig.js');
 			mxscript(drawDevUrl + './js/diagramly/Init.js');
-			mxscript(geBasePath + './Init.js');
-			mxscript(mxBasePath + './mxClient.js');
+			mxscript(geBasePath + '/Init.js');
+			mxscript(mxBasePath + '/mxClient.js');
 
 			// Adds all JS code that depends on mxClient. This indirection via Devel.js is
 			// required in some browsers to make sure mxClient.js (and the files that it
@@ -441,51 +441,51 @@
 
 <script type="module">
 	import {
-	getBlockAttrs,
-} from './siyuan/api.js';
+		getBlockAttrs,
+	} from './siyuan/api.js';
 
-async function open() {
-	var urlParams = (() => {
-		var result = new Object();
-		var params = window.location.search.slice(1).split('&');
-		for (var i = 0; i < params.length; i++) {
-			let idx = params[i].indexOf('=');
-			if (idx > 0) {
-				result[params[i].substring(0, idx)] = params[i].substring(idx + 1);
+	async function open() {
+		var urlParams = (() => {
+			var result = new Object();
+			var params = window.location.search.slice(1).split('&');
+			for (var i = 0; i < params.length; i++) {
+				let idx = params[i].indexOf('=');
+				if (idx > 0) {
+					result[params[i].substring(0, idx)] = params[i].substring(idx + 1);
+				}
 			}
-		}
-		return result;
-	})();
-	// console.log(urlParams);
-	// console.log(window.location);
+			return result;
+		})();
+		// console.log(urlParams);
+		// console.log(window.location);
 
-	var id = urlParams.id;
+		var id = urlParams.id;
 
-	if (id == null) {
-		let node = window.frameElement != null ? window.frameElement.parentElement.parentElement : null;
-		if (node != null) {
-			id = node.getAttribute('data-node-id');
-			let asset = node.getAttribute('custom-data-assets');
+		if (id == null) {
+			let node = window.frameElement != null ? window.frameElement.parentElement.parentElement : null;
+			if (node != null) {
+				id = node.getAttribute('data-node-id');
+				let asset = node.getAttribute('custom-data-assets');
 
-			let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
-			// console.log(href);
-			window.location.href = href;
-		}
-	} else {
-		if (window.location.hash == '') {
-			let data = await getBlockAttrs(id);
-			// console.log(data);
-			let asset = data['custom-data-assets'];
-			if (asset != null) {
 				let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
 				// console.log(href);
 				window.location.href = href;
 			}
+		} else {
+			if (window.location.hash == '') {
+				let data = await getBlockAttrs(id);
+				// console.log(data);
+				let asset = data['custom-data-assets'];
+				if (asset != null) {
+					let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
+					// console.log(href);
+					window.location.href = href;
+				}
+			}
 		}
 	}
-}
-// console.log(window.location);
-setTimeout(open, 0);
+	// console.log(window.location);
+	setTimeout(open, 0);
 </script>
 
 </html>
