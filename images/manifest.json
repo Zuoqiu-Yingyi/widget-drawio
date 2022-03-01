@@ -4,13 +4,13 @@
     "description": "diagrams.net is a completely free diagram editor",
     "icons": [
         {
-            "src": "android-chrome-196x196.png",
+            "src": "/widgets/drawio/images/android-chrome-196x196.png",
             "sizes": "196x196",
             "type": "image/png",
      		"purpose": "any maskable"
         },
         {
-            "src": "android-chrome-512x512.png",
+            "src": "/widgets/drawio/images/android-chrome-512x512.png",
             "sizes": "512x512",
             "type": "image/png"
         }
@@ -18,5 +18,5 @@
     "theme_color": "#DF6C0C",
     "background_color": "#DF6C0C",
     "display": "fullscreen",
-    "start_url": "/index.html"
+    "start_url": "/widgets/drawio/index.html"
 }
