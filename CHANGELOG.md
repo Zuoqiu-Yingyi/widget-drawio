@@ -1,5 +1,8 @@
 # 更改日志 | CHANGE LOG
 
+## v0.1.2/2022-03-02
+
+- [v0.1.1 <=> v0.1.2](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.1.1...v0.1.2)
 - 修复挂件资源文件显示为未引用问题 | Fixed an issue where the widget resource file appeared to be unreferenced.
 - 优先加载 `custom-data-assets` 中设置的资源文件 | Loading of resource files set in `custom-data-assets` takes precedence.
 - 资源文件名更改时更新 URL | The URL is updated when the resource file name changes.
