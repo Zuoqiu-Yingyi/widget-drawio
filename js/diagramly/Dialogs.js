@@ -4290,7 +4290,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 							body: JSON.stringify({
 								id: id,
 								attrs: {
-									'custom-data-assets': asset,
+									'data-assets': asset,
 								}
 							}),
 							method: 'POST',

@@ -1,7 +1,10 @@
 # 更改日志 | CHANGE LOG
 
+- 修复挂件资源文件显示为未引用问题 | Fixed an issue where the widget resource file appeared to be unreferenced.
+
 ## v0.1.1/2022-02-26
 
+- [v0.1.0 <=> v0.1.1](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.1.0...v0.1.1)
 - 修复使用 `https` 协议时文件校验不通过问题 | Fixed an issue where file validation failed when using the `https` protocol.
 - 修复部分资源文件引用路径问题 | Fixed an issue with some resource file reference paths.
 

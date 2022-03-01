@@ -465,7 +465,7 @@
 			let node = window.frameElement != null ? window.frameElement.parentElement.parentElement : null;
 			if (node != null) {
 				id = node.getAttribute('data-node-id');
-				let asset = node.getAttribute('custom-data-assets');
+				let asset = node.getAttribute('data-assets');
 
 				let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
 				// console.log(href);
@@ -475,7 +475,7 @@
 			if (window.location.hash == '') {
 				let data = await getBlockAttrs(id);
 				// console.log(data);
-				let asset = data['custom-data-assets'];
+				let asset = data['data-assets'];
 				if (asset != null) {
 					let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
 					// console.log(href);
