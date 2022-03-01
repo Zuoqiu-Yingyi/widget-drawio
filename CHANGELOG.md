@@ -7,6 +7,7 @@
 - 优先加载 `custom-data-assets` 中设置的资源文件 | Loading of resource files set in `custom-data-assets` takes precedence.
 - 资源文件名更改时更新 URL | The URL is updated when the resource file name changes.
 - 更新图片资源 URL | Update the image resource URL.
+- 格式化保存的源文件 | Format the saved source file.
 
 ## v0.1.1/2022-02-26
 

@@ -4262,14 +4262,43 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 			if (id != null) {
 				// change(App.MODE_DEVICE);
 
-				let file_name = nameInput.value.endsWith('.drawio') ? nameInput.value : `${nameInput.value}.drawio`;
-				
-				// console.log(file_name);
-				// console.log(editorUi);
-				// console.log(editorUi.editor.getGraphXml());
-				let xml = (new XMLSerializer()).serializeToString(editorUi.editor.getGraphXml());
-				// console.log(xml);
-				let blob = new Blob([xml], {type: "application/xml"});
+				let file_name = nameInput.value;
+				let file_content = null;
+				let file_type = null;
+				switch (true) {
+					case nameInput.value.endsWith('.png'):
+					case nameInput.value.endsWith('.jpg'):
+					case nameInput.value.endsWith('.pdf'):
+					case nameInput.value.endsWith('.vsdx'):
+					case nameInput.value.endsWith('.svg'):
+					case nameInput.value.endsWith('.html'):
+						// TODO
+						return;
+					default:
+						file_name = `${nameInput.value}.drawio`;
+					case nameInput.value.endsWith('.drawio'):
+					case nameInput.value.endsWith('.xml'):
+						// file_content = (new XMLSerializer()).serializeToString(editorUi.editor.getGraphXml());
+						// file_content = mxUtils.getXml(editorUi.editor.getGraphXml());
+						// let noPages = editorUi.pages == null || editorUi.pages.length <= 1;
+						file_content = editorUi.getFileData(
+							true,
+							null,
+							null,
+							null,
+							true, // ignoreSelection, // 是否仅保存选中内容
+							false, // currentPage, // 是否仅保存当前页面
+							null,
+							null,
+							null,
+							true, // uncompressed, // 是否格式化 XML 文本
+						);
+						// console.log(file_content);
+						file_type = "application/xml";
+						break;
+				}
+
+				let blob = new Blob([file_content], {type: file_type});
 				let file = new File([blob], file_name, { lastModified: Date.now() });
 				let data = new FormData();
 				data.append("assetsDirPath", "/assets/");
