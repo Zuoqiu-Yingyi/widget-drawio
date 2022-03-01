@@ -481,6 +481,10 @@
 					let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
 					// console.log(href);
 					window.location.href = href;
+				} else if (urlParams.dev !== '1') {
+					let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}`;
+					// console.log(href);
+					window.location.href = href;
 				}
 			}
 		}

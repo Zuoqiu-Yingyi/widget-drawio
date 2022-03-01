@@ -2,6 +2,7 @@
 
 - 修复挂件资源文件显示为未引用问题 | Fixed an issue where the widget resource file appeared to be unreferenced.
 - 优先加载 `custom-data-assets` 中设置的资源文件 | Loading of resource files set in `custom-data-assets` takes precedence.
+- 资源文件名更改时更新 URL | The URL is updated when the resource file name changes.
 
 ## v0.1.1/2022-02-26
 

@@ -4260,9 +4260,10 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 				|| null;
 			// console.log(id);
 			if (id != null) {
-				change(App.MODE_DEVICE);
+				// change(App.MODE_DEVICE);
 
-				let file_name = nameInput.value;
+				let file_name = nameInput.value.endsWith('.drawio') ? nameInput.value : `${nameInput.value}.drawio`;
+				
 				// console.log(file_name);
 				// console.log(editorUi);
 				// console.log(editorUi.editor.getGraphXml());
@@ -4296,12 +4297,13 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 							}),
 							method: 'POST',
 						}).then((_) => {
-							let name = asset.substring(asset.lastIndexOf('/')+1, asset.lastIndexOf('.'));
+							let name = asset.substring(asset.lastIndexOf('/')+1);
 							// console.log(editorUi);
 							editorUi.getCurrentFile().rename(name);
-							// let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
-							// console.log(href);
+							let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
 							// window.location.href = href;
+							// REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
+							history.pushState(null,null,href)
 						})
 					}
 					editorUi.hideDialog();
