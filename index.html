@@ -245,10 +245,13 @@
 		if (urlParams['dev'] == '1')
 		{
 			// Used to request grapheditor/mxgraph sources in dev mode
-			var mxDevUrl = document.location.protocol + '//devhost.jgraph.com/drawio/src/main';
-			
+			// var mxDevUrl = document.location.protocol + '//devhost.jgraph.com/drawio/src/main';
+			var mxDevUrl = `${window.location.origin}${window.location.pathname}`;
+
 			// Used to request draw.io sources in dev mode
-			var drawDevUrl = document.location.protocol + '//devhost.jgraph.com/drawio/src/main/webapp/';
+			// var drawDevUrl = document.location.protocol + '//devhost.jgraph.com/drawio/src/main/webapp/';
+			var drawDevUrl = `${window.location.origin}${window.location.pathname}`;
+
 			var geBasePath = drawDevUrl + '/js/grapheditor';
 			var mxBasePath = mxDevUrl + '/mxgraph';
 			
@@ -264,24 +267,24 @@
 
 			mxForceIncludes = false;
 
-			mxscript(drawDevUrl + 'js/PreConfig.js');
-			mxscript(drawDevUrl + 'js/diagramly/Init.js');
+			mxscript(drawDevUrl + '/js/PreConfig.js');
+			mxscript(drawDevUrl + '/js/diagramly/Init.js');
 			mxscript(geBasePath + '/Init.js');
 			mxscript(mxBasePath + '/mxClient.js');
 			
 			// Adds all JS code that depends on mxClient. This indirection via Devel.js is
 			// required in some browsers to make sure mxClient.js (and the files that it
 			// loads asynchronously) are available when the code loaded in Devel.js runs.
-			mxscript(drawDevUrl + 'js/diagramly/Devel.js');
+			mxscript(drawDevUrl + '/js/diagramly/Devel.js');
 			
 			// Electron
 			if (mxIsElectron)
 			{
-				mxscript('js/diagramly/DesktopLibrary.js');
-				mxscript('js/diagramly/ElectronApp.js');
+				mxscript('/js/diagramly/DesktopLibrary.js');
+				mxscript('/js/diagramly/ElectronApp.js');
 			}
 			
-			mxscript(drawDevUrl + 'js/PostConfig.js');
+			mxscript(drawDevUrl + '/js/PostConfig.js');
 		}
 		else
 		{
@@ -295,7 +298,7 @@
 				
 				function loadAppJS()
 				{
-					mxscript('js/app.min.js', function()
+					mxscript('/js/app.min.js', function()
 					{
 						mxScriptsLoaded = true;
 						checkAllLoaded();
@@ -303,17 +306,17 @@
 						// Electron
 						if (mxIsElectron)
 						{
-							mxscript('js/diagramly/DesktopLibrary.js', function()
+							mxscript('/js/diagramly/DesktopLibrary.js', function()
 							{
-								mxscript('js/diagramly/ElectronApp.js', function()
+								mxscript('/js/diagramly/ElectronApp.js', function()
 								{
-									mxscript('js/extensions.min.js', function()
+									mxscript('/js/extensions.min.js', function()
 									{
-										mxscript('js/stencils.min.js', function()
+										mxscript('/js/stencils.min.js', function()
 										{
-											mxscript('js/shapes-14-6-5.min.js', function()
+											mxscript('/js/shapes-14-6-5.min.js', function()
 											{
-												mxscript('js/PostConfig.js');
+												mxscript('/js/PostConfig.js');
 											});
 										});
 									});
@@ -322,14 +325,14 @@
 						}
 						else if (!supportedDomain)
 						{
-							mxscript('js/PostConfig.js');
+							mxscript('/js/PostConfig.js');
 						}
 					});
 				};
 				
 				if (!supportedDomain || mxIsElectron)
 				{
-					mxscript('js/PreConfig.js', loadAppJS);
+					mxscript('/js/PreConfig.js', loadAppJS);
 				}
 				else
 				{
@@ -348,6 +351,7 @@
 				status.innerHTML = 'Page could not be loaded. Please try refreshing.';
 			}
 		};
+	</script>
 	</script>
     <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/plgmlhohecdddhbmmkncjdmlhcmaachm">
 	<link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
@@ -473,4 +477,54 @@ else
 }
 </script>
 </body>
+
+<script type="module">
+	function updateURL(url, id, asset) {
+		if (asset != null) {
+			url.searchParams.set('dev', 1);
+			url.searchParams.set('id', id);
+			url.hash = `#U${url.origin}/${asset}`;
+			window.location.href = url.href;
+		} else if (url.searchParams.get('dev') !== '1') {
+			url.searchParams.set('dev', 1);
+			url.searchParams.set('id', id);
+			window.location.href = url.href;
+		}
+	}
+	async function load() {
+		var url = new URL(window.location.href);
+		// console.log(urlParams);
+		// console.log(window.location);
+
+		var id = url.searchParams.get('id');
+
+		if (id == null) {
+			let node = window.frameElement != null ? window.frameElement.parentElement.parentElement : null;
+			if (node != null) {
+				id = node.getAttribute('data-node-id');
+				let asset = node.getAttribute('custom-data-assets') || node.getAttribute('data-assets');
+				updateURL(url, id, asset);
+			}
+		} else {
+			if (url.hash == '') {
+				fetch("/api/attr/getBlockAttrs", {
+					body: JSON.stringify({
+						id: id,
+					}),
+					method: "POST",
+					// headers: { Authorization: "Token " + this.apitoken },
+				}).then((response) => {
+					return response.json();
+				}).then((data) => {
+					// console.log(data);
+						let asset = data.data['custom-data-assets'] || data.data['data-assets'];
+						updateURL(url, id, asset);
+				});
+			}
+		}
+	}
+	// console.log(window.location);
+	setTimeout(load, 0);
+</script>
+
 </html>

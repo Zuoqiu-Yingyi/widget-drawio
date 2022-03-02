@@ -263,18 +263,21 @@ App.DROPBOX_URL = window.DRAWIO_BASE_URL + '/js/dropbox/Dropbox-sdk.min.js';
 /**
  * Sets URL to load the Dropbox dropins JS from.
  */
-App.DROPINS_URL = 'https://www.dropbox.com/static/api/2/dropins.js';
+// App.DROPINS_URL = 'https://www.dropbox.com/static/api/2/dropins.js';
+App.DROPINS_URL = window.DRAWIO_BASE_URL + '/js/other/dropins.js';
 
 /**
  * OneDrive Client JS (file/folder picker). This is a slightly modified version to allow using accessTokens
  * But it doesn't work for IE11, so we fallback to the original one
  */
-App.ONEDRIVE_URL = mxClient.IS_IE11? 'https://js.live.net/v7.2/OneDrive.js' : window.DRAWIO_BASE_URL + '/js/onedrive/OneDrive.js';
+// App.ONEDRIVE_URL = mxClient.IS_IE11? 'https://js.live.net/v7.2/OneDrive.js' : window.DRAWIO_BASE_URL + '/js/onedrive/OneDrive.js';
+App.ONEDRIVE_URL = mxClient.IS_IE11 ? window.DRAWIO_BASE_URL + '/js/other/OneDrive.js' : window.DRAWIO_BASE_URL + '/js/onedrive/OneDrive.js';
 
 /**
  * Trello URL
  */
-App.TRELLO_URL = 'https://api.trello.com/1/client.js';
+// App.TRELLO_URL = 'https://api.trello.com/1/client.js';
+App.TRELLO_URL = window.DRAWIO_BASE_URL + '/js/other/client.js';
 
 /**
  * Trello JQuery dependency
@@ -294,7 +297,8 @@ App.PUSHER_CLUSTER = 'eu';
 /**
  * Specifies the URL for the pusher API.
  */
-App.PUSHER_URL = 'https://js.pusher.com/7.0.3/pusher.min.js';
+// App.PUSHER_URL = 'https://js.pusher.com/7.0.3/pusher.min.js';
+App.PUSHER_URL = window.DRAWIO_BASE_URL + '/js/other/pusher.min.js';
 
 /**
  * SimplePeer library 
@@ -643,7 +647,7 @@ App.main = function(callback, createUi)
 			{
 				var content = mxUtils.getTextContent(scripts[0]);
 				
-				if (CryptoJS.MD5(content).toString() != '1f536e2400baaa30261b8c3976d6fe06')
+				if (CryptoJS.MD5(content).toString() != '172f9f97d905a9c15c3c05ec3ba859c6')
 				{
 					console.log('Change bootstrap script MD5 in the previous line:', CryptoJS.MD5(content).toString());
 					alert('[Dev] Bootstrap script change requires update of CSP');

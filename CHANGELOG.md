@@ -7,6 +7,7 @@
 - 移除未使用文件 | Remove unused files.
 - 优化资源文件加载过程 | Optimize resource file loading process.
 - 更新 draw.io 至 [v16.6.4](https://github.com/jgraph/drawio/releases/tag/v16.6.4) | Update draw.io to [v16.6.4](https://github.com/jgraph/drawio/releases/tag/v16.6.4).
+- 离线加载部分依赖文件 | Partially dependent files are loaded offline.
 
 ## v0.1.2/2022-03-02
 
