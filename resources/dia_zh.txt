@@ -1,6 +1,5 @@
 # *DO NOT DIRECTLY EDIT THIS FILE, IT IS AUTOMATICALLY GENERATED AND IT IS BASED ON:*
 # https://docs.google.com/spreadsheet/ccc?key=0AmQEO36liL4FdDJLWVNMaVV2UmRKSnpXU09MYkdGbEE
-siyuan=思源笔记
 about=关于
 aboutDrawio=关于 draw.io
 accessDenied=没有权限访问
@@ -1187,3 +1186,9 @@ editConnectionPoints=编辑连接点
 notInOffline=离线时不支持
 notInDesktop=桌面应用中不支持
 confConfigSpaceArchived=draw.io Configuration space (DRAWIOCONFIG) is archived. Please restore it first.
+confACleanOldVerStarted=Cleaning old diagram draft versions started
+confACleanOldVerDone=Cleaning old diagram draft versions finished
+confACleaningFile=Cleaning diagram draft "{1}" old versions
+confAFileCleaned=Cleaning diagram draft "{1}" done
+confAFileCleanFailed=Cleaning diagram draft "{1}" failed
+confACleanOnly=Clean Diagram Drafts Only

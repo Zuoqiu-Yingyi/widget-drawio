@@ -6,6 +6,7 @@
 - 修复保存时文件扩展名重复问题 | Fixed the issue of duplicate file name extensions when saving.
 - 移除未使用文件 | Remove unused files.
 - 优化资源文件加载过程 | Optimize resource file loading process.
+- 更新 draw.io 至 [v16.6.4](https://github.com/jgraph/drawio/releases/tag/v16.6.4) | Update draw.io to [v16.6.4](https://github.com/jgraph/drawio/releases/tag/v16.6.4).
 
 ## v0.1.2/2022-03-02
 

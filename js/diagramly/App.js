@@ -643,7 +643,7 @@ App.main = function(callback, createUi)
 			{
 				var content = mxUtils.getTextContent(scripts[0]);
 				
-				if (CryptoJS.MD5(content).toString() != '8d30a606a5a4d5fb5186a4989593c4bd')
+				if (CryptoJS.MD5(content).toString() != '1f536e2400baaa30261b8c3976d6fe06')
 				{
 					console.log('Change bootstrap script MD5 in the previous line:', CryptoJS.MD5(content).toString());
 					alert('[Dev] Bootstrap script change requires update of CSP');
@@ -655,7 +655,7 @@ App.main = function(callback, createUi)
 			{
 				var content = mxUtils.getTextContent(scripts[scripts.length - 1]);
 				
-				if (CryptoJS.MD5(content).toString() != '48180461771607bd48a400774a391b05')
+				if (CryptoJS.MD5(content).toString() != 'd53805dd6f0bbba2da4966491ca0a505')
 				{
 					console.log('Change main script MD5 in the previous line:', CryptoJS.MD5(content).toString());
 					alert('[Dev] Main script change requires update of CSP');
@@ -3087,7 +3087,7 @@ App.prototype.start = function()
 					window.addEventListener('storage', mxUtils.bind(this, function(evt)
 					{
 						var file = this.getCurrentFile();
-						EditorUi.debug('storage event', evt, file);
+						EditorUi.debug('storage event', [evt], [file]);
 	
 						if (file != null && evt.key == '.draft-alive-check' && evt.newValue != null && file.draftId != null)
 						{

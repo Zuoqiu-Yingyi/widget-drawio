@@ -2399,10 +2399,10 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 		var idx2 = nameInput.value.lastIndexOf('.drawio.');
 		var idx = (idx2 > 0) ? idx2 : nameInput.value.lastIndexOf('.');
 
-		// if (ext != 'drawio')
-		// {
-		// 	ext = 'drawio.' + ext;
-		// }
+		if (ext != 'drawio')
+		{
+			ext = 'drawio.' + ext;
+		}
 		
 		if (idx > 0)
 		{
