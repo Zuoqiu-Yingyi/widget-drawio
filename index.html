@@ -440,6 +440,18 @@
 </body>
 
 <script type="module">
+	function updateURL(url, id, asset) {
+		if (asset != null) {
+			url.searchParams.set('dev', 1);
+			url.searchParams.set('id', id);
+			url.hash = `#U${url.origin}/${asset}`;
+			window.location.href = url.href;
+		} else if (url.searchParams.get('dev') !== '1') {
+			url.searchParams.set('dev', 1);
+			url.searchParams.set('id', id);
+			window.location.href = url.href;
+		}
+	}
 	async function open() {
 		var url = new URL(window.location.href);
 		// console.log(urlParams);
@@ -452,12 +464,7 @@
 			if (node != null) {
 				id = node.getAttribute('data-node-id');
 				let asset = node.getAttribute('custom-data-assets') || node.getAttribute('data-assets');
-				if (asset != null) {
-					url.searchParams.set('dev', 1);
-					url.searchParams.set('id', id);
-					url.hash = `#U${url.origin}/${asset}`;
-					window.location.href = url.href;
-				}
+				updateURL(url, id, asset);
 			}
 		} else {
 			if (url.hash == '') {
@@ -472,16 +479,7 @@
 				}).then((data) => {
 					// console.log(data);
 						let asset = data.data['custom-data-assets'] || data.data['data-assets'];
-						if (asset != null) {
-							url.searchParams.set('dev', 1);
-							url.searchParams.set('id', id);
-							url.hash = `#U${url.origin}/${asset}`;
-							window.location.href = url.href;
-						} else if (url.searchParams.get('dev') !== '1') {
-							url.searchParams.set('dev', 1);
-							url.searchParams.set('id', id);
-							window.location.href = url.href;
-						}
+						updateURL(url, id, asset);
 				});
 			}
 		}

@@ -5,6 +5,7 @@
 - 将文件扩展名 `.drawio.svg`, `.drawio.html`, `.drawio.xml` 更改为 `.svg`, `.html`, `.xml` | Change the `.drawio.svg`, `.drawio.html`, `.drawio.xml` filename extensions to `.svg`, `.html`, `.xml`.
 - 修复保存时文件扩展名重复问题 | Fixed the issue of duplicate file name extensions when saving.
 - 移除未使用文件 | Remove unused files.
+- 优化资源文件加载过程 | Optimize resource file loading process.
 
 ## v0.1.2/2022-03-02
 
