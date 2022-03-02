@@ -465,19 +465,28 @@
 			}
 		} else {
 			if (url.hash == '') {
-				let data = await getBlockAttrs(id);
-				// console.log(data);
-				let asset = data['custom-data-assets'] || data['data-assets'];
-				if (asset != null) {
-					url.searchParams.set('dev', 1);
-					url.searchParams.set('id', id);
-					url.hash = `#U${url.origin}/${asset}`;
-					window.location.href = url.href;
-				} else if (url.searchParams.get('dev') !== '1') {
-					url.searchParams.set('dev', 1);
-					url.searchParams.set('id', id);
-					window.location.href = url.href;
-				}
+				fetch("/api/attr/getBlockAttrs", {
+					body: JSON.stringify({
+						id: id,
+					}),
+					method: "POST",
+					// headers: { Authorization: "Token " + this.apitoken },
+				}).then((response) => {
+					return response.json();
+				}).then((data) => {
+					// console.log(data);
+						let asset = data.data['custom-data-assets'] || data.data['data-assets'];
+						if (asset != null) {
+							url.searchParams.set('dev', 1);
+							url.searchParams.set('id', id);
+							url.hash = `#U${url.origin}/${asset}`;
+							window.location.href = url.href;
+						} else if (url.searchParams.get('dev') !== '1') {
+							url.searchParams.set('dev', 1);
+							url.searchParams.set('id', id);
+							window.location.href = url.href;
+						}
+				});
 			}
 		}
 	}
