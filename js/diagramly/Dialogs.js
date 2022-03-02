@@ -4265,8 +4265,13 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 				|| (new URL(window.location.href)).searchParams.get('id')
 				|| null;
 			// console.log(id);
-			saveDataToSiyuan = async (filename, format, filedata, mime, base64Encoded) => {
+			async function saveDataToSiyuan(filename, format, filedata, mime, base64Encoded) {
 				// 上传至资源文件夹
+				let idx2 = filename.lastIndexOf('.drawio.');
+				let idx = (idx2 > 0) ? idx2 : filename.lastIndexOf('.');
+				let ext = filename.substring(filename.lastIndexOf('.'));
+				filename = idx > 0 ? `${filename.substring(0, idx)}.${ext}` : `${filename.substring(0, idx)}.drawio`;
+
 				let blob = new Blob([filedata], { type: mime });
 				let file = new File([blob], filename, { lastModified: Date.now() });
 				let formdata = new FormData();
@@ -4320,6 +4325,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 					case nameInput.value.endsWith('.pdf'):
 					case nameInput.value.endsWith('.vsdx'):
 						return;
+					case nameInput.value.endsWith('.html'):
 					case nameInput.value.endsWith('.drawio.html'):
 						editorUi.showHtmlDialog(
 							mxResources.get('create'),
@@ -4668,6 +4674,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 						);
 
 						break;
+					case nameInput.value.endsWith('.png'):
 					case nameInput.value.endsWith('.drawio.png'):
 						return;
 						// editorUi.showExportDialog(
@@ -4704,6 +4711,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 						// );
 
 						break;
+					case nameInput.value.endsWith('.svg'):
 					case nameInput.value.endsWith('.drawio.svg'):
 						editorUi.showExportDialog(
 							mxResources.get('formatSvg'),
@@ -4740,6 +4748,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 						);
 
 						break;
+					case nameInput.value.endsWith('.xml'):
 					case nameInput.value.endsWith('.drawio.xml'):
 						let div = document.createElement('div');
 						div.style.whiteSpace = 'nowrap';
