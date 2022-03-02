@@ -4812,7 +4812,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 							editorUi.isLocalFileSave = temp_isLocalFileSave;
 							editorUi.saveData = temp_saveData;
 							editorUi.getBaseFilename = temp_getBaseFilename;
-						}), null, mxResources.get('export'));
+						}), null, mxResources.get('save'));
 
 						editorUi.showDialog(dlg.container, 300, 200, true, true);
 
