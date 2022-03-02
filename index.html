@@ -445,21 +445,11 @@
 	} from './siyuan/api.js';
 
 	async function open() {
-		var urlParams = (() => {
-			var result = new Object();
-			var params = window.location.search.slice(1).split('&');
-			for (var i = 0; i < params.length; i++) {
-				let idx = params[i].indexOf('=');
-				if (idx > 0) {
-					result[params[i].substring(0, idx)] = params[i].substring(idx + 1);
-				}
-			}
-			return result;
-		})();
+		var url = new URL(window.location.href);
 		// console.log(urlParams);
 		// console.log(window.location);
 
-		var id = urlParams.id;
+		var id = url.searchParams.get('id');
 
 		if (id == null) {
 			let node = window.frameElement != null ? window.frameElement.parentElement.parentElement : null;
@@ -467,24 +457,26 @@
 				id = node.getAttribute('data-node-id');
 				let asset = node.getAttribute('custom-data-assets') || node.getAttribute('data-assets');
 				if (asset != null) {
-					let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
-					// console.log(href);
-					window.location.href = href;
+					url.searchParams.set('dev', 1);
+					url.searchParams.set('id', id);
+					url.hash = `#U${url.origin}/${asset}`;
+					window.location.href = url.href;
 				}
 			}
 		} else {
-			if (window.location.hash == '') {
+			if (url.hash == '') {
 				let data = await getBlockAttrs(id);
 				// console.log(data);
 				let asset = data['custom-data-assets'] || data['data-assets'];
 				if (asset != null) {
-					let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
-					// console.log(href);
-					window.location.href = href;
-				} else if (urlParams.dev !== '1') {
-					let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}`;
-					// console.log(href);
-					window.location.href = href;
+					url.searchParams.set('dev', 1);
+					url.searchParams.set('id', id);
+					url.hash = `#U${url.origin}/${asset}`;
+					window.location.href = url.href;
+				} else if (url.searchParams.get('dev') !== '1') {
+					url.searchParams.set('dev', 1);
+					url.searchParams.set('id', id);
+					window.location.href = url.href;
 				}
 			}
 		}

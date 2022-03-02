@@ -952,13 +952,20 @@ var EmbedDialog = function(editorUi, result, timeout, ignoreSize, previewFn, tit
 		editorUi.alert(mxResources.get('copiedToClipboard'));
 	});
 
+	var saveBtn = mxUtils.button(mxResources.get('save'), function()
+	{
+		
+	});
+
 	if (result.length < maxSize)
 	{
 		// Does not work in Safari and shows annoying dialog for IE11-
 		if (!mxClient.IS_SF && document.documentMode == null)
 		{
 			buttons.appendChild(copyBtn);
+			buttons.appendChild(saveBtn);
 			copyBtn.className = 'geBtn gePrimaryBtn';
+			saveBtn.className = 'geBtn gePrimaryBtn';
 			closeBtn.className = 'geBtn';
 		}
 		else
@@ -4224,11 +4231,10 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 	var count = 0;
 
 	// 思源笔记保存
-	function siyuanSave(img, title)
-	{
+	function siyuanSave(img, title) {
 		var button = document.createElement('a');
 		button.style.overflow = 'hidden';
-		
+
 		var logo = document.createElement('img');
 		logo.src = img;
 		logo.setAttribute('border', '0');
@@ -4242,16 +4248,16 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 		button.style.margin = '4px';
 		button.style.padding = '8px 8px 10px 8px';
 		button.style.whiteSpace = 'nowrap';
-		
+
 		button.appendChild(logo);
-		
+
 		button.style.color = 'gray';
 		button.style.fontSize = '11px';
-		
+
 		var label = document.createElement('div');
 		button.appendChild(label);
 		mxUtils.write(label, title);
-		
+
 		mxEvent.addListener(button, 'click', async () => {
 			let id = (window.frameElement != null
 				? window.frameElement.parentElement.parentElement.getAttribute('data-node-id')
@@ -4259,28 +4265,528 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 				|| (new URL(window.location.href)).searchParams.get('id')
 				|| null;
 			// console.log(id);
+			saveDataToSiyuan = async (filename, format, filedata, mime, base64Encoded) => {
+				// 上传至资源文件夹
+				let blob = new Blob([filedata], { type: mime });
+				let file = new File([blob], filename, { lastModified: Date.now() });
+				let formdata = new FormData();
+				formdata.append("assetsDirPath", "/assets/");
+				formdata.append("file[]", file);
+				fetch("/api/asset/upload", {
+					body: formdata,
+					method: "POST",
+					// headers: { Authorization: "Token " + this.apitoken },
+				}).then((response) => {
+					return response.json();
+				}).then((data) => {
+					// console.log(data);
+					let asset = data.data.succMap[filename];
+					console.log(asset);
+					if (!asset.endsWith(filename)) {
+						// 文件名更改
+						// console.log(filename, asset);
+						fetch('/api/attr/setBlockAttrs', {
+							body: JSON.stringify({
+								id: id,
+								attrs: {
+									'custom-data-assets': asset,
+									'data-assets': asset,
+								}
+							}),
+							method: 'POST',
+						}).then((_) => {
+							let name = asset.substring(asset.lastIndexOf('/') + 1);
+							// console.log(editorUi);
+							editorUi.getCurrentFile().rename(name);
+							let url = new URL(window.location.href);
+							url.hash = `#U${url.origin}/${asset}`
+							// REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
+							history.pushState(null, null, url.href)
+						})
+					}
+					editorUi.hideDialog();
+					editorUi.editor.setStatus(mxResources.get('allChangesSaved'));
+				});
+			};
 			if (id != null) {
 				// change(App.MODE_DEVICE);
 
 				let file_name = nameInput.value;
 				let file_content = null;
 				let file_type = null;
+				// 根据文件扩展名调用不同的保存方法
 				switch (true) {
-					case nameInput.value.endsWith('.png'):
 					case nameInput.value.endsWith('.jpg'):
 					case nameInput.value.endsWith('.pdf'):
 					case nameInput.value.endsWith('.vsdx'):
-					case nameInput.value.endsWith('.svg'):
-					case nameInput.value.endsWith('.html'):
-						// TODO
 						return;
+					case nameInput.value.endsWith('.drawio.html'):
+						editorUi.showHtmlDialog(
+							mxResources.get('create'),
+							'https://www.diagrams.net/doc/faq/embed-html-options',
+							null,
+							function (publicUrl, zoomEnabled, initialZoom, linkTarget, linkColor, fit, allPages, layers, tags, lightbox, editLink) {
+								editorUi.createHtml(publicUrl, zoomEnabled, initialZoom, linkTarget, linkColor, fit, allPages, layers, tags, lightbox, editLink, mxUtils.bind(this, function (html, scriptTag) {
+									scriptTag = `<script type="text/javascript" src="${window.DRAWIO_VIEWER_URL}"></script>`;
+									let EmbedDialog = function (editorUi, result, timeout, ignoreSize, previewFn, title, tweet, previewTitle, filename) {
+										tweet = (tweet != null) ? tweet : 'Check out the diagram I made using @drawio';
+										var div = document.createElement('div');
+										var maxSize = 500000;
+										var maxFbSize = 51200;
+										var maxTwitterSize = 7168;
+
+										// Checks if result is a link
+										var validUrl = /^https?:\/\//.test(result) || /^mailto:\/\//.test(result);
+
+										if (title != null) {
+											mxUtils.write(div, title);
+										}
+										else {
+											mxUtils.write(div, mxResources.get((result.length < maxSize) ?
+												((validUrl) ? 'link' : 'mainEmbedNotice') : 'preview') + ':');
+										}
+										mxUtils.br(div);
+
+										var size = document.createElement('div');
+										size.style.position = 'absolute';
+										size.style.top = '30px';
+										size.style.right = '30px';
+										size.style.color = 'gray';
+										mxUtils.write(size, editorUi.formatFileSize(result.length));
+
+										div.appendChild(size);
+
+										// Using DIV for faster rendering
+										var text = document.createElement('textarea');
+										text.setAttribute('autocomplete', 'off');
+										text.setAttribute('autocorrect', 'off');
+										text.setAttribute('autocapitalize', 'off');
+										text.setAttribute('spellcheck', 'false');
+										text.style.fontFamily = 'monospace';
+										text.style.wordBreak = 'break-all';
+										text.style.marginTop = '10px';
+										text.style.resize = 'none';
+										text.style.height = '150px';
+										text.style.width = '440px';
+										text.style.border = '1px solid gray';
+										text.value = mxResources.get('updatingDocument');
+										div.appendChild(text);
+										mxUtils.br(div);
+
+										this.init = function () {
+											window.setTimeout(function () {
+												if (result.length < maxSize) {
+													text.value = result;
+													text.focus();
+
+													if (mxClient.IS_GC || mxClient.IS_FF || document.documentMode >= 5) {
+														text.select();
+													}
+													else {
+														document.execCommand('selectAll', false, null);
+													}
+												}
+												else {
+													text.setAttribute('readonly', 'true');
+													text.value = mxResources.get('tooLargeUseDownload');
+												}
+											}, 0);
+										};
+
+										var buttons = document.createElement('div');
+										buttons.style.position = 'absolute';
+										buttons.style.bottom = '36px';
+										buttons.style.right = '32px';
+
+										var previewBtn = null;
+
+										// Loads forever in IE9
+										if (EmbedDialog.showPreviewOption && (!mxClient.IS_CHROMEAPP || validUrl) && !navigator.standalone && (validUrl ||
+											(mxClient.IS_SVG && (document.documentMode == null || document.documentMode > 9)))) {
+											previewBtn = mxUtils.button((previewTitle != null) ? previewTitle :
+												mxResources.get((result.length < maxSize) ? 'preview' : 'openInNewWindow'), function () {
+												var value = (result.length < maxSize) ? text.value : result;
+
+												if (previewFn != null) {
+													previewFn(value);
+												}
+												else {
+													if (validUrl) {
+														try {
+															var win = editorUi.openLink(value);
+
+															if (win != null && (timeout == null || timeout > 0)) {
+																window.setTimeout(mxUtils.bind(this, function () {
+																	try {
+																		if (win != null && win.location.href != null &&
+																			win.location.href.substring(0, 8) != value.substring(0, 8)) {
+																			win.close();
+																			editorUi.handleError({ message: mxResources.get('drawingTooLarge') });
+																		}
+																	}
+																	catch (e) {
+																		// ignore
+																	}
+																}), timeout || 500);
+															}
+														}
+														catch (e) {
+															editorUi.handleError({ message: e.message || mxResources.get('drawingTooLarge') });
+														}
+													}
+													else {
+														var wnd = window.open();
+														var doc = (wnd != null) ? wnd.document : null;
+
+														if (doc != null) {
+															doc.writeln('<html><head><title>' + encodeURIComponent(mxResources.get('preview')) +
+																'</title><meta charset="utf-8"></head>' +
+																'<body>' + result + '</body></html>');
+															doc.close();
+														}
+														else {
+															editorUi.handleError({ message: mxResources.get('errorUpdatingPreview') });
+														}
+													}
+												}
+											});
+
+											previewBtn.className = 'geBtn';
+											buttons.appendChild(previewBtn);
+										}
+
+										if (!validUrl || result.length > 7500) {
+											var downloadBtn = mxUtils.button(mxResources.get('download'), function () {
+												editorUi.hideDialog();
+												editorUi.saveData((filename != null) ? filename : 'embed.txt', 'txt', result, 'text/plain');
+											});
+
+											downloadBtn.className = 'geBtn';
+											buttons.appendChild(downloadBtn);
+										}
+
+										// Twitter-intent does not allow more characters, must be pasted manually
+										if (validUrl && (!editorUi.isOffline() || mxClient.IS_CHROMEAPP)) {
+											if (result.length < maxFbSize) {
+												var fbBtn = mxUtils.button('', function () {
+													try {
+														var url = 'https://www.facebook.com/sharer.php?p[url]=' +
+															encodeURIComponent(text.value);
+														editorUi.openLink(url);
+													}
+													catch (e) {
+														editorUi.handleError({ message: e.message || mxResources.get('drawingTooLarge') });
+													}
+												});
+
+												var img = document.createElement('img');
+												img.setAttribute('src', Editor.facebookImage);
+												img.setAttribute('width', '18');
+												img.setAttribute('height', '18');
+												img.setAttribute('border', '0');
+
+												fbBtn.appendChild(img);
+												fbBtn.setAttribute('title', mxResources.get('facebook') + ' (' +
+													editorUi.formatFileSize(maxFbSize) + ' max)');
+												fbBtn.style.verticalAlign = 'bottom';
+												fbBtn.style.paddingTop = '4px';
+												fbBtn.style.minWidth = '46px'
+												fbBtn.className = 'geBtn';
+												buttons.appendChild(fbBtn);
+											}
+
+											if (result.length < maxTwitterSize) {
+												var tweetBtn = mxUtils.button('', function () {
+													try {
+														var url = 'https://twitter.com/intent/tweet?text=' +
+															encodeURIComponent(tweet) + '&url=' +
+															encodeURIComponent(text.value);
+
+														editorUi.openLink(url);
+													}
+													catch (e) {
+														editorUi.handleError({ message: e.message || mxResources.get('drawingTooLarge') });
+													}
+												});
+
+												var img = document.createElement('img');
+												img.setAttribute('src', Editor.tweetImage);
+												img.setAttribute('width', '18');
+												img.setAttribute('height', '18');
+												img.setAttribute('border', '0');
+												img.style.marginBottom = '5px'
+
+												tweetBtn.appendChild(img);
+												tweetBtn.setAttribute('title', mxResources.get('twitter') + ' (' +
+													editorUi.formatFileSize(maxTwitterSize) + ' max)');
+												tweetBtn.style.verticalAlign = 'bottom';
+												tweetBtn.style.paddingTop = '4px';
+												tweetBtn.style.minWidth = '46px'
+												tweetBtn.className = 'geBtn';
+												buttons.appendChild(tweetBtn);
+											}
+										}
+
+										if (!editorUi.isOffline() && result.length < maxSize) {
+											var emailBtn = mxUtils.button('', function () {
+												try {
+													var url = 'mailto:?subject=' +
+														encodeURIComponent(filename || editorUi.defaultFilename) + '&body=' +
+														encodeURIComponent(text.value);
+
+													editorUi.openLink(url);
+												}
+												catch (e) {
+													editorUi.handleError({ message: e.message || mxResources.get('drawingTooLarge') });
+												}
+											});
+
+											var img = document.createElement('img');
+											img.setAttribute('src', Editor.mailImage);
+											img.setAttribute('width', '18');
+											img.setAttribute('height', '18');
+											img.setAttribute('border', '0');
+											img.style.marginBottom = '5px'
+
+											if (Editor.isDarkMode()) {
+												img.style.filter = 'invert(100%)';
+											}
+
+											emailBtn.appendChild(img);
+											emailBtn.style.verticalAlign = 'bottom';
+											emailBtn.style.paddingTop = '4px';
+											emailBtn.style.minWidth = '46px'
+											emailBtn.className = 'geBtn';
+											buttons.appendChild(emailBtn);
+										}
+
+										var closeBtn = mxUtils.button(mxResources.get('close'), function () {
+											editorUi.hideDialog();
+										});
+
+										buttons.appendChild(closeBtn);
+
+										var copyBtn = mxUtils.button(mxResources.get('copy'), function () {
+											text.focus();
+
+											if (mxClient.IS_GC || mxClient.IS_FF || document.documentMode >= 5) {
+												text.select();
+											}
+											else {
+												document.execCommand('selectAll', false, null);
+											}
+
+											document.execCommand('copy');
+											editorUi.alert(mxResources.get('copiedToClipboard'));
+										});
+
+										var saveBtn = mxUtils.button(mxResources.get('save'), function () {
+											editorUi.hideDialog();
+											saveDataToSiyuan(file_name, null, html.replace(/<\/div>\s*$/, `${scriptTag}<\/div>\n`), 'text/html', null);
+										});
+
+										if (result.length < maxSize) {
+											// Does not work in Safari and shows annoying dialog for IE11-
+											if (!mxClient.IS_SF && document.documentMode == null) {
+												buttons.appendChild(copyBtn);
+												buttons.appendChild(saveBtn);
+												copyBtn.className = 'geBtn gePrimaryBtn';
+												saveBtn.className = 'geBtn gePrimaryBtn';
+												closeBtn.className = 'geBtn';
+											}
+											else {
+												closeBtn.className = 'geBtn gePrimaryBtn';
+											}
+										}
+										else {
+											buttons.appendChild(previewBtn);
+											closeBtn.className = 'geBtn';
+											previewBtn.className = 'geBtn gePrimaryBtn';
+										}
+
+										div.appendChild(buttons);
+										this.container = div;
+									};
+									var dlg = new EmbedDialog(editorUi, html + '\n' + scriptTag, null, null, function () {
+										var wnd = window.open();
+										var doc = wnd.document;
+
+										if (doc != null) {
+											if (document.compatMode === 'CSS1Compat') {
+												doc.writeln('<!DOCTYPE html>');
+											}
+
+											doc.writeln('<html>');
+											doc.writeln('<head><title>' + encodeURIComponent(mxResources.get('preview')) +
+												'</title><meta charset="utf-8"></head>');
+											doc.writeln('<body>');
+											doc.writeln(html);
+
+											var direct = mxClient.IS_IE || mxClient.IS_EDGE || document.documentMode != null;
+
+											if (direct) {
+												doc.writeln(scriptTag);
+											}
+
+											doc.writeln('</body>');
+											doc.writeln('</html>');
+											doc.close();
+
+											// Adds script tag after closing page and delay to fix timing issues
+											if (!direct) {
+												var info = wnd.document.createElement('div');
+												info.marginLeft = '26px';
+												info.marginTop = '26px';
+												mxUtils.write(info, mxResources.get('updatingDocument'));
+
+												var img = wnd.document.createElement('img');
+												img.setAttribute('src', window.location.protocol + '//' + window.location.hostname +
+													'/' + IMAGE_PATH + '/spin.gif');
+												img.style.marginLeft = '6px';
+												info.appendChild(img);
+
+												wnd.document.body.insertBefore(info, wnd.document.body.firstChild);
+
+												window.setTimeout(function () {
+													var script = document.createElement('script');
+													script.type = 'text/javascript';
+													script.src = /<script.*?src="(.*?)"/.exec(scriptTag)[1];
+													doc.body.appendChild(script);
+
+													info.parentNode.removeChild(info);
+												}, 20);
+											}
+										}
+										else {
+											editorUi.handleError({ message: mxResources.get('errorUpdatingPreview') });
+										}
+									});
+									editorUi.showDialog(dlg.container, 450, 240, true, true);
+									dlg.init();
+								}));
+							}
+						);
+
+						break;
+					case nameInput.value.endsWith('.drawio.png'):
+						return;
+						// editorUi.showExportDialog(
+						// 	mxResources.get('formatPng'),
+						// 	true,
+						// 	mxResources.get('save'),
+						// 	'https://www.diagrams.net/doc/faq/export-diagram',
+						// 	mxUtils.bind(this, function (scale, transparentBackground, ignoreSelection, addShadow, editable,
+						// 		embedImages, border, cropImage, currentPage, dummy, grid, keepTheme, exportType) {
+						// 		var val = parseInt(scale);
+
+						// 		if (!isNaN(val) && val > 0) {
+						// 			let temp_isLocalFileSave = editorUi.isLocalFileSave;
+						// 			let temp_saveData = editorUi.saveData;
+						// 			let temp_getBaseFilename = editorUi.getBaseFilename;
+
+						// 			editorUi.isLocalFileSave = () => { return true; };
+						// 			editorUi.saveData = saveDataToSiyuan;
+						// 			editorUi.getBaseFilename = (_) => { return file_name.replace(/\.drawio\.png$/i, ''); };
+
+						// 			editorUi.exportImage(val / 100, transparentBackground, ignoreSelection,
+						// 				addShadow, editable, border, !cropImage, false, null, grid, null,
+						// 				keepTheme, exportType);
+
+						// 			editorUi.isLocalFileSave = temp_isLocalFileSave;
+						// 			editorUi.saveData = temp_saveData;
+						// 			editorUi.getBaseFilename = temp_getBaseFilename;
+						// 		}
+						// 	}),
+						// 	true,
+						// 	Editor.defaultIncludeDiagram,
+						// 	'png',
+						// 	true,
+						// );
+
+						break;
+					case nameInput.value.endsWith('.drawio.svg'):
+						editorUi.showExportDialog(
+							mxResources.get('formatSvg'),
+							true,
+							mxResources.get('save'),
+							'https://www.diagrams.net/doc/faq/export-diagram',
+							mxUtils.bind(this, function (scale, transparentBackground, ignoreSelection,
+								addShadow, editable, embedImages, border, cropImage, currentPage,
+								linkTarget, grid, keepTheme, exportType, embedFonts, lblToSvg) {
+								var val = parseInt(scale);
+
+								if (!isNaN(val) && val > 0) {
+									let temp_isLocalFileSave = editorUi.isLocalFileSave;
+									let temp_saveData = editorUi.saveData;
+									let temp_getBaseFilename = editorUi.getBaseFilename;
+
+									editorUi.isLocalFileSave = () => { return true; };
+									editorUi.saveData = saveDataToSiyuan;
+									editorUi.getBaseFilename = (_) => { return file_name.replace(/\.drawio\.svg$/i, ''); };
+
+									editorUi.exportSvg(val / 100, transparentBackground, ignoreSelection,
+										addShadow, editable, embedImages, border, !cropImage, false,
+										linkTarget, keepTheme, exportType, embedFonts);
+
+									editorUi.isLocalFileSave = temp_isLocalFileSave;
+									editorUi.saveData = temp_saveData;
+									editorUi.getBaseFilename = temp_getBaseFilename;
+								}
+							}),
+							true,
+							null,
+							'svg',
+							true,
+						);
+
+						break;
+					case nameInput.value.endsWith('.drawio.xml'):
+						let div = document.createElement('div');
+						div.style.whiteSpace = 'nowrap';
+						let noPages = editorUi.pages == null || editorUi.pages.length <= 1;
+
+						let hd = document.createElement('h3');
+						mxUtils.write(hd, mxResources.get('formatXml'));
+						hd.style.cssText = 'width:100%;text-align:center;margin-top:0px;margin-bottom:4px';
+						div.appendChild(hd);
+
+						let selection = editorUi.addCheckbox(div, mxResources.get('selectionOnly'),
+							false, editorUi.editor.graph.isSelectionEmpty());
+						let compressed = editorUi.addCheckbox(div, mxResources.get('compressed'), true);
+						let pages = editorUi.addCheckbox(div, mxResources.get('allPages'), !noPages, noPages);
+						pages.style.marginBottom = '16px';
+
+						mxEvent.addListener(selection, 'change', function () {
+							if (selection.checked) {
+								pages.setAttribute('disabled', 'disabled');
+							}
+							else {
+								pages.removeAttribute('disabled');
+							}
+						});
+
+						let dlg = new CustomDialog(editorUi, div, mxUtils.bind(this, function () {
+							let temp_isLocalFileSave = editorUi.isLocalFileSave;
+							let temp_saveData = editorUi.saveData;
+							let temp_getBaseFilename = editorUi.getBaseFilename;
+
+							editorUi.isLocalFileSave = () => { return true; };
+							editorUi.saveData = saveDataToSiyuan;
+							editorUi.getBaseFilename = (_) => { return file_name.replace(/\.drawio\.xml$/i, ''); };
+
+							editorUi.downloadFile('xml', !compressed.checked, null, !selection.checked, noPages || !pages.checked);
+
+							editorUi.isLocalFileSave = temp_isLocalFileSave;
+							editorUi.saveData = temp_saveData;
+							editorUi.getBaseFilename = temp_getBaseFilename;
+						}), null, mxResources.get('export'));
+
+						editorUi.showDialog(dlg.container, 300, 200, true, true);
+
+						break;
 					default:
 						file_name = `${nameInput.value}.drawio`;
 					case nameInput.value.endsWith('.drawio'):
-					case nameInput.value.endsWith('.xml'):
-						// file_content = (new XMLSerializer()).serializeToString(editorUi.editor.getGraphXml());
-						// file_content = mxUtils.getXml(editorUi.editor.getGraphXml());
-						// let noPages = editorUi.pages == null || editorUi.pages.length <= 1;
 						file_content = editorUi.getFileData(
 							true,
 							null,
@@ -4295,56 +4801,16 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 						);
 						// console.log(file_content);
 						file_type = "application/xml";
+						saveDataToSiyuan(file_name, null, file_content, file_type, null);
+
 						break;
 				}
-
-				let blob = new Blob([file_content], {type: file_type});
-				let file = new File([blob], file_name, { lastModified: Date.now() });
-				let data = new FormData();
-				data.append("assetsDirPath", "/assets/");
-				data.append("file[]", file);
-				fetch("/api/asset/upload", {
-					body: data,
-					method: "POST",
-					// headers: { Authorization: "Token " + this.apitoken },
-				}).then((response) => {
-					return response.json();
-				}).then((data) => {
-					// console.log(data);
-					let asset = data.data.succMap[file_name];
-					console.log(asset);
-					if (!asset.endsWith(file_name)) {
-						// 文件名更改
-						// console.log(file_name, asset);
-						fetch('/api/attr/setBlockAttrs', {
-							body: JSON.stringify({
-								id: id,
-								attrs: {
-									'custom-data-assets': asset,
-									'data-assets': asset,
-								}
-							}),
-							method: 'POST',
-						}).then((_) => {
-							let name = asset.substring(asset.lastIndexOf('/')+1);
-							// console.log(editorUi);
-							editorUi.getCurrentFile().rename(name);
-							let href = `${window.location.origin}${window.location.pathname}?dev=1&id=${id}#U${window.location.origin}/${asset}`;
-							// window.location.href = href;
-							// REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
-							history.pushState(null,null,href)
-						})
-					}
-					editorUi.hideDialog();
-					editorUi.editor.setStatus(mxResources.get('allChangesSaved'));
-				});
 			}
 		});
 
 		buttons.appendChild(button);
-		
-		if (++count == rowLimit)
-		{
+
+		if (++count == rowLimit) {
 			mxUtils.br(buttons);
 			count = 0;
 		}

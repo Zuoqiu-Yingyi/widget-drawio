@@ -1,5 +1,8 @@
 # 更改日志 | CHANGE LOG
 
+- 新增对 `.drawio.svg`, `.drawio.html`, `.drawio.xml` 三种可编辑格式的导出支持 | Added export support for `.drawio.svg`, `.drawio.html`, `.drawio.xml` in three editable formats.
+- 优化 URL 参数解析方案 | Optimized URL parameter resolution schemes.
+
 ## v0.1.2/2022-03-02
 
 - [v0.1.1 <=> v0.1.2](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.1.1...v0.1.2)
