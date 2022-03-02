@@ -4265,12 +4265,18 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 				|| (new URL(window.location.href)).searchParams.get('id')
 				|| null;
 			// console.log(id);
-			async function saveDataToSiyuan(filename, format, filedata, mime, base64Encoded) {
-				// 上传至资源文件夹
+			function filenameParse(filename) {
+				// 提取主文件名与文件扩展名
 				let idx2 = filename.lastIndexOf('.drawio.');
 				let idx = (idx2 > 0) ? idx2 : filename.lastIndexOf('.');
-				let ext = filename.substring(filename.lastIndexOf('.'));
-				filename = idx > 0 ? `${filename.substring(0, idx)}.${ext}` : `${filename.substring(0, idx)}.drawio`;
+				let file_name_main = idx > 0 ? filename.substring(0, idx) : filename;
+				let file_name_ext = idx > 0 ? filename.substring(filename.lastIndexOf('.')+1) : 'drawio';
+				filename = `${file_name_main}.${file_name_ext}`;
+				return {name: filename, main: file_name_main, ext: file_name_ext};
+			}
+			async function saveDataToSiyuan(filename, format, filedata, mime, base64Encoded) {
+				// 上传至资源文件夹
+				filename = filenameParse(filename).name;
 
 				let blob = new Blob([filedata], { type: mime });
 				let file = new File([blob], filename, { lastModified: Date.now() });
@@ -4315,18 +4321,111 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 			};
 			if (id != null) {
 				// change(App.MODE_DEVICE);
+				let filename = filenameParse(nameInput.value);
+				file_name = filename.name;
+				file_name_main = filename.main;
+				file_name_ext = filename.ext;
 
-				let file_name = nameInput.value;
 				let file_content = null;
 				let file_type = null;
 				// 根据文件扩展名调用不同的保存方法
-				switch (true) {
-					case nameInput.value.endsWith('.jpg'):
-					case nameInput.value.endsWith('.pdf'):
-					case nameInput.value.endsWith('.vsdx'):
+				switch (file_name_ext) {
+					case 'jpg':
+					case 'pdf':
+					case 'vsdx':
+					default:
 						return;
-					case nameInput.value.endsWith('.html'):
-					case nameInput.value.endsWith('.drawio.html'):
+					case 'drawio':
+						file_content = editorUi.getFileData(
+							true,
+							null,
+							null,
+							null,
+							true, // ignoreSelection, // 是否仅保存选中内容
+							false, // currentPage, // 是否仅保存当前页面
+							null,
+							null,
+							null,
+							true, // uncompressed, // 是否格式化 XML 文本
+						);
+						// console.log(file_content);
+						file_type = "application/xml";
+						saveDataToSiyuan(file_name, null, file_content, file_type, null);
+
+						break;
+					case 'png':
+						return;
+						// editorUi.showExportDialog(
+						// 	mxResources.get('formatPng'),
+						// 	true,
+						// 	mxResources.get('save'),
+						// 	'https://www.diagrams.net/doc/faq/export-diagram',
+						// 	mxUtils.bind(this, function (scale, transparentBackground, ignoreSelection, addShadow, editable,
+						// 		embedImages, border, cropImage, currentPage, dummy, grid, keepTheme, exportType) {
+						// 		var val = parseInt(scale);
+
+						// 		if (!isNaN(val) && val > 0) {
+						// 			let temp_isLocalFileSave = editorUi.isLocalFileSave;
+						// 			let temp_saveData = editorUi.saveData;
+						// 			let temp_getBaseFilename = editorUi.getBaseFilename;
+
+						// 			editorUi.isLocalFileSave = () => { return true; };
+						// 			editorUi.saveData = saveDataToSiyuan;
+						// 			editorUi.getBaseFilename = (_) => { return file_name_main; };
+
+						// 			editorUi.exportImage(val / 100, transparentBackground, ignoreSelection,
+						// 				addShadow, editable, border, !cropImage, false, null, grid, null,
+						// 				keepTheme, exportType);
+
+						// 			editorUi.isLocalFileSave = temp_isLocalFileSave;
+						// 			editorUi.saveData = temp_saveData;
+						// 			editorUi.getBaseFilename = temp_getBaseFilename;
+						// 		}
+						// 	}),
+						// 	true,
+						// 	Editor.defaultIncludeDiagram,
+						// 	'png',
+						// 	true,
+						// );
+
+						break;
+					case 'svg':
+						editorUi.showExportDialog(
+							mxResources.get('formatSvg'),
+							true,
+							mxResources.get('save'),
+							'https://www.diagrams.net/doc/faq/export-diagram',
+							mxUtils.bind(this, function (scale, transparentBackground, ignoreSelection,
+								addShadow, editable, embedImages, border, cropImage, currentPage,
+								linkTarget, grid, keepTheme, exportType, embedFonts, lblToSvg) {
+								var val = parseInt(scale);
+
+								if (!isNaN(val) && val > 0) {
+									let temp_isLocalFileSave = editorUi.isLocalFileSave;
+									let temp_saveData = editorUi.saveData;
+									let temp_getBaseFilename = editorUi.getBaseFilename;
+
+									editorUi.isLocalFileSave = () => { return true; };
+									editorUi.saveData = saveDataToSiyuan;
+									editorUi.getBaseFilename = (_) => { return file_name_main; };
+
+									editorUi.exportSvg(val / 100, transparentBackground, ignoreSelection,
+										addShadow, editable, embedImages, border, !cropImage, false,
+										linkTarget, keepTheme, exportType, embedFonts);
+
+									editorUi.isLocalFileSave = temp_isLocalFileSave;
+									editorUi.saveData = temp_saveData;
+									editorUi.getBaseFilename = temp_getBaseFilename;
+								}
+							}),
+							true,
+							null,
+							'svg',
+							true,
+						);
+
+						break;
+					case 'html':
 						editorUi.showHtmlDialog(
 							mxResources.get('create'),
 							'https://www.diagrams.net/doc/faq/embed-html-options',
@@ -4674,82 +4773,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 						);
 
 						break;
-					case nameInput.value.endsWith('.png'):
-					case nameInput.value.endsWith('.drawio.png'):
-						return;
-						// editorUi.showExportDialog(
-						// 	mxResources.get('formatPng'),
-						// 	true,
-						// 	mxResources.get('save'),
-						// 	'https://www.diagrams.net/doc/faq/export-diagram',
-						// 	mxUtils.bind(this, function (scale, transparentBackground, ignoreSelection, addShadow, editable,
-						// 		embedImages, border, cropImage, currentPage, dummy, grid, keepTheme, exportType) {
-						// 		var val = parseInt(scale);
-
-						// 		if (!isNaN(val) && val > 0) {
-						// 			let temp_isLocalFileSave = editorUi.isLocalFileSave;
-						// 			let temp_saveData = editorUi.saveData;
-						// 			let temp_getBaseFilename = editorUi.getBaseFilename;
-
-						// 			editorUi.isLocalFileSave = () => { return true; };
-						// 			editorUi.saveData = saveDataToSiyuan;
-						// 			editorUi.getBaseFilename = (_) => { return file_name.replace(/\.drawio\.png$/i, ''); };
-
-						// 			editorUi.exportImage(val / 100, transparentBackground, ignoreSelection,
-						// 				addShadow, editable, border, !cropImage, false, null, grid, null,
-						// 				keepTheme, exportType);
-
-						// 			editorUi.isLocalFileSave = temp_isLocalFileSave;
-						// 			editorUi.saveData = temp_saveData;
-						// 			editorUi.getBaseFilename = temp_getBaseFilename;
-						// 		}
-						// 	}),
-						// 	true,
-						// 	Editor.defaultIncludeDiagram,
-						// 	'png',
-						// 	true,
-						// );
-
-						break;
-					case nameInput.value.endsWith('.svg'):
-					case nameInput.value.endsWith('.drawio.svg'):
-						editorUi.showExportDialog(
-							mxResources.get('formatSvg'),
-							true,
-							mxResources.get('save'),
-							'https://www.diagrams.net/doc/faq/export-diagram',
-							mxUtils.bind(this, function (scale, transparentBackground, ignoreSelection,
-								addShadow, editable, embedImages, border, cropImage, currentPage,
-								linkTarget, grid, keepTheme, exportType, embedFonts, lblToSvg) {
-								var val = parseInt(scale);
-
-								if (!isNaN(val) && val > 0) {
-									let temp_isLocalFileSave = editorUi.isLocalFileSave;
-									let temp_saveData = editorUi.saveData;
-									let temp_getBaseFilename = editorUi.getBaseFilename;
-
-									editorUi.isLocalFileSave = () => { return true; };
-									editorUi.saveData = saveDataToSiyuan;
-									editorUi.getBaseFilename = (_) => { return file_name.replace(/\.drawio\.svg$/i, ''); };
-
-									editorUi.exportSvg(val / 100, transparentBackground, ignoreSelection,
-										addShadow, editable, embedImages, border, !cropImage, false,
-										linkTarget, keepTheme, exportType, embedFonts);
-
-									editorUi.isLocalFileSave = temp_isLocalFileSave;
-									editorUi.saveData = temp_saveData;
-									editorUi.getBaseFilename = temp_getBaseFilename;
-								}
-							}),
-							true,
-							null,
-							'svg',
-							true,
-						);
-
-						break;
-					case nameInput.value.endsWith('.xml'):
-					case nameInput.value.endsWith('.drawio.xml'):
+					case 'xml':
 						let div = document.createElement('div');
 						div.style.whiteSpace = 'nowrap';
 						let noPages = editorUi.pages == null || editorUi.pages.length <= 1;
@@ -4781,7 +4805,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 
 							editorUi.isLocalFileSave = () => { return true; };
 							editorUi.saveData = saveDataToSiyuan;
-							editorUi.getBaseFilename = (_) => { return file_name.replace(/\.drawio\.xml$/i, ''); };
+							editorUi.getBaseFilename = (_) => { return file_name_main; };
 
 							editorUi.downloadFile('xml', !compressed.checked, null, !selection.checked, noPages || !pages.checked);
 
@@ -4791,26 +4815,6 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 						}), null, mxResources.get('export'));
 
 						editorUi.showDialog(dlg.container, 300, 200, true, true);
-
-						break;
-					default:
-						file_name = `${nameInput.value}.drawio`;
-					case nameInput.value.endsWith('.drawio'):
-						file_content = editorUi.getFileData(
-							true,
-							null,
-							null,
-							null,
-							true, // ignoreSelection, // 是否仅保存选中内容
-							false, // currentPage, // 是否仅保存当前页面
-							null,
-							null,
-							null,
-							true, // uncompressed, // 是否格式化 XML 文本
-						);
-						// console.log(file_content);
-						file_type = "application/xml";
-						saveDataToSiyuan(file_name, null, file_content, file_type, null);
 
 						break;
 				}
