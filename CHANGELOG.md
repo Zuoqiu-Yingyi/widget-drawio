@@ -1,5 +1,8 @@
 # 更改日志 | CHANGE LOG
 
+## v0.1.3/2022-03-03
+
+- [v0.1.2 <=> v0.1.3](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.1.2...v0.1.3)
 - 新增对 `.drawio.svg`, `.drawio.html`, `.drawio.xml` 三种可编辑格式的导出支持 | Added export support for `.drawio.svg`, `.drawio.html`, `.drawio.xml` in three editable formats.
 - 优化 URL 参数解析方案 | Optimized URL parameter resolution schemes.
 - 将文件扩展名 `.drawio.svg`, `.drawio.html`, `.drawio.xml` 更改为 `.svg`, `.html`, `.xml` | Change the `.drawio.svg`, `.drawio.html`, `.drawio.xml` filename extensions to `.svg`, `.html`, `.xml`.
