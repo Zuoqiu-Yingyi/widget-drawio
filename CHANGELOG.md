@@ -1,5 +1,7 @@
 # 更改日志 | CHANGE LOG
 
+- 更新 draw.io 至 [v16.6.5](https://github.com/jgraph/drawio/releases/tag/v16.6.5) | Update draw.io to [v16.6.5](https://github.com/jgraph/drawio/releases/tag/v16.6.5).
+
 ## v0.1.3/2022-03-03
 
 - [v0.1.2 <=> v0.1.3](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.1.2...v0.1.3)
