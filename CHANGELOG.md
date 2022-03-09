@@ -2,6 +2,7 @@
 
 - 更新 draw.io 至 [v16.6.5](https://github.com/jgraph/drawio/releases/tag/v16.6.5) | Update draw.io to [v16.6.5](https://github.com/jgraph/drawio/releases/tag/v16.6.5).
 - 更新 draw.io 至 [v16.6.6](https://github.com/jgraph/drawio/releases/tag/v16.6.6) | Update draw.io to [v16.6.6](https://github.com/jgraph/drawio/releases/tag/v16.6.6).
+- 新建块时跳过储存位置选择对话框 | Skip the storage location selection dialog when creating a new block. REF: [Supported URL parameters: client=1](https://www.diagrams.net/doc/faq/supported-url-parameters#:~:text=client=1)
 
 ## v0.1.3/2022-03-03
 

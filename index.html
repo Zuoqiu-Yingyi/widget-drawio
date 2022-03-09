@@ -288,6 +288,7 @@
 		}
 		else
 		{
+			var drawUrl = `${window.location.origin}${window.location.pathname}`;
 			(function()
 			{
 				var hostName = window.location.hostname;
@@ -298,7 +299,7 @@
 				
 				function loadAppJS()
 				{
-					mxscript('/js/app.min.js', function()
+					mxscript(drawUrl + '/js/app.min.js', function()
 					{
 						mxScriptsLoaded = true;
 						checkAllLoaded();
@@ -306,17 +307,17 @@
 						// Electron
 						if (mxIsElectron)
 						{
-							mxscript('/js/diagramly/DesktopLibrary.js', function()
+							mxscript(drawUrl + '/js/diagramly/DesktopLibrary.js', function()
 							{
-								mxscript('/js/diagramly/ElectronApp.js', function()
+								mxscript(drawUrl + '/js/diagramly/ElectronApp.js', function()
 								{
-									mxscript('/js/extensions.min.js', function()
+									mxscript(drawUrl + '/js/extensions.min.js', function()
 									{
-										mxscript('/js/stencils.min.js', function()
+										mxscript(drawUrl + '/js/stencils.min.js', function()
 										{
-											mxscript('/js/shapes-14-6-5.min.js', function()
+											mxscript(drawUrl + '/js/shapes-14-6-5.min.js', function()
 											{
-												mxscript('/js/PostConfig.js');
+												mxscript(drawUrl + '/js/PostConfig.js');
 											});
 										});
 									});
@@ -325,14 +326,14 @@
 						}
 						else if (!supportedDomain)
 						{
-							mxscript('/js/PostConfig.js');
+							mxscript(drawUrl + '/js/PostConfig.js');
 						}
 					});
 				};
 				
 				if (!supportedDomain || mxIsElectron)
 				{
-					mxscript('/js/PreConfig.js', loadAppJS);
+					mxscript(drawUrl + '/js/PreConfig.js', loadAppJS);
 				}
 				else
 				{
@@ -480,14 +481,13 @@ else
 
 <script type="module">
 	function updateURL(url, id, asset) {
+		url.searchParams.set('dev', 1); // 开发者模式
+		url.searchParams.set('id', id); // 块 ID
+		url.searchParams.set('client', 1); // 跳过新建时选择储存位置
 		if (asset != null) {
-			url.searchParams.set('dev', 1);
-			url.searchParams.set('id', id);
 			url.hash = `#U${url.origin}/${asset}`;
 			window.location.href = url.href;
 		} else if (url.searchParams.get('dev') !== '1') {
-			url.searchParams.set('dev', 1);
-			url.searchParams.set('id', id);
 			window.location.href = url.href;
 		}
 	}
