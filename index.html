@@ -507,10 +507,11 @@ else
 		if (id == null) {
 			let node = window.frameElement != null ? window.frameElement.parentElement.parentElement : null;
 			if (node != null) {
+				if (node.getAttribute('data-type') == 'NodeIFrame') {
+					alert('在 iframe 块中无法保存资源文件至思源笔记！\nUnable to save resource file to SiYuan Note in an iframe block.');
+					return;
+				}
 				id = node.getAttribute('data-node-id');
-				// let asset = node.getAttribute('custom-data-assets') || node.getAttribute('data-assets');
-				// let lightbox = node.getAttribute('custom-lightbox');
-				// updateURL(url, id, asset, lightbox);
 			}
 		}
 		if (id != null) {

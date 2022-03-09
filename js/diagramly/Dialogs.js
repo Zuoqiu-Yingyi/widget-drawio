@@ -4309,19 +4309,26 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 								}
 							}),
 							method: 'POST',
-						}).then((_) => {
-							let name = asset.substring(asset.lastIndexOf('/') + 1);
-							// console.log(editorUi);
-							editorUi.getCurrentFile().rename(name);
-							let url = new URL(window.location.href);
-							url.hash = `#U${url.origin}/${asset}`
-							console.log(url.href);
-							// REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
-							history.pushState(null, null, url.href)
+						}).then((response) => {
+							return response.json();
+						}).then((data) => {
+							if (data.code == 0) {
+								let name = asset.substring(asset.lastIndexOf('/') + 1);
+								// console.log(editorUi);
+								editorUi.getCurrentFile().rename(name);
+								let url = new URL(window.location.href);
+								url.hash = `#U${url.origin}/${asset}`
+								console.log(url.href);
+								// REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
+								history.pushState(null, null, url.href)
+								editorUi.hideDialog();
+								editorUi.editor.setStatus(mxResources.get('allChangesSaved'));
+							}
 						})
+					} else {
+						editorUi.hideDialog();
+						editorUi.editor.setStatus(mxResources.get('allChangesSaved'));
 					}
-					editorUi.hideDialog();
-					editorUi.editor.setStatus(mxResources.get('allChangesSaved'));
 				});
 			};
 			if (id != null) {
