@@ -2,6 +2,7 @@
 
 - 更新 draw.io 至 [v16.6.5](https://github.com/jgraph/drawio/releases/tag/v16.6.5) | Update draw.io to [v16.6.5](https://github.com/jgraph/drawio/releases/tag/v16.6.5).
 - 更新 draw.io 至 [v16.6.6](https://github.com/jgraph/drawio/releases/tag/v16.6.6) | Update draw.io to [v16.6.6](https://github.com/jgraph/drawio/releases/tag/v16.6.6).
+- 更新 draw.io 至 [v16.6.6](https://github.com/jgraph/drawio/releases/tag/v16.6.6) | Update draw.io to [v17.0.0](https://github.com/jgraph/drawio/releases/tag/v17.0.0).
 - 新建块时跳过储存位置选择对话框 | Skip the storage location selection dialog when creating a new block. REF: [Supported URL parameters: client=1](https://www.diagrams.net/doc/faq/supported-url-parameters#:~:text=client=1).
 - 使用自定义块属性 `custom-lightbox`: `1` 设置块为展示模式 | Use the custom block attribute `custom-lightbox`: `1` to set the block to presentation mode. REF: [Supported URL parameters: lightbox=1](https://www.diagrams.net/doc/faq/supported-url-parameters#:~:text=lightbox=1).
 

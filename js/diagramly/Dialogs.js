@@ -238,11 +238,6 @@ var StorageDialog = function(editorUi, fn, rowLimit)
 		{
 			addLogo(IMAGE_PATH + '/gitlab-logo.svg', mxResources.get('gitlab'), App.MODE_GITLAB, 'gitLab');
 		}
-		
-		if (totalBtns < 6 && editorUi.notion != null)
-		{
-			addLogo(IMAGE_PATH + '/notion-logo.svg', mxResources.get('notion'), App.MODE_NOTION, 'notion');
-		}
 	};
 	
 	div.appendChild(buttons);
@@ -350,11 +345,6 @@ var SplashDialog = function(editorUi)
 	{
 		logo.src = IMAGE_PATH + '/gitlab-logo.svg';
 		service = mxResources.get('gitlab');
-	}
-	else if (editorUi.mode == App.MODE_NOTION)
-	{
-		logo.src = IMAGE_PATH + '/notion-logo.svg';
-		service = mxResources.get('notion');
 	}
 	else if (editorUi.mode == App.MODE_BROWSER)
 	{
@@ -478,10 +468,6 @@ var SplashDialog = function(editorUi)
 	else if (editorUi.mode == App.MODE_GITLAB)
 	{
 		storage = mxResources.get('gitlab');
-	}
-	else if (editorUi.mode == App.MODE_NOTION)
-	{
-		storage = mxResources.get('notion');
 	}
 	else if (editorUi.mode == App.MODE_TRELLO)
 	{
@@ -619,13 +605,6 @@ var SplashDialog = function(editorUi)
 			{
 				editorUi.gitLab.logout();
 				editorUi.openLink(DRAWIO_GITLAB_URL + '/users/sign_out');
-			});
-		}
-		else if (editorUi.mode == App.MODE_NOTION && editorUi.notion != null)
-		{
-			addLogout(function()
-			{
-				editorUi.notion.logout();
 			});
 		}
 		else if (editorUi.mode == App.MODE_TRELLO && editorUi.trello != null)
@@ -2702,10 +2681,6 @@ var NewDialog = function(editorUi, compact, showName, callback, createOnly, canc
 	{
 		logo.src = IMAGE_PATH + '/gitlab-logo.svg';
 	}
-	else if (editorUi.mode == App.MODE_NOTION)
-	{
-		logo.src = IMAGE_PATH + '/notion-logo.svg';
-	}
 	else if (editorUi.mode == App.MODE_TRELLO)
 	{
 		logo.src = IMAGE_PATH + '/trello-logo.svg';
@@ -2751,10 +2726,6 @@ var NewDialog = function(editorUi, compact, showName, callback, createOnly, canc
 	else if (editorUi.mode == App.MODE_GITLAB && editorUi.gitLab != null)
 	{
 		ext = editorUi.gitLab.extension;
-	}
-	else if (editorUi.mode == App.MODE_NOTION && editorUi.notion != null)
-	{
-		ext = editorUi.notion.extension;
 	}
 	else if (editorUi.mode == App.MODE_TRELLO && editorUi.trello != null)
 	{
@@ -4303,9 +4274,9 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 				let idx2 = filename.lastIndexOf('.drawio.');
 				let idx = (idx2 > 0) ? idx2 : filename.lastIndexOf('.');
 				let file_name_main = idx > 0 ? filename.substring(0, idx) : filename;
-				let file_name_ext = idx > 0 ? filename.substring(filename.lastIndexOf('.')+1) : 'drawio';
+				let file_name_ext = idx > 0 ? filename.substring(filename.lastIndexOf('.') + 1) : 'drawio';
 				filename = `${file_name_main}.${file_name_ext}`;
-				return {name: filename, main: file_name_main, ext: file_name_ext};
+				return { name: filename, main: file_name_main, ext: file_name_ext };
 			}
 			async function saveDataToSiyuan(filename, format, filedata, mime, base64Encoded) {
 				// 上传至资源文件夹
@@ -4344,6 +4315,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 							editorUi.getCurrentFile().rename(name);
 							let url = new URL(window.location.href);
 							url.hash = `#U${url.origin}/${asset}`
+							console.log(url.href);
 							// REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
 							history.pushState(null, null, url.href)
 						})
@@ -4543,51 +4515,51 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 											(mxClient.IS_SVG && (document.documentMode == null || document.documentMode > 9)))) {
 											previewBtn = mxUtils.button((previewTitle != null) ? previewTitle :
 												mxResources.get((result.length < maxSize) ? 'preview' : 'openInNewWindow'), function () {
-												var value = (result.length < maxSize) ? text.value : result;
+													var value = (result.length < maxSize) ? text.value : result;
 
-												if (previewFn != null) {
-													previewFn(value);
-												}
-												else {
-													if (validUrl) {
-														try {
-															var win = editorUi.openLink(value);
-
-															if (win != null && (timeout == null || timeout > 0)) {
-																window.setTimeout(mxUtils.bind(this, function () {
-																	try {
-																		if (win != null && win.location.href != null &&
-																			win.location.href.substring(0, 8) != value.substring(0, 8)) {
-																			win.close();
-																			editorUi.handleError({ message: mxResources.get('drawingTooLarge') });
-																		}
-																	}
-																	catch (e) {
-																		// ignore
-																	}
-																}), timeout || 500);
-															}
-														}
-														catch (e) {
-															editorUi.handleError({ message: e.message || mxResources.get('drawingTooLarge') });
-														}
+													if (previewFn != null) {
+														previewFn(value);
 													}
 													else {
-														var wnd = window.open();
-														var doc = (wnd != null) ? wnd.document : null;
+														if (validUrl) {
+															try {
+																var win = editorUi.openLink(value);
 
-														if (doc != null) {
-															doc.writeln('<html><head><title>' + encodeURIComponent(mxResources.get('preview')) +
-																'</title><meta charset="utf-8"></head>' +
-																'<body>' + result + '</body></html>');
-															doc.close();
+																if (win != null && (timeout == null || timeout > 0)) {
+																	window.setTimeout(mxUtils.bind(this, function () {
+																		try {
+																			if (win != null && win.location.href != null &&
+																				win.location.href.substring(0, 8) != value.substring(0, 8)) {
+																				win.close();
+																				editorUi.handleError({ message: mxResources.get('drawingTooLarge') });
+																			}
+																		}
+																		catch (e) {
+																			// ignore
+																		}
+																	}), timeout || 500);
+																}
+															}
+															catch (e) {
+																editorUi.handleError({ message: e.message || mxResources.get('drawingTooLarge') });
+															}
 														}
 														else {
-															editorUi.handleError({ message: mxResources.get('errorUpdatingPreview') });
+															var wnd = window.open();
+															var doc = (wnd != null) ? wnd.document : null;
+
+															if (doc != null) {
+																doc.writeln('<html><head><title>' + encodeURIComponent(mxResources.get('preview')) +
+																	'</title><meta charset="utf-8"></head>' +
+																	'<body>' + result + '</body></html>');
+																doc.close();
+															}
+															else {
+																editorUi.handleError({ message: mxResources.get('errorUpdatingPreview') });
+															}
 														}
 													}
-												}
-											});
+												});
 
 											previewBtn.className = 'geBtn';
 											buttons.appendChild(previewBtn);
@@ -5037,16 +5009,6 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 			addLogo(IMAGE_PATH + '/gitlab-logo.svg', mxResources.get('gitlab'), App.MODE_GITLAB, 'gitLab');
 		}
 
-		if (editorUi.notion != null)
-		{
-			var notionOption = document.createElement('option');
-			notionOption.setAttribute('value', App.MODE_NOTION);
-			mxUtils.write(notionOption, mxResources.get('notion'));
-			serviceSelect.appendChild(notionOption);
-
-			addLogo(IMAGE_PATH + '/notion-logo.svg', mxResources.get('notion'), App.MODE_NOTION, 'notion');
-		}
-		
 		if (typeof window.TrelloClient === 'function')
 		{
 			var trelloOption = document.createElement('option');
@@ -5115,10 +5077,6 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 				else if (newMode == App.MODE_GITLAB)
 				{
 					ext = editorUi.gitLab.extension;
-				}
-				else if (newMode == App.MODE_NOTION)
-				{
-					ext = editorUi.notion.extension;
 				}
 				else if (newMode == App.MODE_TRELLO)
 				{
@@ -6180,7 +6138,6 @@ var LinkDialog = function(editorUi, initialValue, btnLabel, fn, showPages, showN
 		});
 	}
 
-	//TODO should Notion support this?
 	//TODO should Trello support this?
 	
 	mxEvent.addListener(linkInput, 'keypress', function(e)
@@ -8522,12 +8479,6 @@ var AuthDialog = function(editorUi, peer, showRememberOption, fn)
 	{
 		service = mxResources.get('gitlab');
 		img.src = IMAGE_PATH + '/gitlab-logo.svg';
-		img.style.width = '32px';
-	}
-	else if (peer == editorUi.notion)
-	{
-		service = mxResources.get('notion');
-		img.src = IMAGE_PATH + '/notion-logo-white.svg';
 		img.style.width = '32px';
 	}
 	else if (peer == editorUi.trello)
@@ -12539,11 +12490,6 @@ var BtnDialog = function(editorUi, peer, btnLbl, fn)
 		service = mxResources.get('gitlab');
 		img.src = IMAGE_PATH + '/gitlab-logo.svg';
 	}
-	else if (peer == editorUi.notion)
-	{
-		service = mxResources.get('notion');
-		img.src = IMAGE_PATH + '/notion-logo.svg';
-	}
 	else if (peer == editorUi.trello)
 	{
 		service = mxResources.get('trello');
@@ -13320,23 +13266,22 @@ var FilePropertiesDialog = function(editorUi)
 		};
 	}
 
-	if (file != null && file.constructor == DriveFile && editorUi.drive != null)
+	if (file != null && file.isRealtimeOptional())
 	{
 		row = document.createElement('tr');
 		td = document.createElement('td');
 		td.style.whiteSpace = 'nowrap';
 		td.style.fontSize = '10pt';
 		td.style.width = '120px';
-		mxUtils.write(td, mxResources.get('realtimeCollaboration') +
-			' (' + mxResources.get('beta') + '):');
-		
+		mxUtils.write(td, mxResources.get('realtimeCollaboration') + ':');
 		row.appendChild(td);
 	
 		var collabInput = document.createElement('input');
 		collabInput.setAttribute('type', 'checkbox');
+		var initialCollab = file.isRealtimeEnabled();
 
 		var collab = editorUi.drive.getCustomProperty(file.desc, 'collaboration');
-		var initialCollab = collab != null && collab == 'enabled';
+		var initialCollab = collab != 'disabled';
 	
 		if (initialCollab)
 		{
@@ -13352,30 +13297,17 @@ var FilePropertiesDialog = function(editorUi)
 
 			if (collabInput.checked != initialCollab)
 			{
-				var params = {'key': 'collaboration'};
-
-				if (collabInput.checked)
+				if (editorUi.spinner.spin(document.body, mxResources.get('updatingDocument')))
 				{
-					params['value'] = 'enabled';
-				}
-
-				if (editorUi.spinner.spin(document.body, mxResources.get('saving')))
-				{
-					editorUi.drive.executeRequest({
-						'url': '/files/' + file.getId() + '/properties?alt=json&supportsAllDrives=true',
-						'method': 'POST',
-						'contentType': 'application/json; charset=UTF-8',
-						'params': params
-					}, function(resp)
+					file.setRealtimeEnabled(collabInput.checked, mxUtils.bind(this, function(resp)
 					{
 						editorUi.spinner.stop();
-						editorUi.alert(mxResources.get('restartForChangeRequired'));
-					}, function(resp)
+					}), mxUtils.bind(this, function(resp)
 					{
 						editorUi.spinner.stop();
 						editorUi.showError(mxResources.get('error'), (resp != null && resp.error != null) ?
 							resp.error.message : mxResources.get('unknownError'), mxResources.get('ok'));
-					});
+					}));
 				}
 			}
 		};
@@ -13388,7 +13320,7 @@ var FilePropertiesDialog = function(editorUi)
 		td = document.createElement('td');
 		td.style.whiteSpace = 'nowrap';
 		td.appendChild(collabInput);
-		td.appendChild(editorUi.menus.createHelpLink('https://github.com/jgraph/drawio/discussions/2641'));
+		td.appendChild(editorUi.menus.createHelpLink('https://github.com/jgraph/drawio/discussions/2672'));
 		row.appendChild(td);
 		tbody.appendChild(row);
 	}

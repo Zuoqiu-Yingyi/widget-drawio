@@ -40,6 +40,13 @@ To use the widget in your browser, please visit `http(s)://host:port/widgets/dra
       Resource file reference URL are updated to the block attributes `custom-data-assets` and `data-assets` when saved.
     - 文件名更改后保存/另存为动作会新建一个文件, 文件名不更改时保存/另存为动作会更新当前文件  
       The Save/Save As action creates a new file when the file name is changed, and the Save/Save As action updates the current file when the file name is not changed.
+- 展示模式 | Presentation mode.
+  - 设置自定义块属性 `lightbox`: `1`  
+    Set custom block properties `lightbox`: `1`.
+  - 该模式只能查看不能编辑  
+    The mode can only be viewed and cannot be edited.
+  - 删除该属性或更改该属性值为其他值后刷新可以退出该模式  
+    After you delete the attribute or change the value of the property to a different value, you can exit the mode by refreshing.
 
 ## 开始 | START
 
