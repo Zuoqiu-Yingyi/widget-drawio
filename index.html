@@ -480,16 +480,19 @@ else
 </body>
 
 <script type="module">
-	function updateURL(url, id, asset) {
+	function updateURL(url, id, asset, lightbox) {
 		url.searchParams.set('dev', 1); // 开发者模式
 		url.searchParams.set('id', id); // 块 ID
 		url.searchParams.set('client', 1); // 跳过新建时选择储存位置
 		if (asset != null) {
 			url.hash = `#U${url.origin}/${asset}`;
-			window.location.href = url.href;
-		} else if (url.searchParams.get('dev') !== '1') {
-			window.location.href = url.href;
 		}
+
+		if (lightbox == '1') {
+			url.searchParams.set('lightbox', lightbox);
+		}
+
+		window.location.href = url.href;
 	}
 	async function load() {
 		var url = new URL(window.location.href);
@@ -503,7 +506,8 @@ else
 			if (node != null) {
 				id = node.getAttribute('data-node-id');
 				let asset = node.getAttribute('custom-data-assets') || node.getAttribute('data-assets');
-				updateURL(url, id, asset);
+				let lightbox = node.getAttribute('custom-lightbox');
+				updateURL(url, id, asset, lightbox);
 			}
 		} else {
 			if (url.hash == '') {
@@ -518,7 +522,8 @@ else
 				}).then((data) => {
 					// console.log(data);
 						let asset = data.data['custom-data-assets'] || data.data['data-assets'];
-						updateURL(url, id, asset);
+						let lightbox = data.data['custom-lightbox'];
+						updateURL(url, id, asset, lightbox);
 				});
 			}
 		}
