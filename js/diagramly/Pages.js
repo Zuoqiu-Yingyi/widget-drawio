@@ -519,23 +519,6 @@ EditorUi.prototype.initPages = function()
 		// Adds a graph model listener to update the view
 		this.editor.graph.model.addListener(mxEvent.CHANGE, mxUtils.bind(this, function(sender, evt)
 		{
-			// Logging possible NPE in FF
-			if (evt == null)
-			{
-				try
-				{
-					EditorUi.logEvent({category: 'NPE-NULL-EVENT',
-						action: 'EditorUi.initPages'});
-				}
-				catch (e)
-				{
-					// ignore
-				}
-
-				return;
-			}
-			// End of debugging
-
 			var edit = evt.getProperty('edit');
 			var changes = edit.changes;
 			
@@ -652,14 +635,13 @@ Graph.prototype.saveViewState = function(vs, node, ignoreTransient, resolveRefer
 {
 	if (!ignoreTransient)
 	{
-		node.setAttribute('grid', (vs == null || vs.gridEnabled) ? '1' : '0');
+		node.setAttribute('grid', ((vs == null) ? this.defaultGridEnabled : vs.gridEnabled) ? '1' : '0');
+		node.setAttribute('page', ((vs == null) ? this.defaultPageVisible : vs.pageVisible) ? '1' : '0');
 		node.setAttribute('gridSize', (vs != null) ? vs.gridSize : mxGraph.prototype.gridSize);
 		node.setAttribute('guides', (vs == null || vs.guidesEnabled) ? '1' : '0');
 		node.setAttribute('tooltips', (vs == null || vs.tooltips) ? '1' : '0');
 		node.setAttribute('connect', (vs == null || vs.connect) ? '1' : '0');
 		node.setAttribute('arrows', (vs == null || vs.arrows) ? '1' : '0');
-		node.setAttribute('page', ((vs == null && this.defaultPageVisible ) ||
-			(vs != null && vs.pageVisible)) ? '1' : '0');
 		
 		// Ignores fold to avoid checksum errors for lightbox mode
 		node.setAttribute('fold', (vs == null || vs.foldingEnabled) ? '1' : '0');
@@ -693,7 +675,7 @@ Graph.prototype.saveViewState = function(vs, node, ignoreTransient, resolveRefer
 		}
 	}
 
-	node.setAttribute('math', (vs != null && vs.mathEnabled) ? '1' : '0');
+	node.setAttribute('math', ((vs == null) ? this.defaultMathEnabled : vs.mathEnabled) ? '1' : '0');
 	node.setAttribute('shadow', (vs != null && vs.shadowVisible) ? '1' : '0');
 	
 	if (vs != null && vs.extFonts != null && vs.extFonts.length > 0)
@@ -1080,6 +1062,7 @@ EditorUi.prototype.createPage = function(name, id)
 {
 	var page = new DiagramPage(this.fileNode.ownerDocument.createElement('diagram'), id);
 	page.setName((name != null) ? name : this.createPageName());
+	this.initDiagramNode(page);
 	
 	return page;
 };
@@ -1202,8 +1185,21 @@ EditorUi.prototype.duplicatePage = function(page, name)
 			var lookup = graph.createCellLookup([graph.model.root]);
 
 			var newPage = new DiagramPage(node);
-			newPage.root = graph.cloneCell(graph.model.root, null, cloneMap);
-			newPage.viewState = graph.getViewState();
+			newPage.root = graph.cloneCell(graph.model.root,
+				null, cloneMap);
+			// Updates cell IDs
+			var model = new mxGraphModel();
+			model.prefix = Editor.guid() + '-';
+			model.setRoot(newPage.root);
+
+			// Updates custom links
+			graph.updateCustomLinks(graph.createCellMapping(
+				cloneMap, lookup), [newPage.root]);
+			
+			// Initializes diagram node
+			newPage.viewState = (page == this.currentPage) ?
+				graph.getViewState() : page.viewState;
+			this.initDiagramNode(newPage);
 			
 			// Resets zoom and scrollbar positions
 			newPage.viewState.scale = 1;
@@ -1213,10 +1209,10 @@ EditorUi.prototype.duplicatePage = function(page, name)
 			newPage.viewState.defaultParent = null;
 			newPage.setName(name);
 			
-			newPage = this.insertPage(newPage, mxUtils.indexOf(this.pages, page) + 1);
-
-			// Updates custom links after inserting into the model for cells to have new IDs
-			graph.updateCustomLinks(graph.createCellMapping(cloneMap, lookup), [newPage.root]);
+			// Inserts new page after duplicated page
+			newPage = this.insertPage(newPage,
+				mxUtils.indexOf(this.pages,
+					page) + 1);
 		}
 	}
 	catch (e)
@@ -1225,6 +1221,51 @@ EditorUi.prototype.duplicatePage = function(page, name)
 	}
 	
 	return newPage;
+};
+
+/**
+ * Duplicates the given page.
+ */
+EditorUi.prototype.initDiagramNode = function(page)
+{
+	var enc = new mxCodec(mxUtils.createXmlDocument());
+	var temp = enc.encode(new mxGraphModel(page.root));
+	this.editor.graph.saveViewState(page.viewState, temp);
+	mxUtils.setTextContent(page.node, Graph.compressNode(temp));
+};
+
+/**
+ * Duplicates the given page.
+ */
+EditorUi.prototype.clonePages = function(pages)
+{
+	var result = [];
+	
+	for (var i = 0; i < pages.length; i++)
+	{
+		result.push(this.clonePage(pages[i]));
+	}
+	
+	return result;
+};
+
+/**
+ * Duplicates the given page.
+ */
+EditorUi.prototype.clonePage = function(page)
+{
+	this.updatePageRoot(page);
+
+	var result = new DiagramPage(page.node.cloneNode(true));
+	var viewState = (page == this.currentPage) ?
+		this.editor.graph.getViewState() :
+		page.viewState;
+	result.viewState = mxUtils.clone(viewState,
+		EditorUi.transientViewStateProperties)
+	result.root = this.editor.graph.model.cloneCell(
+		page.root, null, true);
+
+	return result;
 };
 
 /**
@@ -1545,8 +1586,8 @@ EditorUi.prototype.createPageMenuTab = function(hoverEnabled, invert)
 
 						var id = this.pages[index].getId();
 						item.setAttribute('title', this.pages[index].getName() +
-							((id != null) ? ' (' + id + ')' : '') +
-							' [' + (index + 1)+ ']');
+							' (' + (index + 1) + '/' + this.pages.length + ')' +
+							((id != null) ? ' [' + id + ']' : ''));
 						
 						// Adds checkmark to current page
 						if (this.pages[index] == this.currentPage)
@@ -1943,9 +1984,6 @@ EditorUi.prototype.createPageMenu = function(page, label)
 	var codec = new mxObjectCodec(new ChangePage(), ['ui', 'relatedPage',
 		'index', 'neverShown', 'page', 'previousPage']);
 	
-	var viewStateIgnored = ['defaultParent', 'currentRoot', 'scrollLeft',
-		'scrollTop', 'scale', 'translate', 'lastPasteXml', 'pasteCounter'];
-	
 	codec.afterEncode = function(enc, obj, node)
 	{
 		node.setAttribute('relatedPage', obj.relatedPage.getId())
@@ -1959,7 +1997,7 @@ EditorUi.prototype.createPageMenu = function(page, label)
 	        	node.setAttribute('viewState', JSON.stringify(
 	        		obj.relatedPage.viewState, function(key, value)
 	        	{
-	        		return (mxUtils.indexOf(viewStateIgnored, key) < 0) ? value : undefined;
+	        		return (mxUtils.indexOf(EditorUi.transientViewStateProperties, key) < 0) ? value : undefined;
 	        	}));
 			}
 	        

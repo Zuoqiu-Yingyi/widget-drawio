@@ -15,10 +15,10 @@ EditorUi = function(editor, container, lightbox)
 	var graph = this.editor.graph;
 	graph.lightbox = lightbox;
 
-	// Overrides graph bounds to include background pages
+	// Overrides graph bounds to include background images
 	var graphGetGraphBounds = graph.getGraphBounds;
 
-	graph.getGraphBounds = function(img)
+	graph.getGraphBounds = function()
 	{
 		var bounds = graphGetGraphBounds.apply(this, arguments);
 		var img = this.backgroundImage;
@@ -1916,9 +1916,20 @@ EditorUi.prototype.onKeyDown = function(evt)
 			{
 				try
 				{
-					if (graph.cellEditor.isContentEditing() && graph.cellEditor.isTextSelected())
+					var nesting = graph.cellEditor.isContentEditing() && graph.cellEditor.isTextSelected();
+
+					if (window.getSelection && graph.cellEditor.isContentEditing() &&
+						!nesting && !mxClient.IS_IE && !mxClient.IS_IE11)
 					{
-						// (Shift+)tab indents/outdents with text selection
+						var selection = window.getSelection();
+						var container = (selection.rangeCount > 0) ? selection.getRangeAt(0).commonAncestorContainer : null;
+						nesting = container != null && (container.nodeName == 'LI' || (container.parentNode != null &&
+							container.parentNode.nodeName == 'LI'));
+					}
+
+					if (nesting)
+					{
+						// (Shift+)tab indents/outdents with text selection or inside list elements
 						document.execCommand(mxEvent.isShiftDown(evt) ? 'outdent' : 'indent', false, null);
 					}
 					// Shift+tab applies value with cursor
@@ -4421,6 +4432,26 @@ EditorUi.prototype.createStatusContainer = function()
 EditorUi.prototype.setStatusText = function(value)
 {
 	this.statusContainer.innerHTML = value;
+
+	// Wraps simple status messages in a div for styling
+	if (this.statusContainer.getElementsByTagName('div').length == 0)
+	{
+		this.statusContainer.innerHTML = '';
+		var div = this.createStatusDiv(value);
+		this.statusContainer.appendChild(div);
+	}
+};
+
+/**
+ * Creates a new toolbar for the given container.
+ */
+EditorUi.prototype.createStatusDiv = function(value)
+{
+	var div = document.createElement('div');
+	div.setAttribute('title', value);
+	div.innerHTML = value;
+
+	return div;
 };
 
 /**

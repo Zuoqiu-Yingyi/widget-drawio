@@ -332,15 +332,18 @@
         }},
         {name: 'fillWeight', dispName: 'Fill Weight', type: 'int', defVal: -1, isVisible: function(state, format)
         {
-        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1';
+        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1' &&
+				state.vertices.length > 0;
         }},
         {name: 'hachureGap', dispName: 'Hachure Gap', type: 'int', defVal: -1, isVisible: function(state, format)
         {
-        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1';
+        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1' &&
+				state.vertices.length > 0;
         }},
         {name: 'hachureAngle', dispName: 'Hachure Angle', type: 'int', defVal: -41, isVisible: function(state, format)
         {
-        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1';
+        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1' &&
+				state.vertices.length > 0;
         }},
         {name: 'curveFitting', dispName: 'Curve Fitting', type: 'float', defVal: 0.95, isVisible: function(state, format)
         {
@@ -356,24 +359,23 @@
         }},
         {name: 'disableMultiStrokeFill', dispName: 'Disable Multi Stroke Fill', type: 'bool', defVal: false, isVisible: function(state, format)
         {
-        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1';
+        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1' &&
+				state.vertices.length > 0;
         }},
         {name: 'dashOffset', dispName: 'Dash Offset', type: 'int', defVal: -1, isVisible: function(state, format)
         {
-        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1';
+        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1' &&
+				state.vertices.length > 0;
         }},
         {name: 'dashGap', dispName: 'Dash Gap', type: 'int', defVal: -1, isVisible: function(state, format)
         {
-        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1';
+        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1' &&
+				state.vertices.length > 0;
         }},
         {name: 'zigzagOffset', dispName: 'ZigZag Offset', type: 'int', defVal: -1, isVisible: function(state, format)
         {
-        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1';
-        }},
-        {name: 'jiggle', dispName: 'Jiggle', type: 'float', min: 0, defVal: 1, isVisible: function(state, format)
-        {
-        	return mxUtils.getValue(state.style, 'comic', '0') == '1' ||
-        		mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1';
+        	return mxUtils.getValue(state.style, 'sketch', (urlParams['rough'] == '1') ? '1' : '0') == '1' &&
+				state.vertices.length > 0;
         }},
         {name: 'sketchStyle', dispName: 'Sketch Style', type: 'enum', defVal: 'rough',
         	enumList: [{val: 'rough', dispName: 'Rough'}, {val: 'comic', dispName: 'Comic'}],
@@ -1796,6 +1798,12 @@
 			StyleFormatPanel.prototype.defaultColorSchemes = config.defaultColorSchemes || StyleFormatPanel.prototype.defaultColorSchemes;
 			Graph.prototype.defaultEdgeLength = config.defaultEdgeLength || Graph.prototype.defaultEdgeLength;
 			DrawioFile.prototype.autosaveDelay = config.autosaveDelay || DrawioFile.prototype.autosaveDelay;
+
+			// Enables debug output
+			if (config.debug)
+			{
+				urlParams['test'] = '1'
+			}
 			
 			if (config.templateFile != null)
 			{
@@ -2088,6 +2096,16 @@
 			{
 				EditorUi.prototype.maxImageSize = config.maxImageSize;
 			}
+			
+			if (config.shareCursorPosition != null)
+			{
+				EditorUi.prototype.shareCursorPosition = config.shareCursorPosition;
+			}
+
+			if (config.showRemoteCursors != null)
+			{
+				EditorUi.prototype.showRemoteCursors = config.showRemoteCursors;
+			}
 		}
 	};
 
@@ -2200,20 +2218,15 @@
 
 		if (node != null)
 		{
-			// Checks input for parser errors
-			var errs = node.getElementsByTagName('parsererror');
-			
-			if (errs != null && errs.length > 0)
+			// Checks for parser errors
+			var cause = Editor.extractParserError(node, mxResources.get('invalidOrMissingFile'));
+
+			if (cause)
 			{
-				var elt = errs[0];
-				var divs = elt.getElementsByTagName('div');
-				
-				if (divs != null && divs.length > 0)
-				{
-					elt = divs[0];
-				}
-				
-				throw {message: mxUtils.getTextContent(elt)};
+				EditorUi.debug('Editor.setGraphXml ParserError', [this],
+					'node', [node], 'cause', [cause]);
+
+				throw new Error(mxResources.get('notADiagramFile') + ' (' + cause + ')');
 			}
 			else if (node.nodeName == 'mxGraphModel')
 			{
@@ -7892,6 +7905,22 @@
 	};
 
 	/**
+	 * Adds style to mark stencils as lines.
+	 */
+	var mxStencilDrawShape = mxStencil.prototype.drawShape;
+		
+	mxStencil.prototype.drawShape = function(canvas, shape, x, y, w, h)
+	{
+		if (mxUtils.getValue(shape.style, 'lineShape', null) == '1')
+		{
+			canvas.setFillColor(mxUtils.getValue(shape.style,
+				mxConstants.STYLE_STROKECOLOR, this.stroke));
+		}
+
+		return mxStencilDrawShape.apply(this, arguments);
+	};
+
+	/**
 	 * Constructs a new print dialog.
 	 */
 	PrintDialog.prototype.create = function(editorUi, titleText)
@@ -7927,7 +7956,7 @@
 
 		mxUtils.br(pagesSection);
 
-		// Pages ... to ...
+		// Page range
 		var pagesRadio = allPagesRadio.cloneNode(true);
 		allPagesRadio.setAttribute('checked', 'checked');
 		pagesRadio.setAttribute('value', 'range');
@@ -8002,11 +8031,47 @@
 			div.appendChild(pagesSection);
 			pagesRadio.checked = true;
 		}
+
+		mxUtils.br(pagesSection);
 		
+		// Selection only
+		var selectionOnlyRadio = document.createElement('input');
+		selectionOnlyRadio.setAttribute('value', 'all');
+		selectionOnlyRadio.setAttribute('type', 'radio');
+		selectionOnlyRadio.style.marginRight = '8px';
+		
+		if (graph.isSelectionEmpty())
+		{
+			selectionOnlyRadio.setAttribute('disabled', 'disabled');
+		}
+
 		// Adjust to ...
 		var adjustSection = document.createElement('div');
 		adjustSection.style.marginBottom = '10px';
+
+		if (pageCount == 1)
+		{
+			selectionOnlyRadio.setAttribute('type', 'checkbox');
+			selectionOnlyRadio.style.marginBottom = '12px';
+			adjustSection.appendChild(selectionOnlyRadio);
+		}
+		else
+		{
+
+			selectionOnlyRadio.setAttribute('name', 'pages-printdialog');
+			selectionOnlyRadio.style.marginBottom = '8px';
+			pagesSection.appendChild(selectionOnlyRadio);
+		}
 		
+		var span = document.createElement('span');
+		mxUtils.write(span, mxResources.get('selectionOnly'));
+		selectionOnlyRadio.parentNode.appendChild(span);
+
+		if (pageCount == 1)
+		{
+			mxUtils.br(selectionOnlyRadio.parentNode);
+		}
+
 		var adjustRadio = document.createElement('input');
 		adjustRadio.style.marginRight = '8px';
 		
@@ -8158,14 +8223,18 @@
 			
 			// Disables dark mode while printing
 			var darkStylesheet = null;
-			
+			var darkFg = graph.shapeForegroundColor;
+			var darkBg = graph.shapeBackgroundColor;
+
 			if (graph.themes != null && graph.defaultThemeName == 'darkTheme')
 			{
 				darkStylesheet = graph.stylesheet;
 				graph.stylesheet = graph.getDefaultStylesheet()
+				graph.shapeForegroundColor = '#000000';
+				graph.shapeBackgroundColor = '#ffffff';
 				graph.refresh();
 			}
-			
+
 			function printGraph(thisGraph, pv, forcePageBreaks)
 			{
 				// Workaround for CSS transforms affecting the print output
@@ -8237,6 +8306,14 @@
 					pv = PrintDialog.createPrintPreview(thisGraph, scale, pf, border, x0, y0, autoOrigin);
 					pv.pageSelector = false;
 					pv.mathEnabled = false;
+
+					if (selectionOnlyRadio.checked)
+					{
+						pv.isCellVisible = function(cell)
+						{
+							return thisGraph.isCellSelected(cell);
+						};
+					}
 					
 					var file = editorUi.getCurrentFile();
 					
@@ -8329,15 +8406,19 @@
 					
 					// Switches stylesheet for print output in dark mode
 					var temp = null;
+					var tempFg = graph.shapeForegroundColor;
+					var tempBg = graph.shapeBackgroundColor;
 					
 					// Disables dashed printing of flowAnimation
 					var enableFlowAnimation = graph.enableFlowAnimation;
 					graph.enableFlowAnimation = false;
-					
+
 					if (graph.themes != null && graph.defaultThemeName == 'darkTheme')
 					{
 						temp = graph.stylesheet;
 						graph.stylesheet = graph.getDefaultStylesheet()
+						graph.shapeForegroundColor = '#000000';
+						graph.shapeBackgroundColor = '#ffffff';
 						graph.refresh();
 					}
 					
@@ -8350,6 +8431,8 @@
 					// Restores the stylesheet
 					if (temp != null)
 					{
+						graph.shapeForegroundColor = tempFg;
+						graph.shapeBackgroundColor = tempBg;
 						graph.stylesheet = temp;
 						graph.refresh();
 					}
@@ -8411,7 +8494,7 @@
 			var pagesTo = pagesToInput.value;
 			var ignorePages = !allPagesRadio.checked;
 			var pv = null;
-			
+
 			if (EditorUi.isElectronApp)
 			{
 				PrintDialog.electronPrint(editorUi, allPagesRadio.checked, pagesFrom, pagesTo,  fitRadio.checked,
@@ -8423,7 +8506,9 @@
 			
 			if (ignorePages)
 			{
-				ignorePages = pagesFrom == currentPage && pagesTo == currentPage;
+				ignorePages = selectionOnlyRadio.checked ||
+					(pagesFrom == currentPage &&
+					pagesTo == currentPage);
 			}
 			
 			if (!ignorePages && editorUi.pages != null && editorUi.pages.length)
@@ -8445,6 +8530,8 @@
 					if (tempGraph == null)
 					{
 						tempGraph = editorUi.createTemporaryGraph(graph.stylesheet);
+						tempGraph.shapeForegroundColor = graph.shapeForegroundColor;
+						tempGraph.shapeBackgroundColor = graph.shapeBackgroundColor;
 
 						// Restores graph settings that are relevant for printing
 						var pageVisible = true;
@@ -8471,12 +8558,43 @@
 							bgImage = page.viewState.backgroundImage;
 							tempGraph.extFonts = page.viewState.extFonts;
 						}
-					
+
+						// Forces update of background page image in offscreen page
+						if (bgImage != null && bgImage.originalSrc != null)
+						{
+							bgImage = editorUi.createImageForPageLink(
+								bgImage.originalSrc, page);
+						}
+						
 						tempGraph.background = bg;
-						tempGraph.backgroundImage = (bgImage != null) ? new mxImage(bgImage.src, bgImage.width, bgImage.height) : null;
+						tempGraph.backgroundImage = (bgImage != null) ? new mxImage(
+							bgImage.src, bgImage.width, bgImage.height,
+							bgImage.x, bgImage.y) : null;
 						tempGraph.pageVisible = pageVisible;
 						tempGraph.mathEnabled = mathEnabled;
-						
+
+						// Overrides graph bounds to include background images
+						var graphGetGraphBounds = tempGraph.getGraphBounds;
+
+						tempGraph.getGraphBounds = function()
+						{
+							var bounds = graphGetGraphBounds.apply(this, arguments);
+							var img = this.backgroundImage;
+							
+							if (img != null && img.width != null && img.height != null)
+							{
+								var t = this.view.translate;
+								var s = this.view.scale;
+
+								bounds = mxRectangle.fromRectangle(bounds);
+								bounds.add(new mxRectangle(
+									(t.x + img.x) * s, (t.y + img.y) * s,
+									img.width * s, img.height * s));
+							}
+
+							return bounds;
+						};
+
 						// Redirects placeholders to current page
 						var graphGetGlobalVariable = tempGraph.getGlobalVariable;
 		
@@ -8548,6 +8666,8 @@
 			// Restores dark mode
 			if (darkStylesheet != null)
 			{
+				graph.shapeForegroundColor = darkFg;
+				graph.shapeBackgroundColor = darkBg;
 				graph.stylesheet = darkStylesheet;
 				graph.refresh();
 			}

@@ -87,8 +87,7 @@ function createWindow (opt = {})
 		webPreferences: {
 			preload: `${__dirname}/electron-preload.js`,
 			spellcheck: enableSpellCheck,
-			contextIsolation: true,
-			nativeWindowOpen: true
+			contextIsolation: true
 		}
 	}, opt)
 
@@ -286,8 +285,7 @@ app.on('ready', e =>
 			show : false,
 			webPreferences: {
 				preload: `${__dirname}/electron-preload.js`,
-				contextIsolation: true,
-				nativeWindowOpen: true
+				contextIsolation: true
 			}
 		});
     	
@@ -1218,8 +1216,7 @@ function exportDiagram(event, args, directFinalize)
 			webPreferences: {
 				preload: `${__dirname}/electron-preload.js`,
 				backgroundThrottling: false,
-				contextIsolation: true,
-				nativeWindowOpen: true
+				contextIsolation: true
 			},
 			show : false,
 			frame: false,
@@ -1471,7 +1468,7 @@ ipcMain.on('export', exportDiagram);
 // Renderer Helper functions
 //================================================================
 
-const { COPYFILE_EXCL } = fs.constants;
+const { O_SYNC, O_CREAT, O_WRONLY, O_TRUNC } = fs.constants;
 const DRAFT_PREFEX = '~$';
 const DRAFT_EXT = '.dtmp';
 const BKP_PREFEX = '~$';
@@ -1544,6 +1541,7 @@ async function saveFile(fileObject, data, origStat, overwrite, defEnc)
 	var retryCount = 0;
 	var backupCreated = false;
 	var bkpPath = path.join(path.dirname(fileObject.path), BKP_PREFEX + path.basename(fileObject.path) + BKP_EXT);
+	var writeEnc = defEnc || fileObject.encoding;
 
 	var writeFile = async function()
 	{
@@ -1552,10 +1550,20 @@ async function saveFile(fileObject, data, origStat, overwrite, defEnc)
 			throw new Error('empty data');
 		}
 		else
-		{
-			var writeEnc = defEnc || fileObject.encoding;
-			
-			await fsProm.writeFile(fileObject.path, data, writeEnc);
+		{			
+			let fh;
+
+			try
+			{
+				// O_SYNC is for sync I/O and reduce risk of file corruption
+				fh = await fsProm.open(fileObject.path, O_SYNC | O_CREAT | O_WRONLY | O_TRUNC);
+				await fsProm.writeFile(fh, data, writeEnc);
+			}
+			finally
+			{
+				await fh?.close();
+			}
+
 			let stat2 = await fsProm.stat(fileObject.path);
 			// Workaround for possible writing errors is to check the written
 			// contents of the file and retry 3 times before showing an error
@@ -1576,32 +1584,51 @@ async function saveFile(fileObject, data, origStat, overwrite, defEnc)
 			}
 			else
 			{
-				if (backupCreated)
+				//We'll keep the backup file in case the original file is corrupted. TODO When should we delete the backup file?
+				/*if (backupCreated)
 				{
 					fs.unlink(bkpPath, (err) => {}); //Ignore errors!
-				}
+				}*/
 
 				return stat2;
 			}
 		}
 	};
 	
-	async function doSaveFile()
+	async function doSaveFile(isNew)
 	{
-		//Copy file to backup file (after conflict and stat is checked)
-		try
+		if (!isNew)
 		{
-			await fsProm.copyFile(fileObject.path, bkpPath, COPYFILE_EXCL);
-			backupCreated = true;
+			//Copy file to backup file (after conflict and stat is checked)
+			let bkpFh;
+
+			try
+			{
+				//Use file read then write to open the backup file direct sync write to reduce the chance of file corruption
+				let fileContent = await fsProm.readFile(fileObject.path, writeEnc);
+				bkpFh = await fsProm.open(bkpPath, O_SYNC | O_CREAT | O_WRONLY | O_TRUNC);
+				await fsProm.writeFile(bkpFh, fileContent, writeEnc);
+				backupCreated = true;
+			}
+			catch (e) 
+			{
+				if (__DEV__)
+				{
+					console.log('Backup file writing failed', e); //Ignore
+				}
+			}
+			finally 
+			{
+				await bkpFh?.close();
+			}
 		}
-		catch (e) {} //Ignore
-					
+
 		return await writeFile();
 	};
 	
 	if (overwrite)
 	{
-		return await doSaveFile();
+		return await doSaveFile(true);
 	}
 	else
 	{
@@ -1610,11 +1637,11 @@ async function saveFile(fileObject, data, origStat, overwrite, defEnc)
 
 		if (stat && isConflict(origStat, stat))
 		{
-			new Error('conflict');
+			throw new Error('conflict');
 		}
 		else
 		{
-			return await doSaveFile();
+			return await doSaveFile(stat == null);
 		}
 	}
 };

@@ -1,4 +1,5 @@
-function mxODPicker(container, previewFn, getODFilesList, getODFileInfo, getRecentList, addToRecent, pickedFileCallback, errorFn, foldersOnly, backFn, withSubmitBtn, withThumbnail, initFolderPath)
+function mxODPicker(container, previewFn, getODFilesList, getODFileInfo, getRecentList, addToRecent, pickedFileCallback,
+	errorFn, foldersOnly, backFn, withSubmitBtn, withThumbnail, initFolderPath, acceptAllFiles)
 {
 	var previewHtml = '';
 	
@@ -76,6 +77,7 @@ function mxODPicker(container, previewFn, getODFilesList, getODFileInfo, getRece
 	var isDarkMode = window.Editor != null && Editor.isDarkMode != null && Editor.isDarkMode();
 	
 	var css = 
+		'.odCatsList *, .odFilesSec * { user-select: none; }' +
 		'.odCatsList {' +
 		'	box-sizing: border-box;' + 
 		'	position:absolute;' + 
@@ -546,7 +548,7 @@ function mxODPicker(container, previewFn, getODFilesList, getODFileInfo, getRece
 						
 				if (isSharepointSites)
 				{
-					item.folder = true;
+					item.folder = isSharepointSites == 2? {isRoot: true} : true;
 				}
 				
 				var isFolder = item.folder !=  null;
@@ -581,7 +583,11 @@ function mxODPicker(container, previewFn, getODFilesList, getODFileInfo, getRece
 					currentItem.className += ' odRowSelected';
 					selectedFile = item;
 					selectedDriveId = driveId;
-					previewFn(selectedFile);
+					
+					if (!acceptAllFiles)
+					{
+						previewFn(selectedFile);
+					}
 				}
 				
 				(function(item2, row2)
@@ -598,7 +604,10 @@ function mxODPicker(container, previewFn, getODFilesList, getODFileInfo, getRece
 							selectedFile = item2;
 							selectedDriveId = driveId;
 							
-							previewFn(selectedFile);
+							if (!acceptAllFiles)
+							{
+								previewFn(selectedFile);
+							}
 						}
 					});
 				})(item, row);
@@ -698,9 +707,9 @@ function mxODPicker(container, previewFn, getODFilesList, getODFileInfo, getRece
 			
 			var list = resp.value || [];
 
-			var potentialDrawioFiles = isSharepointSites? list : [];
+			var potentialDrawioFiles = acceptAllFiles || isSharepointSites? list : [];
 			
-			for (var i = 0; !isSharepointSites && i < list.length; i++)
+			for (var i = 0; !isSharepointSites && !acceptAllFiles && i < list.length; i++)
 			{
 				var file = list[i];
 				var mimeType = file.file? file.file.mimeType : null;

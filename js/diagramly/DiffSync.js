@@ -20,7 +20,8 @@ EditorUi.DIFF_UPDATE = 'u';
 /**
  * Shared codec.
  */
-EditorUi.prototype.codec = new mxCodec();
+EditorUi.transientViewStateProperties =['defaultParent', 'currentRoot', 'scrollLeft',
+	'scrollTop', 'scale', 'translate', 'lastPasteXml', 'pasteCounter'];
 
 /**
  * Contains all view state properties that should not be ignored in diff sync.
@@ -35,6 +36,31 @@ EditorUi.prototype.cellProperties = {id: true, value: true, xmlValue: true, vert
 	visible: true, collapsed: true, connectable: true, parent: true, children: true, previous: true,
 	source: true, target: true, edges: true, geometry: true, style: true,
 	mxObjectId: true, mxTransient: true};
+
+/**
+ * Shared codec.
+ */
+EditorUi.prototype.codec = new mxCodec();
+
+/**
+ * Applies the given patches to the given pages.
+ */
+EditorUi.prototype.applyPatches = function(pages, patches, markPages, resolver, updateEdgeParents)
+{
+	if (patches != null)
+	{
+		for (var i = 0; i < patches.length; i++)
+		{
+			if (patches[i] != null)
+			{
+				pages = this.patchPages(pages, patches[i],
+					markPages, resolver, updateEdgeParents);
+			}
+		}
+	}
+
+	return pages;
+};
 
 /**
  * Removes all labels, user objects and styles from the given node in-place.
@@ -629,9 +655,58 @@ EditorUi.prototype.patchCell = function(model, cell, diff, resolve)
 };
 
 /**
- * Gets a file node that is comparable with a remote file node
- * so that using isEqualNode returns true if the files can be
- * considered equal.
+ * Returns the pages for the given XML string.
+ */
+EditorUi.prototype.getXmlForPages = function(pages)
+{
+	var node = this.getNodeForPages(pages);
+	var result = null;
+
+	if (node != null)
+	{
+		result = mxUtils.getXml(node);
+	}
+
+	return result;
+};
+
+/**
+ * Returns the pages for the given XML string.
+ */
+EditorUi.prototype.getNodeForPages = function(pages)
+{
+	var result = null;
+
+	if (this.fileNode != null && pages != null)
+	{
+		result = this.fileNode.cloneNode(false);
+
+		for (var i = 0; i < pages.length; i++)
+		{
+			var enc = new mxCodec(mxUtils.createXmlDocument());
+			var temp = enc.encode(new mxGraphModel(pages[i].root));
+			this.editor.graph.saveViewState(pages[i].viewState, temp);
+			var node = pages[i].node.cloneNode(false);
+			node.appendChild(temp);
+			result.appendChild(node);
+		}
+	}
+
+	return result;
+};
+
+/**
+ * Returns the pages for the given XML string.
+ */
+EditorUi.prototype.getPagesForXml = function(data)
+{
+	var doc = mxUtils.parseXml(data);
+
+	return this.getPagesForNode(doc.documentElement);
+};
+
+/**
+ * Returns the pages for the given node.
  */
 EditorUi.prototype.getPagesForNode = function(node, nodeName)
 {

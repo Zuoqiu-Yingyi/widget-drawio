@@ -1121,6 +1121,12 @@ App.main = function(callback, createUi)
 						mxEvent.removeListener(window, 'message', configHandler);
 						Editor.configure(data.config, true);
 						mxSettings.load();
+						//To enable transparent iframe in dark mode (e.g, in gitlab)
+						if (data.colorSchemeMeta)
+						{
+							mxmeta('color-scheme', 'dark light');
+						}
+
 						doMain();
 					}
 				}
@@ -3492,6 +3498,9 @@ App.prototype.filterDrafts = function(filePath, guid, callback)
 	{
 		this.getDatabaseItems(mxUtils.bind(this, function(items)
 		{
+			EditorUi.debug('App.filterDrafts',
+				[this], 'items', items);
+
 			// Collects orphaned drafts
 			for (var i = 0; i < items.length; i++)
 			{
@@ -4541,25 +4550,25 @@ App.prototype.loadTemplate = function(url, onload, onerror, templateFilename, as
 {
 	var base64 = false;
 	var realUrl = url;
+	var filterFn = (templateFilename != null) ? templateFilename : url;
+	var isVisioFilename = /(\.v(dx|sdx?))($|\?)/i.test(filterFn) ||
+		/(\.vs(x|sx?))($|\?)/i.test(filterFn);
+	var binary = /\.png$/i.test(filterFn) || /\.pdf$/i.test(filterFn);
 	
 	if (!this.editor.isCorsEnabledForUrl(realUrl))
 	{
-		// Always uses base64 response to check magic numbers for file type
+		base64 = binary || isVisioFilename;
 		var nocache = 't=' + new Date().getTime();
-		realUrl = PROXY_URL + '?url=' + encodeURIComponent(url) + '&base64=1&' + nocache;
-		base64 = true;
+		realUrl = PROXY_URL + '?url=' + encodeURIComponent(url) +
+			'&' + nocache + ((base64) ? '&base64=1' : '');
 	}
 
-	var filterFn = (templateFilename != null) ? templateFilename : url;
-	
 	this.editor.loadUrl(realUrl, mxUtils.bind(this, function(responseData)
 	{
 		try
 		{
 			var data = (!base64) ? responseData : ((window.atob && !mxClient.IS_IE && !mxClient.IS_IE11) ?
 				atob(responseData) : Base64.decode(responseData));
-			var isVisioFilename = /(\.v(dx|sdx?))($|\?)/i.test(filterFn) ||
-				/(\.vs(x|sx?))($|\?)/i.test(filterFn);
 			
 			if (isVisioFilename || this.isVisioData(data))
 			{
@@ -5434,10 +5443,23 @@ App.prototype.getLibraryStorageHint = function(file)
  */
 App.prototype.restoreLibraries = function()
 {
-	this.loadLibraries(mxSettings.getCustomLibraries(), mxUtils.bind(this, function()
+	var checked = [];
+
+	function addLibs(libs)
 	{
-		this.loadLibraries((urlParams['clibs'] || '').split(';'));
-	}));
+		for (var i = 0; i < libs.length; i++)
+		{
+			if (libs[i] != '' && mxUtils.indexOf(
+				checked, libs[i]) < 0)
+			{
+				checked.push(libs[i]);
+			}
+		}
+	};
+
+	addLibs(mxSettings.getCustomLibraries());
+	addLibs((urlParams['clibs'] || '').split(';'));
+	this.loadLibraries(checked);
 };
 
 /**
@@ -5447,9 +5469,9 @@ App.prototype.loadLibraries = function(libs, done)
 {
 	if (this.sidebar != null)
 	{
-		if (this.pendingLibraries == null)
+		if (this.loadedLibraries == null)
 		{
-			this.pendingLibraries = new Object();
+			this.loadedLibraries = new Object();
 		}
 		
 		// Ignores this library next time
@@ -5459,12 +5481,13 @@ App.prototype.loadLibraries = function(libs, done)
 			{
 				mxSettings.removeCustomLibrary(id);
 			}
-			
-			delete this.pendingLibraries[id];
+
+			delete this.loadedLibraries[id];
 		});
-				
+
 		var waiting = 0;
 		var files = [];
+		var idx = (libs.length > 0 && libs[0] == 'L.scratchpad') ? 1 : 0;
 
 		// Loads in order of libs array
 		var checkDone = mxUtils.bind(this, function()
@@ -5477,7 +5500,7 @@ App.prototype.loadLibraries = function(libs, done)
 					{
 						if (files[i] != null)
 						{
-							this.loadLibrary(files[i]);
+							this.loadLibrary(files[i], i <= idx);
 						}
 					}
 				}
@@ -5497,15 +5520,15 @@ App.prototype.loadLibraries = function(libs, done)
 				
 				(mxUtils.bind(this, function(id, index)
 				{
-					if (id != null && id.length > 0 && this.pendingLibraries[id] == null &&
+					if (id != null && id.length > 0 && this.loadedLibraries[id] == null &&
 						this.sidebar.palettes[id] == null)
 					{
 						// Waits for all libraries to load
+						this.loadedLibraries[id] = true;
 						waiting++;
 						
 						var onload = mxUtils.bind(this, function(file)
 						{
-							delete this.pendingLibraries[id];
 							files[index] = file;
 							waiting--;
 							checkDone();
@@ -5518,7 +5541,6 @@ App.prototype.loadLibraries = function(libs, done)
 							checkDone();
 						});
 						
-						this.pendingLibraries[id] = true;
 						var service = id.substring(0, 1);
 						
 						if (service == 'L')
@@ -5843,7 +5865,6 @@ App.prototype.updateButtonContainer = function()
 	}
 };
 
-
 App.prototype.fetchAndShowNotification = function(target, subtarget)
 {
 	if (this.fetchingNotif)
@@ -5864,7 +5885,7 @@ App.prototype.fetchAndShowNotification = function(target, subtarget)
 		});
 		
 		var lsReadFlag = target + 'NotifReadTS';
-		var lastRead = (localStorage != null) ? parseInt(localStorage.getItem(lsReadFlag)) : true;
+		var lastRead = isLocalStorage ? parseInt(localStorage.getItem(lsReadFlag)) : true;
 				
 		for (var i = 0; i < notifs.length; i++)
 		{
@@ -5876,7 +5897,7 @@ App.prototype.fetchAndShowNotification = function(target, subtarget)
 	
 	try
 	{
-		if (localStorage != null)
+		if (isLocalStorage)
 		{
 			cachedNotif = JSON.parse(localStorage.getItem(cachedNotifKey));
 		}

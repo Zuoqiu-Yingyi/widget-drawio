@@ -184,6 +184,11 @@ DriveFile.prototype.saveFile = function(title, revision, success, error, unloadi
 					try
 					{
 						var lastDesc = this.desc;
+						
+						if (this.sync != null)
+						{
+							this.sync.fileSaving();
+						}
 	
 						this.ui.drive.saveFile(this, realRevision, mxUtils.bind(this, function(resp, savedData)
 						{
@@ -417,7 +422,7 @@ DriveFile.prototype.saveAs = function(filename, success, error)
  */
 DriveFile.prototype.rename = function(title, success, error)
 {
-	var etag = this.getCurrentEtag();
+	var rev = this.getCurrentRevisionId();
 	
 	this.ui.drive.renameFile(this.getId(), title, mxUtils.bind(this, function(desc)
 	{
@@ -427,7 +432,7 @@ DriveFile.prototype.rename = function(title, success, error)
 
 			if (this.sync != null)
 			{
-				this.sync.descriptorChanged(etag);
+				this.sync.descriptorChanged(rev);
 			}
 			
 			this.save(true, success, error);
@@ -439,7 +444,7 @@ DriveFile.prototype.rename = function(title, success, error)
 			
 			if (this.sync != null)
 			{
-				this.sync.descriptorChanged(etag);
+				this.sync.descriptorChanged(rev);
 			}
 			
 			if (success != null)

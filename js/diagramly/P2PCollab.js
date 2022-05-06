@@ -41,7 +41,7 @@ function P2PCollab(ui, sync, channelId)
 			}
 			else
 			{
-				this.joinFile();
+				this.joinFile(true);
 			}
 		}
 		catch (e)
@@ -68,7 +68,9 @@ function P2PCollab(ui, sync, channelId)
 		//Converting to a string such that webRTC works also
 		var msg = JSON.stringify({from: myClientId, id: messageId,
 			type: type, sessionId: sync.clientId, userId: user.id,
-			username: user.displayName, data: data});
+			username: user.displayName, data: data,
+			protocol: DrawioFileSync.PROTOCOL,
+			editor: EditorUi.VERSION});
 		
 		if (NO_P2P && type != 'cursor')
 		{
@@ -138,92 +140,72 @@ function P2PCollab(ui, sync, channelId)
         };
     };
 
-	if (urlParams['remote-cursors'] != '0')
+	function sendCursor(me)
 	{
-		function sendCursor(me)
+		if (ui.shareCursorPosition && !graph.isMouseDown)
 		{
-			if (ui.shareCursorPosition && !graph.isMouseDown)
-			{
-				var offset = mxUtils.getOffset(graph.container);
-				var tr = graph.view.translate;
-				var s = graph.view.scale;
-
-				var pageId = (ui.currentPage != null) ?
-					ui.currentPage.getId() : null;
-				sendMessage('cursor', {pageId: pageId,
-					x: Math.round((me.getX() - offset.x +
-						graph.container.scrollLeft) / s - tr.x),
-					y: Math.round((me.getY() - offset.y +
-						graph.container.scrollTop) / s - tr.y)});
-			}
-		};
-
-		this.mouseListeners = {
-			startX: 0,
-			startY: 0,
-			scrollLeft: 0,
-			scrollTop: 0,
-			mouseDown: function(sender, me) {},
-			mouseMove: debounce(function(sender, me)
-			{
-				sendCursor(me);
-			}, cursorDelay), // 5 frame/sec approx TODO with 100 milli (10 fps), the cursor is smoother
-			mouseUp: function(sender, me)
-			{
-				sendCursor(me);
-			}
-		};
-
-		graph.addMouseListener(this.mouseListeners);
-
-		this.shareCursorPositionListener = function()
-		{
-			if (!ui.isShareCursorPosition())
-			{
-				sendMessage('cursor', {hide: true});
-			}
-		};
-
-		ui.addListener('shareCursorPositionChanged', this.shareCursorPositionListener);
-
-		this.selectionChangeListener = function(sender, evt)
-		{
-			// Logging possible NPE in FF
-			if (evt == null)
-			{
-				try
-				{
-					EditorUi.logEvent({category: 'NPE-NULL-EVENT',
-						action: 'P2PCollab.selectionChangeListener'});
-				}
-				catch (e)
-				{
-					// ignore
-				}
-
-				return;
-			}
-			// End of debugging
-
-			var mapToIds = function(c)
-			{
-				return c.id;
-			};
+			var offset = mxUtils.getOffset(graph.container);
+			var tr = graph.view.translate;
+			var s = graph.view.scale;
 
 			var pageId = (ui.currentPage != null) ?
 				ui.currentPage.getId() : null;
-			var added = evt.getProperty('added'),
-				removed = evt.getProperty('removed');
+			sendMessage('cursor', {pageId: pageId,
+				x: Math.round((me.getX() - offset.x +
+					graph.container.scrollLeft) / s - tr.x),
+				y: Math.round((me.getY() - offset.y +
+					graph.container.scrollTop) / s - tr.y)});
+		}
+	};
 
-			//Added/removed looks like inverted
-			sendMessage('selectionChange', {pageId: pageId,
-				removed: added? added.map(mapToIds) : [],
-				added: removed? removed.map(mapToIds) : []
-			});
+	this.mouseListeners = {
+		startX: 0,
+		startY: 0,
+		scrollLeft: 0,
+		scrollTop: 0,
+		mouseDown: function(sender, me) {},
+		mouseMove: debounce(function(sender, me)
+		{
+			sendCursor(me);
+		}, cursorDelay), // 5 frame/sec approx TODO with 100 milli (10 fps), the cursor is smoother
+		mouseUp: function(sender, me)
+		{
+			sendCursor(me);
+		}
+	};
+
+	graph.addMouseListener(this.mouseListeners);
+
+	this.shareCursorPositionListener = function()
+	{
+		if (!ui.isShareCursorPosition())
+		{
+			sendMessage('cursor', {hide: true});
+		}
+	};
+
+	ui.addListener('shareCursorPositionChanged', this.shareCursorPositionListener);
+	
+	this.selectionChangeListener = function(sender, evt)
+	{
+		var mapToIds = function(c)
+		{
+			return c.id;
 		};
 
-		graph.getSelectionModel().addListener(mxEvent.CHANGE, this.selectionChangeListener);
-	}
+		var pageId = (ui.currentPage != null) ?
+			ui.currentPage.getId() : null;
+		var added = evt.getProperty('added'),
+			removed = evt.getProperty('removed');
+
+		//Added/removed looks like inverted
+		sendMessage('selectionChange', {pageId: pageId,
+			removed: added? added.map(mapToIds) : [],
+			added: removed? removed.map(mapToIds) : []
+		});
+	};
+
+	graph.getSelectionModel().addListener(mxEvent.CHANGE, this.selectionChangeListener);
 
 	function updateCursor(entry, transition)
 	{
@@ -234,6 +216,7 @@ function P2PCollab(ui, sync, channelId)
 			entry.lastCursor != null)
 		{
 			if (entry.lastCursor.hide != null ||
+				!ui.isShowRemoteCursors() ||
 				(entry.lastCursor.pageId != null &&
 				entry.lastCursor.pageId != pageId))
 			{
@@ -287,6 +270,7 @@ function P2PCollab(ui, sync, channelId)
 	graph.getView().addListener(mxEvent.SCALE, this.cursorHandler);
 	graph.getView().addListener(mxEvent.TRANSLATE, this.cursorHandler);
 	graph.getView().addListener(mxEvent.SCALE_AND_TRANSLATE, this.cursorHandler);
+	ui.addListener('showRemoteCursorsChanged', this.cursorHandler);
 	ui.editor.addListener('pageSelected', this.cursorHandler);
 
 	function processMsg(msg, fromCId)
@@ -367,7 +351,7 @@ function P2PCollab(ui, sync, channelId)
 				name.style.whiteSpace = 'nowrap';
 				
 				mxUtils.write(name, username);
-				cursor.append(name);
+				cursor.appendChild(name);
 
 				ui.diagramContainer.appendChild(cursor);
 				selection = connectedSessions[sessionId].selection;
@@ -393,12 +377,9 @@ function P2PCollab(ui, sync, channelId)
 		switch (msg.type)
 		{
 			case 'cursor':
-				if (urlParams['remote-cursors'] != '0')
-				{
-					createCursor();
-					connectedSessions[sessionId].lastCursor = msgData;
-					updateCursor(connectedSessions[sessionId], true);
-				}
+				createCursor();
+				connectedSessions[sessionId].lastCursor = msgData;
+				updateCursor(connectedSessions[sessionId], true);
 			break;
 			case 'diff':
 				try
@@ -412,11 +393,11 @@ function P2PCollab(ui, sync, channelId)
 				}
 			break;
 			case 'selectionChange':
-				if (urlParams['remote-cursors'] != '0')
+				if (urlParams['remote-selection'] != '0')
 				{
 					var pageId = (ui.currentPage != null) ?
 						ui.currentPage.getId() : null;
-
+					
 					if (pageId == null ||
 						(msgData.pageId != null &&
 						msgData.pageId == pageId))
@@ -439,9 +420,13 @@ function P2PCollab(ui, sync, channelId)
 						{
 							var id = msgData.added[i];
 							var cell = graph.model.getCell(id);
-							selection[id] = graph.highlightCell(cell,
-								connectedSessions[sessionId].color, 60000,
-								SELECTION_OPACITY, 3);
+
+							if (cell != null)
+							{	
+								selection[id] = graph.highlightCell(cell,
+									connectedSessions[sessionId].color, 60000,
+									SELECTION_OPACITY, 3);
+							}
 						}
 					}
 				}
@@ -578,7 +563,7 @@ function P2PCollab(ui, sync, channelId)
 		}
 	};
 
-	this.joinFile = function()
+	this.joinFile = function(check)
 	{
 		if (destroyed) return;
 
@@ -615,6 +600,11 @@ function P2PCollab(ui, sync, channelId)
 				joinInProgress = false;
 				sync.file.fireEvent(new mxEventObject('realtimeStateChanged'));
 				EditorUi.debug('P2PCollab: open socket', socket.joinId);
+
+				if (check)
+				{
+					sync.scheduleCleanup();
+				}
 			});
 		
 			ws.addEventListener('message', mxUtils.bind(this, function(event)
@@ -673,7 +663,7 @@ function P2PCollab(ui, sync, channelId)
 					{
 						EditorUi.debug('P2PCollab: calling rejoin on', ws.joinId);
 						rejoinCalled = true;
-						this.joinFile();
+						this.joinFile(true);
 					}
 				}
 
@@ -697,7 +687,7 @@ function P2PCollab(ui, sync, channelId)
 					{
 						EditorUi.debug('P2PCollab: calling rejoin on', ws.joinId);
 						rejoinCalled = true;
-						this.joinFile();
+						this.joinFile(true);
 					}
 				}
 
@@ -723,7 +713,10 @@ function P2PCollab(ui, sync, channelId)
 
 			for (var id in selection)
 			{
-				selection[id].destroy();
+				if (selection[id] != null)
+				{
+					selection[id].destroy();
+				}
 			}
 
 			if (user.cursor != null && user.cursor.parentNode != null)
@@ -771,6 +764,7 @@ function P2PCollab(ui, sync, channelId)
 			graph.getView().removeListener(mxEvent.TRANSLATE, this.cursorHandler);
 			graph.getView().removeListener(mxEvent.SCALE_AND_TRANSLATE, this.cursorHandler);
 			ui.editor.removeListener('pageSelected', this.cursorHandler);
+			ui.removeListener(this.cursorHandler);
 		}
 
 		//Close the socket

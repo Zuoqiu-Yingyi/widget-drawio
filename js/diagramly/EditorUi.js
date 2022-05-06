@@ -58,11 +58,14 @@
 	/**
 	 * Specifies the URL for the diffsync cache.
 	 */
-	EditorUi.cacheUrl = (urlParams['dev'] == '1') ? '/cache' : window.REALTIME_URL;
+	EditorUi.cacheUrl = window.REALTIME_URL;
 
+	/**
+	 * Disables sync if no diffsync cache is defined.
+	 */
 	if (EditorUi.cacheUrl == null && typeof DrawioFile !== 'undefined')
 	{
-		DrawioFile.SYNC = 'none'; //Disable real-time sync
+		DrawioFile.SYNC = 'none'; // Disables real-time sync
 	}
 	
 	/**
@@ -100,6 +103,11 @@
 	 */
 	EditorUi.scratchpadHelpLink = 'https://www.diagrams.net/doc/faq/scratchpad';
 
+	/**
+	 * Specifies if the edit option should be shown in the HTML export dialog.
+	 */
+	EditorUi.enableHtmlEditOption = true;
+ 
 	/**
 	 * Default Mermaid config without using foreign objects in flowcharts.
 	 */
@@ -264,10 +272,7 @@
 				
 				for (var i = 0; i < arguments.length; i++)
 			    {
-					if (arguments[i] != null)
-					{
-						args.push(arguments[i]);
-					}
+					args.push(arguments[i]);
 			    }
 			    
 				console.log.apply(console, args);
@@ -401,7 +406,12 @@
 	/**
 	 * Restores app defaults for UI
 	 */
-	EditorUi.prototype.shareCursorPosition = false;
+	EditorUi.prototype.shareCursorPosition = true;
+
+	/**
+	 * Restores app defaults for UI
+	 */
+	EditorUi.prototype.showRemoteCursors = true;
 
 	/**
 	 * Capability check for canvas export
@@ -531,6 +541,24 @@
 		return this.shareCursorPosition;
 	};
 
+	 /**
+	  * Returns true if offline app, which isn't a defined thing
+	  */
+	EditorUi.prototype.setShowRemoteCursors = function(value)
+	{
+		this.showRemoteCursors = value;
+
+		this.fireEvent(new mxEventObject('showRemoteCursorsChanged'));
+	};
+ 
+	/**
+	 * Returns true if offline app, which isn't a defined thing
+	 */
+	EditorUi.prototype.isShowRemoteCursors = function()
+	{
+		return this.showRemoteCursors;
+	};
+ 
 	/**
 	 * Returns true if offline app, which isn't a defined thing
 	 */
@@ -1758,6 +1786,9 @@
 		
 		if (cause)
 		{
+			EditorUi.debug('EditorUi.setFileData ParserError', [this],
+				'data', [data], 'node', [node], 'cause', [cause]);
+
 			throw new Error(mxResources.get('notADiagramFile') + ' (' + cause + ')');
 		}
 		else
@@ -2014,7 +2045,8 @@
 					{
 						var prev = this.editor.graph.pageVisible;
 						
-						if (pageVisible != null)
+						//Only override if page is actually visible
+						if (pageVisible == false)
 						{
 							this.editor.graph.pageVisible = pageVisible;
 						}
@@ -3915,7 +3947,7 @@
 		var e = (resp != null && resp.error != null) ? resp.error : resp;
 
 		// Logs errors and writes stack to console
-		if (resp != null && resp.stack != null && resp.message != null)
+		if (resp != null && (urlParams['test'] == '1' || resp.stack != null) && resp.message != null)
 		{
 			try
 			{
@@ -5764,39 +5796,46 @@
 		var layers = this.addCheckbox(div, mxResources.get('layers'), true);
 		var tags = this.addCheckbox(div, mxResources.get('tags'), true);
 		var lightbox = this.addCheckbox(div, mxResources.get('lightbox'), true);
-		
-		var editSection = this.addEditButton(div, lightbox);
-		var edit = editSection.getEditInput();
-		edit.style.marginBottom = '16px';
-		
-		mxEvent.addListener(lightbox, 'change', function()
+
+		var editSection = null;
+		var h = 380;
+
+		if (EditorUi.enableHtmlEditOption)
 		{
-			if (lightbox.checked)
+			editSection = this.addEditButton(div, lightbox);
+			var edit = editSection.getEditInput();
+			edit.style.marginBottom = '16px';
+			h += 50;
+
+			mxEvent.addListener(lightbox, 'change', function()
 			{
-				edit.removeAttribute('disabled');
-			}
-			else
-			{
-				edit.setAttribute('disabled', 'disabled');
-			}
-			
-			if (edit.checked && lightbox.checked)
-			{
-				editSection.getEditSelect().removeAttribute('disabled');
-			}
-			else
-			{
-				editSection.getEditSelect().setAttribute('disabled', 'disabled');
-			}
-		});
-		
+				if (lightbox.checked)
+				{
+					edit.removeAttribute('disabled');
+				}
+				else
+				{
+					edit.setAttribute('disabled', 'disabled');
+				}
+				
+				if (edit.checked && lightbox.checked)
+				{
+					editSection.getEditSelect().removeAttribute('disabled');
+				}
+				else
+				{
+					editSection.getEditSelect().setAttribute('disabled', 'disabled');
+				}
+			});
+		}
+
 		var dlg = new CustomDialog(this, div, mxUtils.bind(this, function()
 		{
 			fn((publicUrlRadio.checked) ? publicUrl : null, zoom.checked, zoomInput.value, linkSection.getTarget(),
 				linkSection.getColor(), fit.checked, allPages.checked, layers.checked, tags.checked,
-				lightbox.checked, editSection.getLink());
+				lightbox.checked, (editSection != null) ? editSection.getLink() : null);
 		}), null, btnLabel, helpLink);
-		this.showDialog(dlg.container, 340, 430, true, true);
+		this.showDialog(dlg.container, 340, h, true, true);
 		copyRadio.focus();
 	};
 	
@@ -6228,11 +6267,11 @@
 		var lblToSvgOption = document.createElement('option');
 		lblToSvgOption.setAttribute('value', 'lblToSvg');
 		mxUtils.write(lblToSvgOption, mxResources.get('lblToSvg'));
-		txtSettingsSelect.appendChild(lblToSvgOption);
+		
 
-		if (this.isOffline())
+		if (!this.isOffline() && !EditorUi.isElectronApp)
 		{
-			lblToSvgOption.setAttribute('disabled', 'disabled');
+			txtSettingsSelect.appendChild(lblToSvgOption);
 		}
 
 		mxEvent.addListener(txtSettingsSelect, 'change', mxUtils.bind(this, function()
@@ -9690,7 +9729,7 @@
 		{
 			ui.showDialog(new PrintDialog(ui).container, 360,
 				(ui.pages != null && ui.pages.length > 1) ?
-				450 : 370, true, true);
+				470 : 390, true, true);
 		};
 
 		// Specifies the default filename
@@ -11117,6 +11156,14 @@
 					mxEvent.consume(evt);
 				}
 			}
+			//Miro is using unkown encoding instead of BASE64 as before
+			/*else if (spans != null && spans.length > 0 && spans[0].hasAttribute('data-meta')
+				&& spans[0].getAttribute('data-meta').substring(0, 14) == '<--(miro-data)')
+			{
+				var miroData = spans[0].getAttribute('data-meta');
+				miroData = miroData.substring(14, miroData.length - 15);
+				console.log(miroData);
+			}*/
 			else
 			{
 				// KNOWN: Paste from IE11 to other browsers on Windows
@@ -11149,7 +11196,8 @@
 						mxUtils.trim(decodeURIComponent(spans[0].textContent)) :
 						decodeURIComponent(xml);
 							
-					if (this.isCompatibleString(tmp))
+					if (tmp && (this.isCompatibleString(tmp) || 
+						tmp.substring(0, 20).replace(/\s/g, '').indexOf('{"isProtected":') == 0))
 					{
 						compat = true;
 						xml = tmp;
@@ -11164,6 +11212,22 @@
 				{
 					if (xml != null && xml.length > 0)
 					{
+						if (xml.substring(0, 20).replace(/\s/g, '').indexOf('{"isProtected":') == 0)
+						{
+							try
+							{
+								if (typeof MiroImporter !== 'undefined')
+								{
+									var miro = new MiroImporter();
+									xml = miro.importMiroJson(JSON.parse(xml));
+								}
+							}
+							catch(e)
+							{
+								console.log('Miro import error:', e);
+							}
+						}
+
 						this.pasteXml(xml, pasteAsLabel, compat, evt);
 
 						try
@@ -11507,7 +11571,7 @@
 					handleResult(xml);
 				}));
 			}
-			else if (Graph.fileSupport && !new XMLHttpRequest().upload &&
+			else if (Graph.fileSupport && new XMLHttpRequest().upload &&
 				this.isRemoteFileFormat(data, name))
 			{
 				if (this.isOffline())
@@ -12135,6 +12199,9 @@
 				try
 				{
 					data = JSON.parse(data);
+
+					EditorUi.debug('EditorUi.installMessageHandler',
+						[this], 'evt', [evt], 'data', [data]);
 				}
 				catch (e)
 				{
