@@ -4398,6 +4398,10 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 
 						break;
 					case 'svg':
+						/**
+						 * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.showExportDialog
+						 * REF ~/js/diagramly/Menus.js -> editorUi.showExportDialog(mxResources.get('formatSvg')
+						 */
 						editorUi.showExportDialog(
 							mxResources.get('formatSvg'),
 							true,
@@ -4434,13 +4438,24 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 
 						break;
 					case 'html':
+						/**
+						 * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.showHtmlDialog
+						 * REF ~/js/diagramly/Menus.js -> editorUi.showHtmlDialog(mxResources.get('export')
+						 */
 						editorUi.showHtmlDialog(
 							mxResources.get('create'),
 							'https://www.diagrams.net/doc/faq/embed-html-options',
 							null,
 							function (publicUrl, zoomEnabled, initialZoom, linkTarget, linkColor, fit, allPages, layers, tags, lightbox, editLink) {
+								/**
+								 * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.createHtml
+								 * REF ~/js/diagramly/Menus.js -> editorUi.showHtmlDialog(mxResources.get('export')
+								 */
 								editorUi.createHtml(publicUrl, zoomEnabled, initialZoom, linkTarget, linkColor, fit, allPages, layers, tags, lightbox, editLink, mxUtils.bind(this, function (html, scriptTag) {
 									scriptTag = `<script type="text/javascript" src="${window.DRAWIO_VIEWER_URL}"></script>`;
+									/**
+									 * ~/js/diagramly/dialogs.js -> EmbedDialog
+									 */
 									let EmbedDialog = function (editorUi, result, timeout, ignoreSize, previewFn, title, tweet, previewTitle, filename) {
 										tweet = (tweet != null) ? tweet : 'Check out the diagram I made using @drawio';
 										var div = document.createElement('div');
@@ -4692,20 +4707,24 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 											document.execCommand('copy');
 											editorUi.alert(mxResources.get('copiedToClipboard'));
 										});
-
+										/* 👇 保存按钮单击事件处理器 👇 */
 										var saveBtn = mxUtils.button(mxResources.get('save'), function () {
 											editorUi.hideDialog();
 											saveDataToSiyuan(file_name, null, html.replace(/<\/div>\s*$/, `${scriptTag}<\/div>\n`), 'text/html', null);
 										});
+										/* 👆 保存按钮单击事件处理器 👆 */
 
 										if (result.length < maxSize) {
 											// Does not work in Safari and shows annoying dialog for IE11-
 											if (!mxClient.IS_SF && document.documentMode == null) {
 												buttons.appendChild(copyBtn);
-												buttons.appendChild(saveBtn);
 												copyBtn.className = 'geBtn gePrimaryBtn';
-												saveBtn.className = 'geBtn gePrimaryBtn';
 												closeBtn.className = 'geBtn';
+												
+												/* 👇 添加保存按钮 👇 */
+												buttons.appendChild(saveBtn);
+												saveBtn.className = 'geBtn gePrimaryBtn';
+												/* 👆 添加保存按钮 👆 */
 											}
 											else {
 												closeBtn.className = 'geBtn gePrimaryBtn';
@@ -4782,6 +4801,9 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 
 						break;
 					case 'xml':
+						/**
+						 * REF ~/js/diagramly/Menus.js -> editorUi.actions.put('exportXml'
+						 */
 						let div = document.createElement('div');
 						div.style.whiteSpace = 'nowrap';
 						let noPages = editorUi.pages == null || editorUi.pages.length <= 1;
