@@ -4264,7 +4264,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 
 		mxEvent.addListener(button, 'click', async () => {
 			let id = (window.frameElement != null
-				? window.frameElement.parentElement.parentElement.getAttribute('data-node-id')
+				? window.frameElement.parentElement.parentElement.dataset.nodeId
 				: null)
 				|| (new URL(window.location.href)).searchParams.get('id')
 				|| null;
