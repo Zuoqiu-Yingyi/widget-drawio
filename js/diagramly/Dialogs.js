@@ -4276,10 +4276,10 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 			}
 			async function saveDataToSiyuan(filename, format, filedata, mime, base64Encoded) {
 				// 上传至资源文件夹
-				filename = filenameParse(filename).name;
+				let { name, ext } = filenameParse(filename);
 
 				let blob = new Blob([filedata], { type: mime });
-				let file = new File([blob], filename, { lastModified: Date.now() });
+				let file = new File([blob], name, { lastModified: Date.now() });
 				let formdata = new FormData();
 				formdata.append("assetsDirPath", "/assets/");
 				formdata.append("file[]", file);
@@ -4291,10 +4291,20 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 					return response.json();
 				}).then((data) => {
 					// console.log(data);
-					let asset = data.data.succMap[filename];
+					let asset = data.data.succMap[name];
 					console.log(asset);
-					if (!asset.endsWith(filename)) {
+					if (!asset.endsWith(name)) {
 						// 文件名更改
+						let markdown;
+						switch (ext) {
+							case 'svg':
+							case 'png':
+								markdown = `![](${asset})`;
+								break;
+							default:
+								markdown = null;
+								break;
+						}
 						// console.log(filename, asset);
 						fetch('/api/attr/setBlockAttrs', {
 							body: JSON.stringify({
@@ -4302,7 +4312,8 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 								attrs: {
 									'custom-data-assets': asset,
 									'data-assets': asset,
-								}
+									'data-export-md': markdown,
+								},
 							}),
 							method: 'POST',
 						}).then((response) => {
