@@ -1,5 +1,8 @@
 # 更改日志 | CHANGE LOG
 
+## v0.1.5/2022-05-17
+
+- [v0.1.4 <=> v0.1.5](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.1.4...v0.1.5)
 - 更新 draw.io 至 [v17.5.1](https://github.com/jgraph/drawio/releases/tag/v17.5.1) | Update draw.io to [v17.5.1](https://github.com/jgraph/drawio/releases/tag/v17.5.1).
 - 添加块属性 `data-export-md` 以在导出时显示图片 | Add block attribute `data-export-md` to show image when exporting.
 
