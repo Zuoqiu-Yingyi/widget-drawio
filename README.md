@@ -17,7 +17,8 @@ A [draw.io](https://www.diagrams.net/) widget for Siyuan Notes.
 
 ## 预览 | PREVIEW
 
-![preview](https://cdn.jsdelivr.net/gh/Zuoqiu-Yingyi/widget-drawio/preview.png)
+![preview-relative](./preview.png)
+![preview-location](/widgets/drawio/preview.png)
 
 ## 功能 | FUNCTION
 
