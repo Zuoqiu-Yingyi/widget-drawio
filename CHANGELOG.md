@@ -1,5 +1,7 @@
 # 更改日志 | CHANGE LOG
 
+- [#16](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/16) 修复使用思源 API `setBlockAttrs` 时设置块属性值为 `null` 时无法设置任何属性的问题 | Fixed an issue where no attributes could be set when setting block attribute values to `null` when using the Siyuan API `setBlockAttrs`.
+
 ## v0.1.5/2022-05-17
 
 - [v0.1.4 <=> v0.1.5](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.1.4...v0.1.5)

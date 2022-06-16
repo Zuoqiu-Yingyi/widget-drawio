@@ -4302,7 +4302,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 								markdown = `![](${asset})`;
 								break;
 							default:
-								markdown = null;
+								markdown = '';
 								break;
 						}
 						// console.log(filename, asset);
