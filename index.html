@@ -535,12 +535,18 @@ else
 	setTimeout(load, 0);
 
 	/* Minimal 主题默认隐藏形状面板与格式面板 */
-	window.addEventListener('load', () => {
-		console.log(window);
+	window.addEventListener('load', async () => {
+		// console.log(window);
 		// console.log(window.sb.editorUi);
 		if (window.uiTheme === 'min') {
-			window.sb.editorUi.toggleFormatPanel(false);
-			window.sb.editorUi.sidebarWindow.window.setVisible(false);
+			function onload() {
+				if (window.sb?.editorUi?.sidebarWindow?.window?.setVisible) {
+					window.sb.editorUi.toggleFormatPanel(false);
+					window.sb.editorUi.sidebarWindow.window.setVisible(false);
+				}
+				else setTimeout(onload, 0);
+			}
+			onload();
 		}
 	});
 </script>
