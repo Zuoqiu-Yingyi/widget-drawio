@@ -2,6 +2,8 @@
 
 - [#16](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/16) 修复使用思源 API `setBlockAttrs` 时设置块属性值为 `null` 时无法设置任何属性的问题 | Fixed an issue where no attributes could be set when setting block attribute values to `null` when using the Siyuan API `setBlockAttrs`.
 - [#18](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/18) Minimal 主题默认隐藏形状面板与格式面板 | The Minimal theme hides the Shapes panel and the Format panel by default.
+- 兼容 API `/api/asset/upload` | Compatible with the API `/api/asset/upload`.
+  - Adapt: [Issue #7454 · siyuan-note/siyuan](https://github.com/siyuan-note/siyuan/issues/7454)
 
 ## v0.1.5/2022-05-17
 

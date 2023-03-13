@@ -4281,7 +4281,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 				let blob = new Blob([filedata], { type: mime });
 				let file = new File([blob], name, { lastModified: Date.now() });
 				let formdata = new FormData();
-				formdata.append("assetsDirPath", "/assets/");
+				formdata.append("assetsDirPath", "/assets/drawio/");
 				formdata.append("file[]", file);
 				fetch("/api/asset/upload", {
 					body: formdata,
@@ -4293,6 +4293,8 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 					// console.log(data);
 					let asset = data.data.succMap[name];
 					console.log(asset);
+					if (asset.startsWith('/assets/'))
+						asset = asset.replace(/^\/assets\//, 'assets/')
 					if (!asset.endsWith(name)) {
 						// 文件名更改
 						let markdown;
