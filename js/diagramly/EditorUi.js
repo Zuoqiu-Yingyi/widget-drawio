@@ -4510,7 +4510,7 @@
 		var filename = this.getBaseFilename(ignorePageName) +
 			((xml != null) ? '.drawio' : '') + '.' + ext;
    	    var data = this.createImageDataUri(canvas, xml, format, dpi);
-
+		console.log('pre-saveData');
    	    this.saveData(filename, ext, data.substring(data.lastIndexOf(',') + 1), 'image/' + format, true);
 	};
 	

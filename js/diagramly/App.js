@@ -255,6 +255,7 @@ App.DROPBOX_APPKEY = window.DRAWIO_DROPBOX_ID;
  */
 App.DROPBOX_URL = window.DRAWIO_BASE_URL + '/js/dropbox/Dropbox-sdk.min.js';
 /* 👇 SIYUAN 👇 */
+// 从本地加载依赖
 /**
  * Sets URL to load the Dropbox dropins JS from.
  */
@@ -697,17 +698,19 @@ App.main = function(callback, createUi)
 			{
 				var scripts = document.getElementsByTagName('script');
 				/* 👇 SIYUAN 👇 */
+				// 校验内容 Hash
 				// Checks bootstrap script
 				if (scripts != null && scripts.length > 0)
 				{
 					var content = mxUtils.getTextContent(scripts[0]);
 					
-					if (CryptoJS.MD5(content).toString() != '92c521d768e390be657723d8b51a8879')
+					if (CryptoJS.MD5(content).toString() != 'd41d8cd98f00b204e9800998ecf8427e')
 					{
 						console.log('Change bootstrap script MD5 in the previous line:', CryptoJS.MD5(content).toString());
 						alert('[Dev] Bootstrap script change requires update of CSP');
 					}
 				}
+				/* 👆 SIYUAN 👆 */
 				
 				// Checks main script
 				if (scripts != null && scripts.length > 1)
@@ -720,7 +723,6 @@ App.main = function(callback, createUi)
 						alert('[Dev] Main script change requires update of CSP');
 					}
 				}
-				/* 👆 SIYUAN 👆 */
 			}
 
 			try

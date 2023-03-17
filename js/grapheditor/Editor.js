@@ -109,7 +109,7 @@ Editor.useLocalStorage = typeof(Storage) != 'undefined' && mxClient.IS_IOS;
 Editor.smallScreenWidth = 800;
 
 /**
- *
+ * 
  */
 Editor.rowMoveImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAEBAMAAACw6DhOAAAAGFBMVEUzMzP///9tbW1QUFCKiopBQUF8fHxfX1/IXlmXAAAAFElEQVQImWNgNVdzYBAUFBRggLMAEzYBy29kEPgAAAAASUVORK5CYII=';
 Editor.lightCheckmarkImage = 'data:image/gif;base64,R0lGODlhFQAVAMQfAGxsbHx8fIqKioaGhvb29nJycvr6+sDAwJqamltbW5OTk+np6YGBgeTk5Ly8vJiYmP39/fLy8qWlpa6ursjIyOLi4vj4+N/f3+3t7fT09LCwsHZ2dubm5r6+vmZmZv///yH/C1hNUCBEYXRhWE1QPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS4wLWMwNjAgNjEuMTM0Nzc3LCAyMDEwLzAyLzEyLTE3OjMyOjAwICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IFdpbmRvd3MiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OEY4NTZERTQ5QUFBMTFFMUE5MTVDOTM5MUZGMTE3M0QiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OEY4NTZERTU5QUFBMTFFMUE5MTVDOTM5MUZGMTE3M0QiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Rjg1NkRFMjlBQUExMUUxQTkxNUM5MzkxRkYxMTczRCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Rjg1NkRFMzlBQUExMUUxQTkxNUM5MzkxRkYxMTczRCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PgH//v38+/r5+Pf29fTz8vHw7+7t7Ovq6ejn5uXk4+Lh4N/e3dzb2tnY19bV1NPS0dDPzs3My8rJyMfGxcTDwsHAv769vLu6ubi3trW0s7KxsK+urayrqqmop6alpKOioaCfnp2cm5qZmJeWlZSTkpGQj46NjIuKiYiHhoWEg4KBgH9+fXx7enl4d3Z1dHNycXBvbm1sa2ppaGdmZWRjYmFgX15dXFtaWVhXVlVUU1JRUE9OTUxLSklIR0ZFRENCQUA/Pj08Ozo5ODc2NTQzMjEwLy4tLCsqKSgnJiUkIyIhIB8eHRwbGhkYFxYVFBMSERAPDg0MCwoJCAcGBQQDAgEAACH5BAEAAB8ALAAAAAAVABUAAAVI4CeOZGmeaKqubKtylktSgCOLRyLd3+QJEJnh4VHcMoOfYQXQLBcBD4PA6ngGlIInEHEhPOANRkaIFhq8SuHCE1Hb8Lh8LgsBADs=';
@@ -242,7 +242,7 @@ Editor.darkColor = '#18141D';
  * Dynamic change of dark mode for minimal and sketch theme.
  */
 Editor.lightColor = '#f0f0f0';
-
+  
 /**
  * Returns the current state of the dark mode.
  */
@@ -1136,7 +1136,7 @@ Dialog.prototype.close = function(cancel, isEsc)
 
 	if (this.container.parentNode != null)
 	{
-	this.container.parentNode.removeChild(this.container);
+		this.container.parentNode.removeChild(this.container);
 	}
 };
 
@@ -1382,13 +1382,13 @@ PrintDialog.prototype.create = function(editorUi)
 			printScale = 1;
 			pageScaleInput.value = '100%';
 		}
-		
+
 		// Workaround to match available paper size in actual print output
 		if (mxClient.IS_SF)
 		{
-		printScale *= 0.75;
+			printScale *= 0.75;
 		}
-
+		
 		var pf = graph.pageFormat || mxConstants.PAGE_FORMAT_A4_PORTRAIT;
 		var scale = 1 / graph.pageScale;
 		
@@ -1494,8 +1494,8 @@ PrintDialog.printPreview = function(preview)
 			
 			// Workaround for rendering SVG output and
 			// make window available for printing
-				window.setTimeout(printFn, 500);
-			}
+			window.setTimeout(printFn, 500);
+		}
 	}
 	catch (e)
 	{
@@ -1583,7 +1583,7 @@ var PageSetupDialog = function(editorUi)
 	
 	td = document.createElement('td');
 	td.style.whiteSpace = 'nowrap';
-	
+
 	var gridSizeInput = document.createElement('input');
 	gridSizeInput.setAttribute('type', 'number');
 	gridSizeInput.setAttribute('min', '0');
@@ -1678,7 +1678,7 @@ var PageSetupDialog = function(editorUi)
 			}
 
 			newBackgroundColor = color;
-				updateBackgroundImage();
+			updateBackgroundImage();
 		}, newBackgroundImage, newBackgroundColor, true);
 		
 		mxEvent.consume(evt);
@@ -2375,6 +2375,7 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 		var idx2 = nameInput.value.lastIndexOf('.drawio.');
 		var idx = (idx2 > 0) ? idx2 : nameInput.value.lastIndexOf('.');
 		/* 👇 SIYUAN 👇 */
+		// 删除拓展名的 .drawio. 前綴
 		// if (ext != 'drawio')
 		// {
 		// 	ext = 'drawio.' + ext;
@@ -2595,7 +2596,7 @@ var WrapperWindow = function(editorUi, title, x, y, w, h, fn)
 			
 			var x0 = 0;
 			var y0 = 0;
-			
+
 			var dx = (cx != null) ? cx - this.translate.x * this.scale : 0;
 			var dy = (cy != null) ? cy - this.translate.y * this.scale : 0;
 
@@ -2787,7 +2788,7 @@ var WrapperWindow = function(editorUi, title, x, y, w, h, fn)
 				{
 					if (breaks[i] != null)
 					{
-					breaks[i].destroy();
+						breaks[i].destroy();
 					}
 				}
 				

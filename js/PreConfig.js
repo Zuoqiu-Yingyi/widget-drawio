@@ -4,8 +4,8 @@
  */
 // Overrides of global vars need to be pre-loaded
 window.EXPORT_URL = 'REPLACE_WITH_YOUR_IMAGE_SERVER';
-window.PLANT_URL = 'REPLACE_WITH_YOUR_PLANTUML_SERVER';
 /* 👇 SIYUAN 👇 */
+window.PLANT_URL = window.top.siyuan?.config.editor.plantUMLServePath ?? 'https://www.plantuml.com/plantuml/svg/~1';
 window.DRAWIO_BASE_URL = `${window.location.origin}${window.location.pathname}`.replace(/\/$/, '')
 window.DRAWIO_VIEWER_URL = `${window.DRAWIO_BASE_URL}/js/viewer.min.js`
 /* 👆 SIYUAN 👆 */

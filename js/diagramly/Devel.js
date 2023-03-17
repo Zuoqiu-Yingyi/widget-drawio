@@ -7,6 +7,7 @@
  * files and the mxClient.js loads other files.
  */
 /* 👇 SIYUAN 👇 */
+// 跳过 Hash 校验
 if (!mxIsElectron && !mxIsSiyuan && location.protocol !== 'http:')
 /* 👆 SIYUAN 👆 */
 {
