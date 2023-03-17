@@ -309,12 +309,14 @@ App.GOOGLE_APIS = 'drive-share';
  * Authorizes the client, gets the userId and calls <open>.
  */
 App.startTime = new Date();
-
+/* 👇 SIYUAN 👇 */
 /**
  * Defines plugin IDs for loading via p URL parameter. Update the table at
  * https://www.diagrams.net/doc/faq/supported-url-parameters
  */
-App.pluginRegistry = {'4xAKTrabTpTzahoLthkwPNUn': 'plugins/explore.js',
+App.pluginRegistry = {
+	'siyuan': 'plugins/siyuan.js',
+	'4xAKTrabTpTzahoLthkwPNUn': 'plugins/explore.js',
 	'ex': 'plugins/explore.js', 'p1': 'plugins/p1.js',
 	'ac': 'plugins/connect.js', 'acj': 'plugins/connectJira.js',
 	'ac148': 'plugins/cConf-1-4-8.js', 'ac148cmnt': 'plugins/cConf-comments.js', 
@@ -331,9 +333,11 @@ App.pluginRegistry = {'4xAKTrabTpTzahoLthkwPNUn': 'plugins/explore.js',
 	'tickets': 'plugins/tickets.js', 'flow': 'plugins/flow.js',
 	'webcola': 'plugins/webcola/webcola.js', 'rnd': 'plugins/random.js',
 	'page': 'plugins/page.js', 'gd': 'plugins/googledrive.js',
-	'tags': 'plugins/tags.js'};
+	'tags': 'plugins/tags.js',
+};
 
 App.publicPlugin = [
+	'siyuan',
 	'ex',
 	'voice',
 	'tips',
@@ -352,9 +356,9 @@ App.publicPlugin = [
 	'flow',
 	'webcola',
 //	'rnd', 'page', 'gd',
-	'tags'
+	'tags',
 ];
-
+/* 👆 SIYUAN 👆 */
 /**
  * Loads all given scripts and invokes onload after
  * all scripts have finished loading.

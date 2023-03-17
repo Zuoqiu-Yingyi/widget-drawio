@@ -4773,7 +4773,16 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 	{
 		/* 👇 SIYUAN 👇 */
 		// 添加思源保存按钮
-		window.siyuan?.save(IMAGE_PATH + '/siyuan-log.png', mxResources.get('siyuan') || 'SiYuan Note');
+		if (typeof window.siyuan?.save === 'function') {
+			count = window.siyuan.save(
+				nameInput,
+				buttons,
+				count,
+				rowLimit,
+				`${IMAGE_PATH}/siyuan-log.png`,
+				mxResources.get('siyuan') || 'SiYuan Note',
+			);
+		}
 		/* 👆 SIYUAN 👆 */
 
 		if (typeof window.DriveClient === 'function')

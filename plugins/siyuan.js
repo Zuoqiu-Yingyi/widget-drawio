@@ -14,7 +14,14 @@ Draw.loadPlugin(function (editorUi) {
     /* 挂载的对象 */
     window.siyuan = {
         /* 保存方法 */
-        save: function (img, title) {
+        save: function (
+            nameInput,
+            buttons,
+            count,
+            rowLimit,
+            img,
+            title,
+        ) {
             var button = document.createElement('a');
             button.style.overflow = 'hidden';
 
@@ -503,6 +510,8 @@ Draw.loadPlugin(function (editorUi) {
                 mxUtils.br(buttons);
                 count = 0;
             }
+
+            return count;
         },
     }
 });

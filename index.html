@@ -74,10 +74,11 @@
 				// ignore
 			}
 		}
-		
+		/* 👇 SIYUAN 👇 */
 		// Global variable for desktop
 		var mxIsElectron = window && window.process && window.process.type;
-
+		var mxIsSiyuan = !!window.top.siyuan || /^\d{14}\-[0-9a-z]{7}$/.test(urlParams['id']);
+		/* 👆 SIYUAN 👆 */
 		// Redirects page if required
 		if (urlParams['dev'] != '1')
 		{
