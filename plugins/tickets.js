@@ -60,7 +60,7 @@ Draw.loadPlugin(function(ui)
 		
 		for (var key in deskStatus)
 		{
-			div.innerHTML = '';
+			div.innerText = '';
 			mxUtils.write(div, deskStatus[key]);
 			deskStatusWidth[key] = div.clientWidth + 4;
 		}
@@ -80,9 +80,9 @@ Draw.loadPlugin(function(ui)
 				config = temp.ticketsConfig;
 				configure();
 				ui.fileLoaded(new LocalFile(ui, ui.emptyDiagramXml, this.defaultFilename, true));
-				ui.editor.setStatus('Drag tickets from <a href="' + deskDomain +
+				ui.editor.setStatus('Drag tickets from <a href="' + mxUtils.htmlEntities(deskDomain) +
 					'/a/tickets/filters/all_tickets" target="_blank">' +
-					deskDomain + '</a>');
+					mxUtils.htmlEntities(deskDomain) + '</a>');
 			}
 		}
 		catch (e)

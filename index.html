@@ -5,10 +5,10 @@
     <title>Flowchart Maker &amp; Online Diagram Software</title>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta name="Description" content="diagrams.net is free online diagram software for making flowcharts, process diagrams, org charts, UML, ER and network diagrams">
-    <meta name="Keywords" content="diagram, online, flow chart, flowchart maker, uml, erd">
-    <meta itemprop="name" content="diagrams.net - free flowchart maker and diagrams online">
-	<meta itemprop="description" content="diagrams.net is a free online diagramming application  and flowchart maker . You can use it to create UML, entity relationship,
+    <meta name="Description" content="draw.io is free online diagram software for making flowcharts, process diagrams, org charts, UML, ER and network diagrams">
+    <meta name="Keywords" content="drawio, diagram, online, flow chart, flowchart maker, uml, erd">
+    <meta itemprop="name" content="draw.io - free flowchart maker and diagrams online">
+	<meta itemprop="description" content="draw.io is a free online diagramming application and flowchart maker . You can use it to create UML, entity relationship,
 		org charts, BPMN and BPM, database schema and networks. Also possible are telecommunication network, workflow, flowcharts, maps overlays and GIS, electronic 
 		circuit and social network diagrams.">
 	<meta itemprop="image" content="https://lh4.googleusercontent.com/-cLKEldMbT_E/Tx8qXDuw6eI/AAAAAAAAAAs/Ke0pnlk8Gpg/w500-h344-k/BPMN%2Bdiagram%2Brc2f.png">
@@ -71,10 +71,11 @@
 				// ignore
 			}
 		}
-		
+		/* 👇SIYUAN👇 */
 		// Global variable for desktop
 		var mxIsElectron = window && window.process && window.process.type;
-
+		var mxIsSiyuan = /^\d{14}\-[0-9a-z]{7}$/.test(urlParams['id']);
+		/* 👆SIYUAN👆 */
 		// Redirects page if required
 		if (urlParams['dev'] != '1')
 		{
@@ -138,7 +139,7 @@
 		/**
 		 * Synchronously adds scripts to the page.
 		 */
-		function mxscript(src, onLoad, id, dataAppKey, noWrite)
+		function mxscript(src, onLoad, id, dataAppKey, noWrite, onError)
 		{
 			var defer = onLoad == null && !noWrite;
 			
@@ -172,6 +173,14 @@
 				      		onLoad();
 						}
 				  	};
+				}
+
+				if (onError != null)
+				{
+					s.onerror = function(e)
+					{
+						onError('Failed to load ' + src, e);
+					};
 				}
 			  	
 			  	var t = document.getElementsByTagName('script')[0];
@@ -244,16 +253,15 @@
 		// Changes paths for local development environment
 		if (urlParams['dev'] == '1')
 		{
+			/* 👇 SIYUAN 👇 */
 			// Used to request grapheditor/mxgraph sources in dev mode
-			// var mxDevUrl = document.location.protocol + '//devhost.jgraph.com/drawio/src/main';
-			var mxDevUrl = `${window.location.origin}${window.location.pathname}`;
-
+			var mxDevUrl = '.';
+			
 			// Used to request draw.io sources in dev mode
-			// var drawDevUrl = document.location.protocol + '//devhost.jgraph.com/drawio/src/main/webapp/';
-			var drawDevUrl = `${window.location.origin}${window.location.pathname}`;
-
-			var geBasePath = drawDevUrl + '/js/grapheditor';
+			var drawDevUrl = './';
+			var geBasePath = drawDevUrl + 'js/grapheditor';
 			var mxBasePath = mxDevUrl + '/mxgraph';
+			/* 👆 SIYUAN 👆 */
 			
 			if (document.location.protocol == 'file:')
 			{
@@ -267,28 +275,27 @@
 
 			mxForceIncludes = false;
 
-			mxscript(drawDevUrl + '/js/PreConfig.js');
-			mxscript(drawDevUrl + '/js/diagramly/Init.js');
+			mxscript(drawDevUrl + 'js/PreConfig.js');
+			mxscript(drawDevUrl + 'js/diagramly/Init.js');
 			mxscript(geBasePath + '/Init.js');
 			mxscript(mxBasePath + '/mxClient.js');
 			
 			// Adds all JS code that depends on mxClient. This indirection via Devel.js is
 			// required in some browsers to make sure mxClient.js (and the files that it
 			// loads asynchronously) are available when the code loaded in Devel.js runs.
-			mxscript(drawDevUrl + '/js/diagramly/Devel.js');
+			mxscript(drawDevUrl + 'js/diagramly/Devel.js');
 			
 			// Electron
 			if (mxIsElectron)
 			{
-				mxscript('/js/diagramly/DesktopLibrary.js');
-				mxscript('/js/diagramly/ElectronApp.js');
+				mxscript('js/diagramly/DesktopLibrary.js');
+				mxscript('js/diagramly/ElectronApp.js');
 			}
 			
-			mxscript(drawDevUrl + '/js/PostConfig.js');
+			mxscript(drawDevUrl + 'js/PostConfig.js');
 		}
 		else
 		{
-			var drawUrl = `${window.location.origin}${window.location.pathname}`;
 			(function()
 			{
 				var hostName = window.location.hostname;
@@ -299,7 +306,7 @@
 				
 				function loadAppJS()
 				{
-					mxscript(drawUrl + '/js/app.min.js', function()
+					mxscript('js/app.min.js', function()
 					{
 						mxScriptsLoaded = true;
 						checkAllLoaded();
@@ -307,17 +314,17 @@
 						// Electron
 						if (mxIsElectron)
 						{
-							mxscript(drawUrl + '/js/diagramly/DesktopLibrary.js', function()
+							mxscript('js/diagramly/DesktopLibrary.js', function()
 							{
-								mxscript(drawUrl + '/js/diagramly/ElectronApp.js', function()
+								mxscript('js/diagramly/ElectronApp.js', function()
 								{
-									mxscript(drawUrl + '/js/extensions.min.js', function()
+									mxscript('js/extensions.min.js', function()
 									{
-										mxscript(drawUrl + '/js/stencils.min.js', function()
+										mxscript('js/stencils.min.js', function()
 										{
-											mxscript(drawUrl + '/js/shapes-14-6-5.min.js', function()
+											mxscript('js/shapes-14-6-5.min.js', function()
 											{
-												mxscript(drawUrl + '/js/PostConfig.js');
+												mxscript('js/PostConfig.js');
 											});
 										});
 									});
@@ -326,14 +333,14 @@
 						}
 						else if (!supportedDomain)
 						{
-							mxscript(drawUrl + '/js/PostConfig.js');
+							mxscript('js/PostConfig.js');
 						}
 					});
 				};
 				
 				if (!supportedDomain || mxIsElectron)
 				{
-					mxscript(drawUrl + '/js/PreConfig.js', loadAppJS);
+					mxscript('js/PreConfig.js', loadAppJS);
 				}
 				else
 				{
@@ -353,14 +360,12 @@
 			}
 		};
 	</script>
-	</script>
     <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/plgmlhohecdddhbmmkncjdmlhcmaachm">
 	<link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
 	<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
 	<link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
 	<link rel="mask-icon" href="images/safari-pinned-tab.svg" color="#d89000">
     <link rel="stylesheet" type="text/css" href="styles/grapheditor.css">
-    <link rel="preconnect" href="https://storage.googleapis.com">
     <link rel="canonical" href="https://app.diagrams.net">
 	<link rel="manifest" href="images/manifest.json">
 	<link rel="shortcut icon" href="favicon.ico">
@@ -385,8 +390,8 @@
 			padding-top:0px;
 		}
 		.geEditor *:not(.geScrollable)::-webkit-scrollbar {
-		    width:14px;
-		    height:14px;
+		    width:10px;
+		    height:10px;
 		}
 		.geEditor ::-webkit-scrollbar-track {
 			background-clip:padding-box;
@@ -436,7 +441,7 @@
 	<div class="geBlock">
 		<h1>Flowchart Maker and Online Diagram Software</h1>
 		<p>
-			diagrams.net (formerly draw.io) is free online diagram software. You can use it as a flowchart maker, network diagram software, to create UML online, as an ER diagram tool, 
+			draw.io is free online diagram software. You can use it as a flowchart maker, network diagram software, to create UML online, as an ER diagram tool, 
 			to design database schema, to build BPMN online, as a circuit diagram maker, and more. draw.io can import .vsdx, Gliffy&trade; and Lucidchart&trade; files .
 		</p>
 		<h2 id="geStatus">Loading...</h2>
@@ -449,64 +454,53 @@
 /**
  * Main
  */
-if (navigator.userAgent != null && navigator.userAgent.toLowerCase().
-	indexOf(' electron/') >= 0 && typeof process !== 'undefined' && process.versions.electron < 5)
+if (urlParams['dev'] != '1' && typeof document.createElement('canvas').getContext === "function")
 {
-	// Redirects old Electron app to latest version
-	var div = document.getElementById('geInfo');
-	
-	if (div != null)
+	window.addEventListener('load', function()
 	{
-		div.innerHTML = '<center><h2>You are using an out of date version of this app.<br>Please download the latest version ' +
-			'<a href="https://github.com/jgraph/drawio-desktop/releases/latest" target="_blank">here</a>.</h2></center>';
-	}
+		mxWinLoaded = true;
+		checkAllLoaded();
+	});
 }
 else
 {
-	if (urlParams['dev'] != '1' && typeof document.createElement('canvas').getContext === "function")
-	{
-		window.addEventListener('load', function()
-		{
-			mxWinLoaded = true;
-			checkAllLoaded();
-		});
-	}
-	else
-	{
-		App.main();
-	}
+	App.main();
 }
 </script>
 </body>
 
+<!-- 👇 SIYUAN 👇 -->
 <script type="module">
-	function updateURL(url, id, asset, lightbox) {
+	function updateURL(url, id, asset = null, lightbox = null) {
 		url.searchParams.set('id', id); // 块 ID
 		url.searchParams.set('client', 1); // 跳过新建时选择储存位置
-		if (asset != null) {
+
+		if (asset) {
 			url.hash = `#U${url.origin}/${asset}`;
 		}
 
-		if (lightbox != null) {
+		if (lightbox) {
 			url.searchParams.set('lightbox', lightbox);
 		}
 
-		if (url.searchParams.get('dev') != '1') {
+		if (url.searchParams.get('dev') !== '1') {
 			url.searchParams.set('dev', 1);
 			// console.log(url.href);
 			window.location.href = url.href;
 		}
 	}
-	async function load() {
-		var url = new URL(window.location.href);
+
+	function load() {
+		let url = new URL(window.location.href);
 		// console.log(urlParams);
 		// console.log(window.location);
 
-		var id = url.searchParams.get('id');
+		let id = url.searchParams.get('id');
+		let reg = /^\d{14}\-[0-9a-z]{7}$/;
 
-		if (id == null) {
-			let node = window.frameElement != null ? window.frameElement.parentElement.parentElement : null;
-			if (node != null) {
+		if (!reg.test(id)) {
+			let node = window.frameElement?.parentElement?.parentElement;
+			if (node) {
 				if (node.getAttribute('data-type') == 'NodeIFrame') {
 					alert('在 iframe 块中无法保存资源文件至思源笔记！\nUnable to save resource file to SiYuan Note in an iframe block.');
 					return;
@@ -514,7 +508,8 @@ else
 				id = node.getAttribute('data-node-id');
 			}
 		}
-		if (id != null) {
+
+		if (reg.test(id)) {
 			fetch("/api/attr/getBlockAttrs", {
 				body: JSON.stringify({
 					id: id,
@@ -525,14 +520,16 @@ else
 				return response.json();
 			}).then((data) => {
 				// console.log(data);
-					let asset = data.data['custom-data-assets'] || data.data['data-assets'];
-					let lightbox = data.data['custom-lightbox'];
-					updateURL(url, id, asset, lightbox);
+				let asset = data.data['custom-data-assets'];
+				let lightbox = data.data['custom-lightbox'];
+				updateURL(url, id, asset, lightbox);
 			});
 		}
 	}
+
 	// console.log(window.location);
-	setTimeout(load, 0);
+	// setTimeout(load, 0);
+	load();
 
 	/* Minimal 主题默认隐藏形状面板与格式面板 */
 	window.addEventListener('load', async () => {
@@ -550,5 +547,6 @@ else
 		}
 	});
 </script>
+<!-- 👆 SIYUAN 👆 -->
 
 </html>

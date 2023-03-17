@@ -35,8 +35,8 @@ DriveFile.prototype.getSize = function()
  */
 DriveFile.prototype.isRestricted = function()
 {
-	return this.desc.userPermission != null && this.desc.labels != null &&
-		this.desc.userPermission.role == 'reader' && this.desc.labels.restricted;
+	return DrawioFile.RESTRICT_EXPORT || (this.desc.userPermission != null && this.desc.labels != null &&
+		this.desc.userPermission.role == 'reader' && this.desc.labels.restricted);
 };
 
 /**
@@ -64,6 +64,31 @@ DriveFile.prototype.getCurrentUser = function()
 DriveFile.prototype.getMode = function()
 {
 	return App.MODE_GOOGLE;
+};
+
+/**
+ * Returns true if copy, export and print are not allowed for this file.
+ */
+DriveFile.prototype.getFileUrl = function()
+{
+	return 'https://drive.google.com/open?authuser=0&id=' + this.getId();
+};
+
+/**
+ * Returns true if copy, export and print are not allowed for this file.
+ */
+DriveFile.prototype.getFolderUrl = function()
+{
+	if (this.desc.labels != null && this.desc.labels.trashed)
+	{
+		return 'https://drive.google.com/drive/trash';
+	}
+	else
+	{
+		return (this.desc.parents != null && this.desc.parents.length > 0) ?
+			'https://drive.google.com/drive/folders/' +
+			this.desc.parents[0].id : null;
+	}
 };
 
 /**
@@ -603,7 +628,7 @@ DriveFile.prototype.isRealtimeEnabled = function()
 	var collab = this.ui.drive.getCustomProperty(this.desc, 'collaboration');
 
 	return (DrawioFile.prototype.isRealtimeEnabled.apply(this, arguments) &&
-		collab != 'disabled') || collab == 'enabled';
+		collab != 'disabled') || (Editor.enableRealtime && collab == 'enabled');
 };
 
 /**

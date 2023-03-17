@@ -4,6 +4,7 @@
 - [#18](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/18) Minimal 主题默认隐藏形状面板与格式面板 | The Minimal theme hides the Shapes panel and the Format panel by default.
 - 兼容 API `/api/asset/upload` | Compatible with the API `/api/asset/upload`.
   - Adapt: [Issue #7454 · siyuan-note/siyuan](https://github.com/siyuan-note/siyuan/issues/7454)
+- 更新 draw.io 至 [v20.8.24](https://github.com/jgraph/drawio/releases/tag/v20.8.24) | Update draw.io to [v20.8.24](https://github.com/jgraph/drawio/releases/tag/v20.8.24).
 
 ## v0.1.5/2022-05-17
 

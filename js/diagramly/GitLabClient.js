@@ -748,7 +748,7 @@ GitLabClient.prototype.saveFile = function(file, success, error, overwrite, mess
  */
 GitLabClient.prototype.pickFolder = function(fn)
 {
-	this.showGitLabDialog(false, fn);
+	this.showGitLabDialog(false, fn, true);
 };
 
 /**
@@ -767,7 +767,7 @@ GitLabClient.prototype.pickFile = function(fn)
 /**
  * LATER: Refactor to use common code with GitHubClient
  */
-GitLabClient.prototype.showGitLabDialog = function(showFiles, fn)
+GitLabClient.prototype.showGitLabDialog = function(showFiles, fn, hideNoFilesError)
 {
 	var org = null;
 	var repo = null;
@@ -910,7 +910,7 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn)
 	{
 		if (page == null)
 		{
-			div.innerHTML = '';
+			div.innerText = '';
 			page = 1;
 		}
 		
@@ -944,103 +944,110 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn)
 		
 		this.executeRequest(req, mxUtils.bind(this, function(req)
 		{
-			this.ui.spinner.stop();
-			
-			if (page == 1)
+			this.ui.tryAndHandle(mxUtils.bind(this, function()
 			{
-				updatePathInfo(!ref);
+				this.ui.spinner.stop();
 				
-				div.appendChild(createLink('../ [Up]', mxUtils.bind(this, function()
+				if (page == 1)
 				{
-					if (path == '')
-					{
-						path = null;
-						selectRepo();
-					}
-					else
-					{
-						var tokens = path.split('/');
-						path = tokens.slice(0, tokens.length - 1).join('/');
-						selectFile();
-					}
-				}), '4px'));
-			}
-
-			var files = JSON.parse(req.getText());
-
-			if (files == null || files.length == 0)
-			{
-				mxUtils.write(div, mxResources.get('noFiles'));
-			}
-			else
-			{
-				var gray = true;
-				var count = 0;
-				
-				var listFiles = mxUtils.bind(this, function(showFolders)
-				{
-					for (var i = 0; i < files.length; i++)
-					{
-						(mxUtils.bind(this, function(file)
-						{
-							if (showFolders == (file.type == 'tree'))
-							{
-								var temp = listItem.cloneNode();
-								temp.style.backgroundColor = (gray) ?
-									((Editor.isDarkMode()) ? '#000000' : '#eeeeee') : '';
-								gray = !gray;
-
-								var typeImg = document.createElement('img');
-								typeImg.src = IMAGE_PATH + '/' + (file.type == 'tree'? 'folder.png' : 'file.png');
-								typeImg.setAttribute('align', 'absmiddle');
-								typeImg.style.marginRight = '4px';
-								typeImg.style.marginTop = '-4px';
-								typeImg.width = 20;
-								temp.appendChild(typeImg);
-								
-								temp.appendChild(createLink(file.name + ((file.type == 'tree') ? '/' : ''), mxUtils.bind(this, function()
-								{
-									if (file.type == 'tree')
-									{
-										path = file.path;
-										selectFile();
-									}
-									else if (showFiles && file.type == 'blob')
-									{
-										this.ui.hideDialog();
-										fn(org + '/' + repo + '/' + ref + '/' + file.path);
-									}
-								})));
-								
-								div.appendChild(temp);
-								count++;
-							}
-						}))(files[i]);
-					}
-				});
-				
-				listFiles(true);
-				
-				if (showFiles)
-				{
-					listFiles(false);
-				}
-				
-				if (count == pageSize)
-				{
-					div.appendChild(nextPageDiv);
+					updatePathInfo(!ref);
 					
-					scrollFn = function()
+					div.appendChild(createLink('../ [Up]', mxUtils.bind(this, function()
 					{
-						if (div.scrollTop >= div.scrollHeight - div.offsetHeight)
+						if (path == '')
 						{
-							nextPage();
+							path = null;
+							selectRepo();
 						}
-					};
-					
-					mxEvent.addListener(div, 'scroll', scrollFn);
+						else
+						{
+							var tokens = path.split('/');
+							path = tokens.slice(0, tokens.length - 1).join('/');
+							selectFile();
+						}
+					}), '4px'));
 				}
-			}
+
+				var files = JSON.parse(req.getText());
+
+				if (files == null || files.length == 0)
+				{
+					if (!hideNoFilesError)
+					{
+						mxUtils.br(div);
+						mxUtils.write(div, mxResources.get('noFiles'));
+					}
+				}
+				else
+				{
+					var gray = true;
+					var count = 0;
+					
+					var listFiles = mxUtils.bind(this, function(showFolders)
+					{
+						for (var i = 0; i < files.length; i++)
+						{
+							(mxUtils.bind(this, function(file)
+							{
+								if (showFolders == (file.type == 'tree'))
+								{
+									var temp = listItem.cloneNode();
+									temp.style.backgroundColor = (gray) ?
+										((Editor.isDarkMode()) ? '#000000' : '#eeeeee') : '';
+									gray = !gray;
+
+									var typeImg = document.createElement('img');
+									typeImg.src = IMAGE_PATH + '/' + (file.type == 'tree'? 'folder.png' : 'file.png');
+									typeImg.setAttribute('align', 'absmiddle');
+									typeImg.style.marginRight = '4px';
+									typeImg.style.marginTop = '-4px';
+									typeImg.width = 20;
+									temp.appendChild(typeImg);
+									
+									temp.appendChild(createLink(file.name + ((file.type == 'tree') ? '/' : ''), mxUtils.bind(this, function()
+									{
+										if (file.type == 'tree')
+										{
+											path = file.path;
+											selectFile();
+										}
+										else if (showFiles && file.type == 'blob')
+										{
+											this.ui.hideDialog();
+											fn(org + '/' + repo + '/' + ref + '/' + file.path);
+										}
+									})));
+									
+									div.appendChild(temp);
+									count++;
+								}
+							}))(files[i]);
+						}
+					});
+					
+					listFiles(true);
+					
+					if (showFiles)
+					{
+						listFiles(false);
+					}
+					
+					if (count == pageSize)
+					{
+						div.appendChild(nextPageDiv);
+						
+						scrollFn = function()
+						{
+							if (div.scrollTop >= div.scrollHeight - div.offsetHeight)
+							{
+								nextPage();
+							}
+						};
+						
+						mxEvent.addListener(div, 'scroll', scrollFn);
+					}
+				}
+			}));
 		}), error, true);
 	});
 
@@ -1048,7 +1055,7 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn)
 	{
 		if (page == null)
 		{
-			div.innerHTML = '';
+			div.innerText = '';
 			page = 1;
 		}
 		
@@ -1082,67 +1089,71 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn)
 		
 		this.executeRequest(req, mxUtils.bind(this, function(req)
 		{
-			this.ui.spinner.stop();
-			
-			if (page == 1)
+			this.ui.tryAndHandle(mxUtils.bind(this, function()
 			{
-				updatePathInfo(true);
+				this.ui.spinner.stop();
 				
-				div.appendChild(createLink('../ [Up]', mxUtils.bind(this, function()
+				if (page == 1)
 				{
-					path = null;
-					selectRepo();
-				}), '4px'));
-			}
+					updatePathInfo(true);
+					
+					div.appendChild(createLink('../ [Up]', mxUtils.bind(this, function()
+					{
+						path = null;
+						selectRepo();
+					}), '4px'));
+				}
 
-			var branches = JSON.parse(req.getText());
-			
-			if (branches == null || branches.length == 0)
-			{
-				mxUtils.write(div, mxResources.get('noFiles'));
-			}
-			else if (branches.length == 1 && auto)
-			{
-				ref = branches[0].name;
-				path = '';
-				selectFile();
-			}
-			else
-			{
-				for (var i = 0; i < branches.length; i++)
-				{
-					(mxUtils.bind(this, function(branch, idx)
-					{
-						var temp = listItem.cloneNode();
-						temp.style.backgroundColor = (idx % 2 == 0) ?
-							((Editor.isDarkMode()) ? '#000000' : '#eeeeee') : '';
-						
-						temp.appendChild(createLink(branch.name, mxUtils.bind(this, function()
-						{
-							ref = encodeURIComponent(branch.name);
-							path = '';
-							selectFile();
-						})));
-						
-						div.appendChild(temp);
-					}))(branches[i], i);
-				}
+				var branches = JSON.parse(req.getText());
 				
-				if (branches.length == pageSize)
+				if (branches == null || branches.length == 0)
 				{
-					div.appendChild(nextPageDiv);
-					
-					scrollFn = function()
-					{
-						if (div.scrollTop >= div.scrollHeight - div.offsetHeight)
-						{
-							nextPage();
-						}
-					};
-					
-					mxEvent.addListener(div, 'scroll', scrollFn);
+					mxUtils.br(div);
+					mxUtils.write(div, mxResources.get('repositoryNotFound'));
 				}
-			}
+				else if (branches.length == 1 && auto)
+				{
+					ref = branches[0].name;
+					path = '';
+					selectFile();
+				}
+				else
+				{
+					for (var i = 0; i < branches.length; i++)
+					{
+						(mxUtils.bind(this, function(branch, idx)
+						{
+							var temp = listItem.cloneNode();
+							temp.style.backgroundColor = (idx % 2 == 0) ?
+								((Editor.isDarkMode()) ? '#000000' : '#eeeeee') : '';
+							
+							temp.appendChild(createLink(branch.name, mxUtils.bind(this, function()
+							{
+								ref = encodeURIComponent(branch.name);
+								path = '';
+								selectFile();
+							})));
+							
+							div.appendChild(temp);
+						}))(branches[i], i);
+					}
+					
+					if (branches.length == pageSize)
+					{
+						div.appendChild(nextPageDiv);
+						
+						scrollFn = function()
+						{
+							if (div.scrollTop >= div.scrollHeight - div.offsetHeight)
+							{
+								nextPage();
+							}
+						};
+						
+						mxEvent.addListener(div, 'scroll', scrollFn);
+					}
+				}
+			}));
 		}), error);
 	});
 
@@ -1173,7 +1184,7 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn)
 		
 		if (page == null)
 		{
-			div.innerHTML = '';
+			div.innerText = '';
 			page = 1;
 		}
 		
@@ -1210,8 +1221,11 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn)
 			
 			this.executeRequest(req, mxUtils.bind(this, function(req)
 			{
-				callback(JSON.parse(req.getText()));
-				spinnerRequestFinished();
+				this.ui.tryAndHandle(mxUtils.bind(this, function()
+				{
+					callback(JSON.parse(req.getText()));
+					spinnerRequestFinished();
+				}));
 			}), error);
 		});
 
@@ -1222,8 +1236,11 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn)
 			
 			this.executeRequest(req, mxUtils.bind(this, function(req)
 			{
-				callback(group, JSON.parse(req.getText()));
-				spinnerRequestFinished();
+				this.ui.tryAndHandle(mxUtils.bind(this, function()
+				{
+					callback(group, JSON.parse(req.getText()));
+					spinnerRequestFinished();
+				}));
 			}), error);
 		});
 		
@@ -1246,7 +1263,8 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn)
 					if ((repos == null || repos.length == 0) && (groups == null || groups.length == 0))
 					{
 						spinnerRequestFinished();
-						mxUtils.write(div, mxResources.get('noFiles'));
+						mxUtils.br(div);
+						mxUtils.write(div, mxResources.get('repositoryNotFound'));
 					}
 					else
 					{
@@ -1334,7 +1352,7 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn)
 								{
 									var temp = listItem.cloneNode();
 									temp.style.backgroundColor = (gray) ?
-										((uiTheme == 'dark') ? '#000000' : '#eeeeee') : '';
+										((Editor.isDarkMode()) ? '#000000' : '#eeeeee') : '';
 									gray = !gray;
 									
 									(mxUtils.bind(this, function(project)

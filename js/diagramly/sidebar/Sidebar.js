@@ -39,7 +39,7 @@
 
 	Sidebar.prototype.gcp = ['Cards', 'Big Data', 'Compute', 'Developer Tools', 'Extras', 'Identity and Security', 'Machine Learning', 'Management Tools', 'Networking', 'Storage Databases'];
 	
-	Sidebar.prototype.gcp2 = ['Paths', 'Zones', 'Service Cards', 'Compute', 'API Management', 'Security', 'Data Analytics', 'Data Transfer', 'Cloud AI', 'Internet of Things', 'Databases', 'Storage', 'Management Tools', 'Networking', 'Developer Tools', 'Expanded Product Cards', 'User Device Cards', 'Product Cards', 'General Icons', 'Icons AI and Machine Learning', 'Icons Compute', 'Icons Data Analytics', 'Icons Management Tools', 'Icons Networking', 'Icons Developer Tools', 'Icons API Management', 'Icons Internet of Things', 'Icons Databases', 'Icons Storage', 'Icons Security', 'Icons Migration', 'Icons Hybrid and Multi Cloud'];
+	Sidebar.prototype.gcp2 = ['Paths', 'Zones', 'Service Cards', 'Compute', 'API Management', 'Security', 'Data Analytics', 'Data Transfer', 'Cloud AI', 'Internet of Things', 'Databases', 'Storage', 'Management Tools', 'Networking', 'Developer Tools', 'Expanded Product Cards', 'User Device Cards', 'Product Cards', 'General Icons', 'Icons AI and Machine Learning', 'Icons Compute', 'Icons Data Analytics', 'Icons Operations', 'Icons Networking', 'Icons CI CD', 'Icons API Management', 'Icons Internet of Things', 'Icons Databases', 'Icons Storage', 'Icons Security', 'Icons Migration', 'Icons Hybrid and Multi Cloud', 'Icons Open Source Icons'];
 	
 	Sidebar.prototype.gcpicons = ['AI and Machine Learning', 'API Management', 'Compute', 'Data Analytics', 'Databases', 'Developer Tools', 'Expanded Product Card Icons', 'Generic', 'Hybrid and Multi Cloud', 'Security', 'Internet of Things', 'Management Tools', 'Migration', 'Networking', 'Open Source Icons', 'Storage'];
 	
@@ -76,7 +76,7 @@
 							  'Database', 'Desktop App Streaming', 'Developer Tools', 'Game Development', 'Internet of Things', 'IoT Things', 'IoT Resources', 'Machine Learning', 'Management Tools',
 							  'Media Services', 'Migration', 'Mobile Services', 'Network Content Delivery', 'Security Identity Compliance', 'Storage'];
 	
-	Sidebar.prototype.aws4 = ['Arrows', 'General Resources', 'Illustrations', 'Groups', 'Analytics', 'Application Integration', 'AR VR', 'Cost Management', 'Blockchain', 
+	Sidebar.prototype.aws4 = ['Arrows', 'General Resources', 'Illustrations', 'Groups', 'Analytics', 'Application Integration', 'AR VR', 'Cloud Financial Management', 'Blockchain', 
 							  'Business Applications', 'Compute', 'Containers', 'Customer Enablement', 'Customer Engagement',
 							  'Database', 'Developer Tools', 'End User Computing', 'Front End Web Mobile', 'Game Tech', 'Internet of Things', 'IoT Things', 'IoT Resources', 'Machine Learning', 'Management Governance',
 							  'Media Services', 'Migration Transfer', 'Network Content Delivery', 'Quantum Technologies', 'Robotics', 'Satellite', 'Serverless', 'Security Identity Compliance', 'Storage'];
@@ -113,7 +113,7 @@
 	 */
 	Sidebar.prototype.configuration = [{id: 'general', libs: ['general', 'misc', 'advanced']},
 									   {id: 'uml'}, {id: 'uml25'}, {id: 'search'}, {id: 'er'},
-									   {id: 'azure2', prefix: 'azure2', libs: ['AI Machine Learning', 'Analytics', 'App Services', 'Azure Stack', 'Azure VMware Solution', 'Blockchain', 'Compute', 'Containers', 'CXP', 'Databases', 'DevOps', 'General', 'Identity', 'Integration', 'Internet of Things', 'Intune', 'IoT', 'Management Governance', 'Migrate', 'Mixed Reality', 'Monitor', 'Networking', 'Other', 'Preview', 'Security', 'Storage', 'Web']},
+									   {id: 'azure2', prefix: 'azure2', libs: ['AI Machine Learning', 'Analytics', 'App Services', 'Azure Ecosystem', 'Azure Stack', 'Azure VMware Solution', 'Blockchain', 'Compute', 'Containers', 'CXP', 'Databases', 'DevOps', 'General', 'Identity', 'Integration', 'Internet of Things', 'Intune', 'IoT', 'Management Governance', 'Menu', 'Migrate', 'Mixed Reality', 'Monitor', 'Networking', 'Other', 'Preview', 'Security', 'Storage', 'Web']},
 	                                   {id: 'ios', prefix: 'ios', libs: [''/*prefix is library*/, '7icons', '7ui']}, 
 	                                   {id: 'android', prefix: 'android', libs: [''/*prefix is library*/]}, {id: 'aws3d'},
 	                                   {id: 'flowchart'}, {id: 'basic'}, {id: 'infographic'}, {id: 'arrows'}, {id: 'arrows2'}, {id: 'lean_mapping'}, {id: 'citrix'}, {id: 'azure'}, {id: 'network'}, {id: 'vvd'}, 
@@ -300,7 +300,8 @@
 		
 		if (elts != null)
 		{
-			var vis = (visible != null) ? ((visible) ? 'block' : 'none') : (elts[0].style.display == 'none') ? 'block' : 'none';
+			var vis = (visible != null) ? ((visible) ? 'block' : 'none') :
+				(elts[0].style.display == 'none') ? 'block' : 'none';
 			
 			for (var i = 0; i < elts.length; i++)
 			{
@@ -328,9 +329,9 @@
 		{
 			for (var i = 0; i < this.customEntries.length; i++)
 			{
-				var section = this.customEntries[i];
+				var section = this.customEntries[i] || {};
 				
-				for (var j = 0; j < section.entries.length; j++)
+				for (var j = 0; section.entries != null && j < section.entries.length; j++)
 				{
 					var entry = section.entries[j];
 					
@@ -373,9 +374,9 @@
 			{
 				for (var i = 0; i < this.customEntries.length; i++)
 				{
-					var section = this.customEntries[i];
+					var section = this.customEntries[i] || {};
 					
-					for (var j = 0; j < section.entries.length; j++)
+					for (var j = 0; section.entries != null && j < section.entries.length; j++)
 					{
 						var entry = section.entries[j];
 						
@@ -470,9 +471,9 @@
 		{
 			for (var i = 0; i < this.customEntries.length; i++)
 			{
-				var section = this.customEntries[i];
+				var section = this.customEntries[i] || {};
 				
-				for (var j = 0; j < section.entries.length; j++)
+				for (var j = 0; section.entries != null && j < section.entries.length; j++)
 				{
 					var entry = section.entries[j];
 					
@@ -491,22 +492,44 @@
 			}
 		}
 	};
-
+	
 	/**
 	 * Overrides the sidebar init.
 	 */
 	Sidebar.prototype.init = function()
 	{
-		// Defines all entries for the sidebar. This is used in the MoreShapes dialog. Create screenshots using the savesidebar URL parameter and
-		// http://www.alderg.com/merge.html for creating a vertical stack of PNG images if multiple sidebars are part of an entry.
+		this.updateEntries();
 
+		// Uses search.xml index file instead (faster load times)
+		this.addStencilsToIndex = false;
+		
+		// Contains additional tags for shapes
+		this.shapetags = {};
+
+		// Adds tags from compressed text file for improved searches
+		if (this.tagIndex != null)
+		{
+			this.addTagIndex(Graph.decompress(this.tagIndex));
+			this.tagIndex = null;	
+		}
+		
+		this.initPalettes();
+	};
+	 
+	/**
+	 * Defines all entries for the sidebar. This is used in the MoreShapes dialog. Create screenshots using the savesidebar URL parameter and
+	 * http://www.alderg.com/merge.html for creating a vertical stack of PNG images if multiple sidebars are part of an entry.
+	 */
+	Sidebar.prototype.updateEntries = function()
+	{
 		var stdEntries = [{title: mxResources.get('general'), id: 'general', image: IMAGE_PATH + '/sidebar-general.png'},
 			{title: mxResources.get('basic'), id: 'basic', image: IMAGE_PATH + '/sidebar-basic.png'},
 			{title: mxResources.get('arrows'), id: 'arrows2', image: IMAGE_PATH + '/sidebar-arrows2.png'},
 			{title: mxResources.get('clipart'), id: 'clipart', image: IMAGE_PATH + '/sidebar-clipart.png'},
 			{title: mxResources.get('flowchart'), id: 'flowchart', image: IMAGE_PATH + '/sidebar-flowchart.png'}];
 		
-		if (urlParams['sketch'] == '1')
+		if (Editor.currentTheme == 'sketch' ||
+			Editor.currentTheme == 'min')
 		{
 			stdEntries = [{title: mxResources.get('searchShapes'), id: 'search'},
 				{title: mxResources.get('scratchpad'), id: '.scratchpad'}].
@@ -569,22 +592,8 @@
 								{title: 'Web Icons', id: 'webicons', image: IMAGE_PATH + '/sidebar-webIcons.png'},
 								{title: mxResources.get('signs'), id: 'signs', image: IMAGE_PATH + '/sidebar-signs.png'}]}];
 
-		// Uses search.xml index file instead (faster load times)
-		this.addStencilsToIndex = false;
-		
-		// Contains additional tags for shapes
-		this.shapetags = {};
+	};
 
-		// Adds tags from compressed text file for improved searches
-		if (this.tagIndex != null)
-		{
-			this.addTagIndex(Graph.decompress(this.tagIndex));
-			this.tagIndex = null;	
-		}
-		
-		this.initPalettes();
-	}
-	
 	/**
 	 * Overridden to add image export via servlet
 	 */
@@ -612,44 +621,59 @@
 			{
 				if (mxEvent.getSource(evt).nodeName == 'BUTTON')
 				{
-					var title2 = title.cloneNode(true);
-					title2.style.backgroundImage = '';
-					title2.style.textDecoration = 'none';
-					title2.style.fontWeight = 'bold';
-					title2.style.fontSize = '14px';
-					title2.style.color = 'rgb(80, 80, 80)';
-					title2.style.width = '456px';
-					title2.style.backgroundColor = '#ffffff';
-					title2.style.paddingLeft = '6px';
+					var svgs = content.getElementsByTagName('svg');
+					var w = 456;
+					var h = (Math.ceil(svgs.length / 6) + 1) * this.thumbHeight;
+					var root = Graph.createSvgNode(0, 0, w, h, '#ffffff');
 					
-					var btn2 = title2.getElementsByTagName('button')[0];
-					btn2.parentNode.removeChild(btn2);
-					
-					var clone = content.cloneNode(true);
-					clone.style.backgroundColor = '#ffffff';
-					clone.style.borderColor = 'transparent';
-					clone.style.width = '456px';
-	
-					var parser = new DOMParser();
-					var doc = parser.parseFromString('<body style="background:#ffffff;font-family:Helvetica,Arial;">' +
-							title2.outerHTML + clone.outerHTML + '</body>', 'text/html');
-					
-					this.editorUi.editor.convertImages(doc.documentElement, mxUtils.bind(this, function(body)
+					// Adds title
+					var canvas = new mxSvgCanvas2D(root);
+					canvas.setFontFamily(mxConstants.DEFAULT_FONTFAMILY);
+					canvas.setFontStyle(mxConstants.FONT_BOLD);
+					canvas.setFontColor('rgb(80, 80, 80)');
+					canvas.setFontSize(14);
+
+					// Extracts title text
+					var children = title.childNodes;
+
+					for (var i = 0; i < children.length; i++)
 					{
-						var html = '<!DOCTYPE html><html><head><link rel="stylesheet" type="text/css" ' +
-							'href="https://www.draw.io/styles/grapheditor.css"></head>' +
-							mxUtils.getXml(body) + '</html>';
-		
-						clone.style.position = 'absolute';
-						window.document.body.appendChild(clone);
-						var h = clone.clientHeight + 18;
-						clone.parentNode.removeChild(clone);
-						
-						this.editorUi.confirm('Image data created', mxUtils.bind(this, function()
+						if (children[i].nodeType == mxConstants.NODETYPE_TEXT)
 						{
-				    		new mxXmlRequest(EXPORT_URL, 'w=456&h=' + h + '&html=' + encodeURIComponent(
-				    			Graph.compress(html))).simulate(document, '_blank');
-						}), null, mxResources.get('save'), mxResources.get('cancel'));
+							canvas.plainText(6, 0, 0, 0, mxUtils.getTextContent(children[i]));
+
+							break;
+						}
+					}
+
+					for (var i = 0; i < svgs.length; i++)
+					{
+						var svg = svgs[i];
+						var clone = svg.cloneNode(true);
+						clone.removeAttribute('style');
+						clone.setAttribute('width', this.thumbWidth);
+						clone.setAttribute('height', this.thumbHeight);
+						clone.setAttribute('x', 12 + mxUtils.mod(i, 6) * 68);
+						clone.setAttribute('y', 24 + Math.floor(i / 6) * 68);
+						root.appendChild(clone);
+					}
+
+					this.editorUi.editor.convertImages(root, mxUtils.bind(this, function(body)
+					{
+						var canvas = document.createElement('canvas');
+						canvas.width = w;
+						canvas.height = h;
+					
+						var img = document.createElement('img');
+						img.onload = mxUtils.bind(this, function()
+						{
+							var ctx = canvas.getContext('2d');
+							ctx.drawImage(img, 0, 0)
+							this.editorUi.saveCanvas(canvas, null, 'png');
+						});
+
+						var xml = Graph.xmlDeclaration + '\n' + Graph.svgDoctype + '\n' + mxUtils.getXml(root);
+						img.src = Editor.createSvgDataUri(xml);
 					}));
 					
 					return;
@@ -904,9 +928,9 @@
 			
 			for (var i = 0; i < this.customEntries.length; i++)
 			{
-				var section = this.customEntries[i];
+				var section = this.customEntries[i] || {};
 				
-				for (var j = 0; j < section.entries.length; j++)
+				for (var j = 0; section.entries != null && j < section.entries.length; j++)
 				{
 					var entry = section.entries[j];
 					
@@ -937,7 +961,7 @@
 									if (error != null)
 									{
 										content.style.display = 'block';
-										title.innerHTML = '';
+										title.innerText = '';
 										mxUtils.write(title, this.editorUi.getResource(lib.title));
 										showError(error, content);
 									}
@@ -945,13 +969,13 @@
 									{
 										this.editorUi.addLibraryEntries(data, content);
 										content.style.display = 'block';
-										title.innerHTML = '';
+										title.innerText = '';
 										mxUtils.write(title, this.editorUi.getResource(lib.title));
 									}
 									else
 									{
 										content.style.display = 'none';
-										title.innerHTML = '';
+										title.innerText = '';
 										mxUtils.write(title, mxResources.get('loading') + '...');
 									}
 								}
@@ -971,7 +995,7 @@
 									});
 
 									content.style.display = 'none';
-									title.innerHTML = '';
+									title.innerText = '';
 									mxUtils.write(title, mxResources.get('loading') + '...');
 									
 									var url = lib.url;
@@ -984,7 +1008,7 @@
 									this.editorUi.editor.loadUrl(url, mxUtils.bind(this, function(data)
 									{
 										content.style.display = 'block';
-										title.innerHTML = '';
+										title.innerText = '';
 										mxUtils.write(title, this.editorUi.getResource(lib.title));
 
 										try
@@ -1401,7 +1425,52 @@
 		
 		sidebarSearchEntries.apply(this, arguments);
 	};
+	
+	// Fixes sidebar tooltips (previews)
+	var sidebarGetTooltipOffset = Sidebar.prototype.getTooltipOffset;
+	
+	Sidebar.prototype.getTooltipOffset = function(elt, bounds)
+	{
+		if (Editor.currentTheme == 'simple' ||
+			Editor.currentTheme == 'sketch' || 
+			Editor.currentTheme == 'min')
+		{
+			if (mxUtils.isAncestorNode(this.editorUi.sketchPickerMenuElt, elt))
+			{
+				var off = mxUtils.getOffset(elt);
 
+				if (Editor.currentTheme == 'simple')
+				{
+					off.x += (elt.offsetWidth - bounds.width) / 2 - 14;
+					off.y = elt.parentNode.offsetHeight - 2;
+				}
+				else
+				{
+					off.x = elt.parentNode.offsetLeft + elt.parentNode.offsetWidth + 2;
+					off.y += (elt.offsetHeight - bounds.height) / 2;
+				}
+				
+				return new mxPoint(Math.max(0, off.x), Math.max(0, off.y));
+			}
+			else if (this.editorUi.sidebarWindow != null)
+			{
+				var off = mxUtils.getOffset(this.editorUi.sidebarWindow.window.div);
+
+				off.x += this.editorUi.sidebarWindow.window.div.offsetWidth + 2;
+				off.y += elt.offsetTop + (elt.offsetHeight - bounds.height) / 2;
+
+				if (elt.offsetParent != null)
+				{
+					off.y -= elt.offsetParent.scrollTop;
+				}
+				
+				return new mxPoint(Math.max(0, off.x), Math.max(0, off.y));
+			}
+		}
+		
+		return sidebarGetTooltipOffset.apply(this, arguments);
+	};
+    
 	/**
 	 * Adds a click handler for inserting the cell as target for dangling edge.
 	 */

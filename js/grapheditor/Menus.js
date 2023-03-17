@@ -41,6 +41,11 @@ Menus.prototype.defaultFonts = ['Helvetica', 'Verdana', 'Times New Roman', 'Gara
 /**
  * Adds the label menu items to the given menu and parent.
  */
+Menus.prototype.autoPopup = true;
+
+/**
+ * Adds the label menu items to the given menu and parent.
+ */
 Menus.prototype.init = function()
 {
 	var ui = this.editorUi;
@@ -49,7 +54,7 @@ Menus.prototype.init = function()
 
 	this.customFonts = [];
 	this.customFontSizes = [];
-
+	
 	this.put('fontFamily', new Menu(mxUtils.bind(this, function(menu, parent)
 	{
 		var addItem = mxUtils.bind(this, function(fontFamily)
@@ -273,6 +278,13 @@ Menus.prototype.init = function()
 	{
 		menu.addItem(mxResources.get('horizontal'), null, function() { graph.distributeCells(true); }, parent);
 		menu.addItem(mxResources.get('vertical'), null, function() { graph.distributeCells(false); }, parent);
+		menu.addSeparator(parent);
+		this.addSubmenu('distributeSpacing', menu, parent, mxResources.get('spacing'));
+	})));
+	this.put('distributeSpacing', new Menu(mxUtils.bind(this, function(menu, parent)
+	{
+		menu.addItem(mxResources.get('horizontal'), null, function() { graph.distributeCells(true, null, true); }, parent);
+		menu.addItem(mxResources.get('vertical'), null, function() { graph.distributeCells(false, null, true); }, parent);
 	})));
 	this.put('line', new Menu(mxUtils.bind(this, function(menu, parent)
 	{
@@ -284,101 +296,117 @@ Menus.prototype.init = function()
 		
 			if (shape != 'arrow')
 			{
-				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE], [null, null, null], 'geIcon geSprite geSprite-straight', parent, true).setAttribute('title', mxResources.get('straight'));
-				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE], ['orthogonalEdgeStyle', null, null], 'geIcon geSprite geSprite-orthogonal', parent, true).setAttribute('title', mxResources.get('orthogonal'));
-				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_ELBOW, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE], ['elbowEdgeStyle', null, null, null], 'geIcon geSprite geSprite-horizontalelbow', parent, true).setAttribute('title', mxResources.get('simple'));
-				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_ELBOW, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE], ['elbowEdgeStyle', 'vertical', null, null], 'geIcon geSprite geSprite-verticalelbow', parent, true).setAttribute('title', mxResources.get('simple'));
-				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_ELBOW, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE], ['isometricEdgeStyle', null, null, null], 'geIcon geSprite geSprite-horizontalisometric', parent, true).setAttribute('title', mxResources.get('isometric'));
-				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_ELBOW, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE], ['isometricEdgeStyle', 'vertical', null, null], 'geIcon geSprite geSprite-verticalisometric', parent, true).setAttribute('title', mxResources.get('isometric'));
+				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE],
+					[null, null, null], 'geIcon geSprite geSprite-straight', parent, true).setAttribute('title', mxResources.get('straight'));
+				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE],
+					['orthogonalEdgeStyle', null, null], 'geIcon geSprite geSprite-orthogonal', parent, true).setAttribute('title', mxResources.get('orthogonal'));
+				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_ELBOW, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE],
+					['elbowEdgeStyle', null, null, null], 'geIcon geSprite geSprite-horizontalelbow', parent, true).setAttribute('title', mxResources.get('simple'));
+				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_ELBOW, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE],
+					['elbowEdgeStyle', 'vertical', null, null], 'geIcon geSprite geSprite-verticalelbow', parent, true).setAttribute('title', mxResources.get('simple'));
+				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_ELBOW, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE],
+					['isometricEdgeStyle', null, null, null], 'geIcon geSprite geSprite-horizontalisometric', parent, true).setAttribute('title', mxResources.get('isometric'));
+				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_ELBOW, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE],
+					['isometricEdgeStyle', 'vertical', null, null], 'geIcon geSprite geSprite-verticalisometric', parent, true).setAttribute('title', mxResources.get('isometric'));
 		
 				if (shape == 'connector')
 				{
-					this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE], ['orthogonalEdgeStyle', '1', null], 'geIcon geSprite geSprite-curved', parent, true).setAttribute('title', mxResources.get('curved'));
+					this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE],
+						['orthogonalEdgeStyle', '1', null], 'geIcon geSprite geSprite-curved', parent, true).setAttribute('title', mxResources.get('curved'));
 				}
 				
-				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE], ['entityRelationEdgeStyle', null, null], 'geIcon geSprite geSprite-entity', parent, true).setAttribute('title', mxResources.get('entityRelation'));
+				this.edgeStyleChange(menu, '', [mxConstants.STYLE_EDGE, mxConstants.STYLE_CURVED, mxConstants.STYLE_NOEDGESTYLE],
+					['entityRelationEdgeStyle', null, null], 'geIcon geSprite geSprite-entity', parent, true).setAttribute('title', mxResources.get('entityRelation'));
 			}
 			
 			menu.addSeparator(parent);
 
-			this.styleChange(menu, '', [mxConstants.STYLE_SHAPE, mxConstants.STYLE_STARTSIZE, mxConstants.STYLE_ENDSIZE, 'width'], [null, null, null, null], 'geIcon geSprite geSprite-connection', parent, true, null, true).setAttribute('title', mxResources.get('line'));
-			this.styleChange(menu, '', [mxConstants.STYLE_SHAPE, mxConstants.STYLE_STARTSIZE, mxConstants.STYLE_ENDSIZE, 'width'], ['link', null, null, null], 'geIcon geSprite geSprite-linkedge', parent, true, null, true).setAttribute('title', mxResources.get('link'));
-			this.styleChange(menu, '', [mxConstants.STYLE_SHAPE, mxConstants.STYLE_STARTSIZE, mxConstants.STYLE_ENDSIZE, 'width'], ['flexArrow', null, null, null], 'geIcon geSprite geSprite-arrow', parent, true, null, true).setAttribute('title', mxResources.get('arrow'));
-			this.styleChange(menu, '', [mxConstants.STYLE_SHAPE, mxConstants.STYLE_STARTSIZE, mxConstants.STYLE_ENDSIZE, 'width'], ['arrow', null, null, null], 'geIcon geSprite geSprite-simplearrow', parent, true, null, true).setAttribute('title', mxResources.get('simpleArrow'));
+			this.styleChange(menu, '', [mxConstants.STYLE_SHAPE, mxConstants.STYLE_STARTSIZE, mxConstants.STYLE_ENDSIZE, 'width'],
+				[null, null, null, null], 'geIcon geSprite geSprite-connection', parent, null, null, true).setAttribute('title', mxResources.get('line'));
+			this.styleChange(menu, '', [mxConstants.STYLE_SHAPE, mxConstants.STYLE_STARTSIZE, mxConstants.STYLE_ENDSIZE, 'width'],
+				['link', null, null, null], 'geIcon geSprite geSprite-linkedge', parent, null, null, true).setAttribute('title', mxResources.get('link'));
+			this.styleChange(menu, '', [mxConstants.STYLE_SHAPE, mxConstants.STYLE_STARTSIZE, mxConstants.STYLE_ENDSIZE, 'width'],
+				['flexArrow', null, null, null], 'geIcon geSprite geSprite-arrow', parent, null, null, true).setAttribute('title', mxResources.get('arrow'));
+			this.styleChange(menu, '', [mxConstants.STYLE_SHAPE, mxConstants.STYLE_STARTSIZE, mxConstants.STYLE_ENDSIZE, 'width'],
+				['arrow', null, null, null], 'geIcon geSprite geSprite-simplearrow', parent, null, null, true).setAttribute('title', mxResources.get('simpleArrow'));
 		}
 	})));
 	this.put('layout', new Menu(mxUtils.bind(this, function(menu, parent)
 	{
 		var promptSpacing = mxUtils.bind(this, function(defaultValue, fn)
 		{
-			var dlg = new FilenameDialog(this.editorUi, defaultValue, mxResources.get('apply'), function(newValue)
-			{
-				fn(parseFloat(newValue));
-			}, mxResources.get('spacing'));
-			this.editorUi.showDialog(dlg.container, 300, 80, true, true);
-			dlg.init();
+			this.editorUi.prompt(mxResources.get('spacing'), defaultValue, fn);
 		});
 
 		var runTreeLayout = mxUtils.bind(this, function(layout)
 		{
-			var tmp = graph.getSelectionCell();
-			var roots = null;
-			
-			if (tmp == null || graph.getModel().getChildCount(tmp) == 0)
+			this.editorUi.tryAndHandle(mxUtils.bind(this, function()
 			{
-				if (graph.getModel().getEdgeCount(tmp) == 0)
+				var tmp = graph.getSelectionCell();
+				var roots = null;
+				
+				if (tmp == null || graph.getModel().getChildCount(tmp) == 0)
 				{
-					roots = graph.findTreeRoots(graph.getDefaultParent());
-				}
-			}
-			else
-			{
-				roots = graph.findTreeRoots(tmp);
-			}
-
-			if (roots != null && roots.length > 0)
-			{
-				tmp = roots[0];
-			}
-			
-			if (tmp != null)
-			{
-				this.editorUi.executeLayout(function()
-				{
-					layout.execute(graph.getDefaultParent(), tmp);
-
-					if (!graph.isSelectionEmpty())
+					if (graph.getModel().getEdgeCount(tmp) == 0)
 					{
-						tmp = graph.getModel().getParent(tmp);
-						
-						if (graph.getModel().isVertex(tmp))
-						{
-							graph.updateGroupBounds([tmp], graph.gridSize * 2, true);
-						}
+						roots = graph.findTreeRoots(graph.getDefaultParent());
 					}
-				}, true);
-			}
+				}
+				else
+				{
+					roots = graph.findTreeRoots(tmp);
+				}
+	
+				if (roots != null && roots.length > 0)
+				{
+					tmp = roots[0];
+				}
+				
+				if (tmp != null)
+				{
+					this.editorUi.executeLayout(function()
+					{
+						layout.execute(graph.getDefaultParent(), tmp);
+
+						if (!graph.isSelectionEmpty())
+						{
+							tmp = graph.getModel().getParent(tmp);
+							
+							if (graph.getModel().isVertex(tmp))
+							{
+								graph.updateGroupBounds([tmp], graph.gridSize * 2, true);
+							}
+						}
+					}, true);
+				}
+			}));
 		});
 
 		menu.addItem(mxResources.get('horizontalFlow'), null, mxUtils.bind(this, function()
 		{
-			var layout = new mxHierarchicalLayout(graph, mxConstants.DIRECTION_WEST);
-			
-    		this.editorUi.executeLayout(function()
-    		{
-    			var selectionCells = graph.getSelectionCells();
-    			layout.execute(graph.getDefaultParent(), selectionCells.length == 0 ? null : selectionCells);
-    		}, true);
+			this.editorUi.tryAndHandle(mxUtils.bind(this, function()
+			{
+				var layout = new mxHierarchicalLayout(graph, mxConstants.DIRECTION_WEST);
+
+				this.editorUi.executeLayout(function()
+				{
+					var selectionCells = graph.getSelectionCells();
+					layout.execute(graph.getDefaultParent(), selectionCells.length == 0 ? null : selectionCells);
+				}, true);
+			}));
 		}), parent);
 		menu.addItem(mxResources.get('verticalFlow'), null, mxUtils.bind(this, function()
 		{
-			var layout = new mxHierarchicalLayout(graph, mxConstants.DIRECTION_NORTH);
-			
-    		this.editorUi.executeLayout(function()
-    		{
-    			var selectionCells = graph.getSelectionCells();
-    			layout.execute(graph.getDefaultParent(), selectionCells.length == 0 ? null : selectionCells);
-    		}, true);
+			this.editorUi.tryAndHandle(mxUtils.bind(this, function()
+			{
+				var layout = new mxHierarchicalLayout(graph, mxConstants.DIRECTION_NORTH);
+				
+				this.editorUi.executeLayout(function()
+				{
+					var selectionCells = graph.getSelectionCells();
+					layout.execute(graph.getDefaultParent(), selectionCells.length == 0 ? null : selectionCells);
+				}, true);
+			}));
 		}), parent);
 		menu.addSeparator(parent);
 		menu.addItem(mxResources.get('horizontalTree'), null, mxUtils.bind(this, function()
@@ -433,46 +461,52 @@ Menus.prototype.init = function()
 			
 			promptSpacing(layout.forceConstant, mxUtils.bind(this, function(newValue)
 			{
-				layout.forceConstant = newValue;
-				
-	    		this.editorUi.executeLayout(function()
-	    		{
-	    			var tmp = graph.getSelectionCell();
-	    			
-	    			if (tmp == null || graph.getModel().getChildCount(tmp) == 0)
-	    			{
-	    				tmp = graph.getDefaultParent();
-	    			}
-	    			
-	    			layout.execute(tmp);
-	    			
-	    			if (graph.getModel().isVertex(tmp))
-	    			{
-	    				graph.updateGroupBounds([tmp], graph.gridSize * 2, true);
-	    			}
-	    		}, true);
+				this.editorUi.tryAndHandle(mxUtils.bind(this, function()
+				{
+					layout.forceConstant = newValue;
+					
+					this.editorUi.executeLayout(function()
+					{
+						var tmp = graph.getSelectionCell();
+						
+						if (tmp == null || graph.getModel().getChildCount(tmp) == 0)
+						{
+							tmp = graph.getDefaultParent();
+						}
+						
+						layout.execute(tmp);
+						
+						if (graph.getModel().isVertex(tmp))
+						{
+							graph.updateGroupBounds([tmp], graph.gridSize * 2, true);
+						}
+					}, true);
+				}));
 			}));
 		}), parent);
 		menu.addItem(mxResources.get('circle'), null, mxUtils.bind(this, function()
 		{
-			var layout = new mxCircleLayout(graph);
-			
-    		this.editorUi.executeLayout(function()
-    		{
-    			var tmp = graph.getSelectionCell();
-    			
-    			if (tmp == null || graph.getModel().getChildCount(tmp) == 0)
-    			{
-    				tmp = graph.getDefaultParent();
-    			}
-    			
-    			layout.execute(tmp);
-    			
-    			if (graph.getModel().isVertex(tmp))
-    			{
-    				graph.updateGroupBounds([tmp], graph.gridSize * 2, true);
-    			}
-    		}, true);
+			this.editorUi.tryAndHandle(mxUtils.bind(this, function()
+			{
+				var layout = new mxCircleLayout(graph);
+				
+				this.editorUi.executeLayout(function()
+				{
+					var tmp = graph.getSelectionCell();
+					
+					if (tmp == null || graph.getModel().getChildCount(tmp) == 0)
+					{
+						tmp = graph.getDefaultParent();
+					}
+					
+					layout.execute(tmp);
+					
+					if (graph.getModel().isVertex(tmp))
+					{
+						graph.updateGroupBounds([tmp], graph.gridSize * 2, true);
+					}
+				}, true);
+			}));
 		}), parent);
 	})));
 	this.put('navigation', new Menu(mxUtils.bind(this, function(menu, parent)
@@ -498,8 +532,8 @@ Menus.prototype.init = function()
 	})));
 	this.put('view', new Menu(mxUtils.bind(this, function(menu, parent)
 	{
-		this.addMenuItems(menu, ((this.editorUi.format != null) ? ['formatPanel'] : []).
-			concat(['outline', 'layers', '-', 'pageView', 'pageScale', '-', 'scrollbars', 'tooltips', '-',
+		this.addMenuItems(menu, ((this.editorUi.format != null) ? ['format'] : []).
+			concat(['outline', 'layers', '-', 'pageView', 'pageScale', '-', 'tooltips',
 			        'grid', 'guides', '-', 'connectionArrows', 'connectionPoints', '-',
 			        'resetView', 'zoomIn', 'zoomOut'], parent));
 	})));
@@ -508,14 +542,14 @@ Menus.prototype.init = function()
 	{
 		if (this.editorUi.format != null)
 		{
-			this.addMenuItems(menu, ['formatPanel'], parent);
+			this.addMenuItems(menu, ['format'], parent);
 		}
 		
 		this.addMenuItems(menu, ['outline', 'layers'], parent);
 	})));
 	this.put('viewZoom', new Menu(mxUtils.bind(this, function(menu, parent)
 	{
-		this.addMenuItems(menu, ['resetView', '-'], parent);
+		this.addMenuItems(menu, ['smartFit', '-'], parent);
 		var scales = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
 		
 		for (var i = 0; i < scales.length; i++)
@@ -575,6 +609,7 @@ Menus.prototype.get = function(name)
 Menus.prototype.addSubmenu = function(name, menu, parent, label)
 {
 	var entry = this.get(name);
+	var submenu = null;
 	
 	if (entry != null)
 	{
@@ -582,10 +617,13 @@ Menus.prototype.addSubmenu = function(name, menu, parent, label)
 	
 		if (menu.showDisabled || enabled)
 		{
-			var submenu = menu.addItem(label || mxResources.get(name), null, null, parent, null, enabled);
+			submenu = menu.addItem(label || mxResources.get(name),
+				null, null, parent, null, enabled);
 			this.addMenu(name, menu, submenu);
 		}
 	}
+
+	return submenu;
 };
 
 /**
@@ -597,7 +635,7 @@ Menus.prototype.addMenu = function(name, popupMenu, parent)
 	
 	if (menu != null && (popupMenu.showDisabled || menu.isEnabled()))
 	{
-		this.get(name).execute(popupMenu, parent);
+		menu.execute(popupMenu, parent);
 	}
 };
 
@@ -831,8 +869,6 @@ Menus.prototype.addInsertTableItem = function(menu, insertFn, parent, showOption
 
 		if (td != null && graph.cellEditor.textarea != null)
 		{
-			var row2 = graph.getParentByName(td, 'TR');
-			
 			// To find the new link, we create a list of all existing links first
     		// LATER: Refactor for reuse with code for finding inserted image below
 			var tmp = graph.cellEditor.textarea.getElementsByTagName('table');
@@ -899,13 +935,25 @@ Menus.prototype.addInsertTableItem = function(menu, insertFn, parent, showOption
 
 	var elt2 = menu.addItem('', null, null, parent, null, null, null, true);
 	elt2.firstChild.style.fontSize = Menus.prototype.defaultFontSize + 'px';
+
+	// Hide empty rows in menu item
+	var tds = elt2.getElementsByTagName('td');
+
+	if (tds.length > 1)
+	{
+		tds[1].style.display = 'none';
+		tds[2].style.display = 'none';
+	}
 	
 	function createPicker(rows, cols)
 	{
 		var table2 = document.createElement('table');
+		table2.className = 'geInsertTablePicker';
 		table2.setAttribute('border', '1');
 		table2.style.borderCollapse = 'collapse';
 		table2.style.borderStyle = 'solid';
+		table2.style.marginBottom = '4px';
+		table2.style.marginTop = '8px';
 		table2.setAttribute('cellPadding', '8');
 		
 		for (var i = 0; i < rows; i++)
@@ -944,15 +992,17 @@ Menus.prototype.addInsertTableItem = function(menu, insertFn, parent, showOption
 		}
 	};
 	
-	elt2.firstChild.innerHTML = '';
+	elt2.firstChild.innerText = '';
 	
 	var titleOption = document.createElement('input');
 	titleOption.setAttribute('id', 'geTitleOption');
 	titleOption.setAttribute('type', 'checkbox');
+	titleOption.style.verticalAlign = 'middle';
 
 	var titleLbl = document.createElement('label');
 	mxUtils.write(titleLbl, mxResources.get('title'));
 	titleLbl.setAttribute('for', 'geTitleOption');
+	titleLbl.style.verticalAlign = 'middle';
 
 	mxEvent.addGestureListeners(titleLbl, null, null, mxUtils.bind(this, function(e)
 	{
@@ -967,10 +1017,12 @@ Menus.prototype.addInsertTableItem = function(menu, insertFn, parent, showOption
 	var containerOption = document.createElement('input');
 	containerOption.setAttribute('id', 'geContainerOption');
 	containerOption.setAttribute('type', 'checkbox');
+	containerOption.style.verticalAlign = 'middle';
 	
 	var containerLbl = document.createElement('label');
 	mxUtils.write(containerLbl, mxResources.get('container'));
 	containerLbl.setAttribute('for', 'geContainerOption');
+	containerLbl.style.verticalAlign = 'middle';
 
 	mxEvent.addGestureListeners(containerLbl, null, null, mxUtils.bind(this, function(e)
 	{
@@ -990,14 +1042,15 @@ Menus.prototype.addInsertTableItem = function(menu, insertFn, parent, showOption
 		elt2.firstChild.appendChild(containerOption);
 		elt2.firstChild.appendChild(containerLbl);
 		mxUtils.br(elt2.firstChild);
-		mxUtils.br(elt2.firstChild);
 	}
 	
 	var picker = createPicker(5, 5);
 	elt2.firstChild.appendChild(picker);
 	
 	var label = document.createElement('div');
+	label.style.textAlign = 'center';
 	label.style.padding = '4px';
+	label.style.width = '100%';
 	label.innerHTML = '1x1';
 	elt2.firstChild.appendChild(label);
 	
@@ -1290,71 +1343,75 @@ Menus.prototype.promptChange = function(menu, label, hint, defaultValue, key, pa
 Menus.prototype.pickColor = function(key, cmd, defaultValue)
 {
 	var ui = this.editorUi;
-	var graph = ui.editor.graph;
-	var h = 226 + ((Math.ceil(ColorDialog.prototype.presetColors.length / 12) +
-			Math.ceil(ColorDialog.prototype.defaultColors.length / 12)) * 17);
 	
-	if (cmd != null && graph.cellEditor.isContentEditing())
+	ui.tryAndHandle(mxUtils.bind(this, function()
 	{
-		// Saves and restores text selection for in-place editor
-		var selState = graph.cellEditor.saveSelection();
+		var graph = ui.editor.graph;
+		var h = 226 + ((Math.ceil(ColorDialog.prototype.presetColors.length / 12) +
+				Math.ceil(ColorDialog.prototype.defaultColors.length / 12)) * 17);
 		
-		var dlg = new ColorDialog(this.editorUi, defaultValue || graph.shapeForegroundColor, mxUtils.bind(this, function(color)
+		if (cmd != null && graph.cellEditor.isContentEditing())
 		{
-			graph.cellEditor.restoreSelection(selState);
-			document.execCommand(cmd, false, (color != mxConstants.NONE) ? color : 'transparent');
-
-			var cmdMapping = {
-				'forecolor': mxConstants.STYLE_FONTCOLOR,
-				'backcolor': mxConstants.STYLE_LABEL_BACKGROUNDCOLOR
-			};
-
-			var style = cmdMapping[cmd];
-
-			if (style != null)
+			// Saves and restores text selection for in-place editor
+			var selState = graph.cellEditor.saveSelection();
+			
+			var dlg = new ColorDialog(this.editorUi, defaultValue || graph.shapeForegroundColor, mxUtils.bind(this, function(color)
 			{
-				ui.fireEvent(new mxEventObject('styleChanged',
-					'keys', [style], 'values', [color],
-					'cells', [graph.cellEditor.getEditingCell()]));
-			}
-		}), function()
-		{
-			graph.cellEditor.restoreSelection(selState);
-		});
+				graph.cellEditor.restoreSelection(selState);
+				document.execCommand(cmd, false, (color != mxConstants.NONE) ? color : 'transparent');
 
-		this.editorUi.showDialog(dlg.container, 230, h, true, true);
-		dlg.init();
-	}
-	else
-	{
-		if (this.colorDialog == null)
-		{
-			this.colorDialog = new ColorDialog(this.editorUi);
-		}
-	
-		this.colorDialog.currentColorKey = key;
-		var state = graph.getView().getState(graph.getSelectionCell());
-		var color = mxConstants.NONE;
-		
-		if (state != null)
-		{
-			color = state.style[key] || color;
-		}
-		
-		if (color == mxConstants.NONE)
-		{
-			color = graph.shapeBackgroundColor.substring(1);
-			this.colorDialog.picker.fromString(color);
-			this.colorDialog.colorInput.value = mxConstants.NONE;
+				var cmdMapping = {
+					'forecolor': mxConstants.STYLE_FONTCOLOR,
+					'backcolor': mxConstants.STYLE_LABEL_BACKGROUNDCOLOR
+				};
+
+				var style = cmdMapping[cmd];
+
+				if (style != null)
+				{
+					ui.fireEvent(new mxEventObject('styleChanged',
+						'keys', [style], 'values', [color],
+						'cells', [graph.cellEditor.getEditingCell()]));
+				}
+			}), function()
+			{
+				graph.cellEditor.restoreSelection(selState);
+			});
+
+			this.editorUi.showDialog(dlg.container, 230, h, true, true);
+			dlg.init();
 		}
 		else
 		{
-			this.colorDialog.picker.fromString(mxUtils.rgba2hex(color));
+			if (this.colorDialog == null)
+			{
+				this.colorDialog = new ColorDialog(this.editorUi);
+			}
+		
+			this.colorDialog.currentColorKey = key;
+			var state = graph.getView().getState(graph.getSelectionCell());
+			var color = mxConstants.NONE;
+			
+			if (state != null)
+			{
+				color = state.style[key] || color;
+			}
+			
+			if (color == mxConstants.NONE)
+			{
+				color = graph.shapeBackgroundColor.substring(1);
+				this.colorDialog.picker.fromString(color);
+				this.colorDialog.colorInput.value = mxConstants.NONE;
+			}
+			else
+			{
+				this.colorDialog.picker.fromString(mxUtils.rgba2hex(color));
+			}
+		
+			this.editorUi.showDialog(this.colorDialog.container, 230, h, true, true);
+			this.colorDialog.init();
 		}
-	
-		this.editorUi.showDialog(this.colorDialog.container, 230, h, true, true);
-		this.colorDialog.init();
-	}
+	}));
 };
 
 /**
@@ -1388,7 +1445,7 @@ Menus.prototype.addMenuItem = function(menu, key, parent, trigger, sprite, label
 			menu.addCheckmark(item, Editor.checkmarkImage);
 		}
 
-		this.addShortcut(item, action);
+		this.addShortcut(item, action, menu.hideShortcuts);
 		
 		return item;
 	}
@@ -1399,15 +1456,22 @@ Menus.prototype.addMenuItem = function(menu, key, parent, trigger, sprite, label
 /**
  * Adds a checkmark to the given menuitem.
  */
-Menus.prototype.addShortcut = function(item, action)
+Menus.prototype.addShortcut = function(item, action, asTooltip)
 {
 	if (action.shortcut != null)
 	{
-		var td = item.firstChild.nextSibling.nextSibling;
-		var span = document.createElement('span');
-		span.style.color = 'gray';
-		mxUtils.write(span, action.shortcut);
-		td.appendChild(span);
+		if (asTooltip)
+		{
+			item.setAttribute('title', action.shortcut);
+		}
+		else
+		{
+			var td = item.firstChild.nextSibling.nextSibling;	
+			var span = document.createElement('span');
+			span.style.color = 'gray';
+			mxUtils.write(span, action.shortcut);
+			td.appendChild(span);
+		}
 	}
 };
 
@@ -1435,13 +1499,42 @@ Menus.prototype.addMenuItems = function(menu, keys, parent, trigger, sprites)
 Menus.prototype.createPopupMenu = function(menu, cell, evt)
 {
 	menu.smartSeparators = true;
-	
-	this.addPopupMenuHistoryItems(menu, cell, evt);
+	menu.hideShortcuts = true;
+	this.addPopupMenuItems(menu, cell, evt);
+};
+
+/**
+ * Creates the keyboard event handler for the current graph and history.
+ */
+Menus.prototype.addPopupMenuItems = function(menu, cell, evt)
+{
+	if (this.isShowHistoryItems())
+	{
+		this.addPopupMenuHistoryItems(menu, cell, evt);	
+	}
+
 	this.addPopupMenuEditItems(menu, cell, evt);
-	this.addPopupMenuStyleItems(menu, cell, evt);
-	this.addPopupMenuArrangeItems(menu, cell, evt);
+
+	if (this.isShowStyleItems())
+	{
+		this.addPopupMenuStyleItems(menu, cell, evt);
+	}
+
+	if (this.isShowArrangeItems())
+	{
+		this.addPopupMenuArrangeItems(menu, cell, evt);
+	}
+
 	this.addPopupMenuCellItems(menu, cell, evt);
 	this.addPopupMenuSelectionItems(menu, cell, evt);
+};
+
+/**
+ * Creates the keyboard event handler for the current graph and history.
+ */
+Menus.prototype.isShowHistoryItems = function()
+{
+	return true;
 };
 
 /**
@@ -1466,8 +1559,17 @@ Menus.prototype.addPopupMenuEditItems = function(menu, cell, evt)
 	}
 	else
 	{
-		this.addMenuItems(menu, ['delete', '-', 'cut', 'copy', '-', 'duplicate'], null, evt);
+		this.addMenuItems(menu, ['cut', 'copy', 'duplicate',
+			'-', 'delete', 'lockUnlock'], null, evt);
 	}
+};
+
+/**
+ * Creates the keyboard event handler for the current graph and history.
+ */
+Menus.prototype.isShowStyleItems = function()
+{
+	return true;
 };
 
 /**
@@ -1488,29 +1590,43 @@ Menus.prototype.addPopupMenuStyleItems = function(menu, cell, evt)
 /**
  * Creates the keyboard event handler for the current graph and history.
  */
+Menus.prototype.isShowArrangeItems = function()
+{
+	return true;
+};
+
+/**
+ * Creates the keyboard event handler for the current graph and history.
+ */
 Menus.prototype.addPopupMenuArrangeItems = function(menu, cell, evt)
 {
 	var graph = this.editorUi.editor.graph;
 	
-	if (graph.getEditableCells(graph.getSelectionCells()).length > 0)
+	// Shows group actions
+	if (graph.getSelectionCount() > 1 || (graph.getSelectionCount() > 0 &&
+		!graph.getModel().isEdge(cell) && !graph.isSwimlane(cell) &&
+		graph.getModel().getChildCount(cell) > 0 && graph.isCellEditable(cell)))
+	{
+		this.addMenuItems(menu, ['group', 'ungroup'], null, evt);
+	}
+
+	var count = graph.getEditableCells(graph.getSelectionCells()).length;
+
+	if (count > 1)
+	{
+		menu.addSeparator();
+		this.addSubmenu('align', menu);
+		this.addSubmenu('distribute', menu);
+	}
+
+	if (count >= 1)
 	{
 		this.addMenuItems(menu, ['-', 'toFront', 'toBack'], null, evt);
 		
-		if (graph.getSelectionCount() == 1)
+		if (this.isShowCellEditItems() && graph.getSelectionCount() == 1)
 		{
 			this.addMenuItems(menu, ['bringForward', 'sendBackward'], null, evt);
 		}
-	}	
-
-	if (graph.getSelectionCount() > 1)	
-	{
-		this.addMenuItems(menu, ['-', 'group'], null, evt);
-	}
-	else if (graph.getSelectionCount() == 1 && !graph.getModel().isEdge(cell) &&
-		!graph.isSwimlane(cell) && graph.getModel().getChildCount(cell) > 0 &&
-		graph.isCellEditable(cell))
-	{
-		this.addMenuItems(menu, ['-', 'ungroup'], null, evt);
 	}
 };
 
@@ -1521,13 +1637,15 @@ Menus.prototype.addPopupMenuCellItems = function(menu, cell, evt)
 {
 	var graph = this.editorUi.editor.graph;
 	var state = graph.view.getState(cell);
-	menu.addSeparator();
 	
 	if (state != null)
 	{
-		var hasWaypoints = false;
+		// Adds reset waypoints option if waypoints exist
+		var geo = graph.getModel().getGeometry(cell);
+		var hasWaypoints = geo != null && geo.points != null && geo.points.length > 0;
 		
-		if (graph.getSelectionCount() == 1 && graph.getModel().isEdge(cell))
+		if (this.isShowStyleItems() && graph.getSelectionCount() == 1 &&
+			graph.getModel().isEdge(cell))
 		{
 			menu.addSeparator();
 			this.addSubmenu('line', menu);
@@ -1539,7 +1657,7 @@ Menus.prototype.addPopupMenuCellItems = function(menu, cell, evt)
 			var handler = graph.selectionCellsHandler.getHandler(cell);
 			var isWaypoint = false;
 			
-			if (handler instanceof mxEdgeHandler && handler.bends != null && handler.bends.length > 2)
+			if (hasWaypoints && handler instanceof mxEdgeHandler && handler.bends != null && handler.bends.length > 2)
 			{
 				var index = handler.getHandleForEvent(graph.updateMouseEvent(new mxMouseEvent(evt)));
 
@@ -1559,26 +1677,36 @@ Menus.prototype.addPopupMenuCellItems = function(menu, cell, evt)
 				}
 			}
 			
-			menu.addSeparator();
-			this.addMenuItem(menu, 'turn', null, evt, null, mxResources.get('reverse'));
-			this.addMenuItems(menu, [(isWaypoint) ? 'removeWaypoint' : 'addWaypoint'], null, evt);
+			if (this.isShowCellEditItems())
+			{
+				this.addMenuItem(menu, 'turn', null, evt, null, mxResources.get('reverse'));
+			}
 			
-			// Adds reset waypoints option if waypoints exist
-			var geo = graph.getModel().getGeometry(cell);
-			hasWaypoints = geo != null && geo.points != null && geo.points.length > 0;
+			this.addMenuItems(menu, [(isWaypoint) ? 'removeWaypoint' : 'addWaypoint'], null, evt);
 		}
 
-		if (graph.getSelectionCount() == 1 && (hasWaypoints || (graph.getModel().isVertex(cell) &&
+		if (graph.getSelectionCount() == 1 && this.isShowCellEditItems() && 
+			(hasWaypoints || (graph.getModel().isVertex(cell) &&
 			graph.getModel().getEdgeCount(cell) > 0)))
 		{
-			this.addMenuItems(menu, ['-', 'clearWaypoints'], null, evt);
+			this.addMenuItems(menu, ['clearWaypoints'], null, evt);
 		}
-	
-		if (graph.getSelectionCount() == 1 && graph.isCellEditable(cell))
+		
+		if (this.isShowCellEditItems() &&
+			graph.getSelectionCount() == 1 &&
+			graph.isCellEditable(cell))
 		{
 			this.addPopupMenuCellEditItems(menu, cell, evt);
 		}
 	}
+};
+
+/**
+ * Creates the keyboard event handler for the current graph and history.
+ */
+Menus.prototype.isShowCellEditItems = function()
+{
+	return true;
 };
 
 /**
@@ -1604,7 +1732,7 @@ Menus.prototype.addPopupMenuCellEditItems = function(menu, cell, evt, parent)
 		this.addMenuItem(menu, 'editConnectionPoints', parent, evt);
 	}
 };
- 
+
 /**
  * Creates the keyboard event handler for the current graph and history.
  */
@@ -1612,7 +1740,7 @@ Menus.prototype.addPopupMenuSelectionItems = function(menu, cell, evt)
 {
 	if (this.editorUi.editor.graph.isSelectionEmpty())
 	{
-		this.addMenuItems(menu, ['-', 'selectVertices', 'selectEdges', 'selectAll'], null, evt);
+		this.addMenuItems(menu, ['-', 'selectAll', 'selectVertices', 'selectEdges'], null, evt);
 	}
 };
 
@@ -1649,6 +1777,7 @@ Menus.prototype.menuCreated = function(menu, elt, className)
 	if (elt != null)
 	{
 		className = (className != null) ? className : 'geItem';
+		elt.className = className;
 		
 		menu.addListener('stateChanged', function()
 		{
@@ -1696,12 +1825,12 @@ Menubar.prototype.hideMenu = function()
 /**
  * Adds a submenu to this menubar.
  */
-Menubar.prototype.addMenu = function(label, funct, before)
+Menubar.prototype.addMenu = function(label, funct, before, clickFn)
 {
 	var elt = document.createElement('a');
 	elt.className = 'geItem';
 	mxUtils.write(elt, label);
-	this.addMenuHandler(elt, funct);
+	this.addMenuHandler(elt, funct, clickFn);
 	
     if (before != null)
     {
@@ -1718,7 +1847,7 @@ Menubar.prototype.addMenu = function(label, funct, before)
 /**
  * Adds a handler for showing a menu in the given element.
  */
-Menubar.prototype.addMenuHandler = function(elt, funct)
+Menubar.prototype.addMenuHandler = function(elt, funct, clickFn)
 {
 	if (funct != null)
 	{
@@ -1726,7 +1855,13 @@ Menubar.prototype.addMenuHandler = function(elt, funct)
 		
 		var clickHandler = mxUtils.bind(this, function(evt)
 		{
-			if (show && elt.enabled == null || elt.enabled)
+			if (clickFn != null)
+			{
+				clickFn(evt);
+			}
+
+			if (!mxEvent.isConsumed(evt) && show &&
+				(elt.enabled == null || elt.enabled))
 			{
 				this.editorUi.editor.graph.popupMenuHandler.hideMenu();
 				var menu = new mxPopupMenu(funct);
@@ -1754,7 +1889,8 @@ Menubar.prototype.addMenuHandler = function(elt, funct)
 		// Shows menu automatically while in expanded state
 		mxEvent.addListener(elt, 'mousemove', mxUtils.bind(this, function(evt)
 		{
-			if (this.editorUi.currentMenu != null && this.editorUi.currentMenuElt != elt)
+			if (this.editorUi.menus.autoPopup && this.editorUi.currentMenu != null &&
+				this.editorUi.currentMenuElt != elt)
 			{
 				this.editorUi.hideCurrentMenu();
 				clickHandler(evt);
@@ -1765,7 +1901,13 @@ Menubar.prototype.addMenuHandler = function(elt, funct)
         mxEvent.addListener(elt, (mxClient.IS_POINTER) ? 'pointerdown' : 'mousedown',
         	mxUtils.bind(this, function(evt)
 		{
-			show = this.currentElt != elt;
+			if (!this.editorUi.menus.autoPopup && this.editorUi.currentMenu != null &&
+				this.editorUi.currentMenuElt != elt && mxEvent.isMouseEvent(evt))
+			{
+				this.editorUi.hideCurrentMenu();
+			}
+
+			show = this.editorUi.currentMenu == null;
 			evt.preventDefault();
 		}));
 

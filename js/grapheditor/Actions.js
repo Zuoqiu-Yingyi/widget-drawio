@@ -33,22 +33,29 @@ Actions.prototype.init = function()
 		
 		ui.openFile();
 	});
-	this.addAction('smartFit', function()
+
+	this.put('smartFit', new Action(mxResources.get('fitWindow') + ' / ' + mxResources.get('resetView'), function()
 	{
 		graph.popupMenuHandler.hideMenu();
 
 		var scale = graph.view.scale;
+		var sx = graph.container.scrollLeft;
+		var sy = graph.container.scrollTop;
         var tx = graph.view.translate.x;
         var ty = graph.view.translate.y;
 
     	ui.actions.get('resetView').funct();
     	
         // Toggle scale if nothing has changed
-        if (Math.abs(scale - graph.view.scale) < 0.00001 && tx == graph.view.translate.x && ty == graph.view.translate.y)
+        if (Math.abs(scale - graph.view.scale) < 0.00001 &&
+			sx == graph.container.scrollLeft &&
+			sy == graph.container.scrollTop &&
+			tx == graph.view.translate.x &&
+			ty == graph.view.translate.y)
         {
         	ui.actions.get((graph.pageVisible) ? 'fitPage' : 'fitWindow').funct();
         }
-	});
+	}, null, null, 'Enter'));
 	this.addAction('keyPressEnter', function()
 	{
 		if (graph.isEnabled())
@@ -127,9 +134,16 @@ Actions.prototype.init = function()
 			// ignore
 		}
 		
-		if (cells == null)
+		try
 		{
-			mxClipboard.cut(graph);
+			if (cells == null)
+			{
+				mxClipboard.cut(graph);
+			}
+		}
+		catch (e)
+		{
+			ui.handleError(e);
 		}
 	}, null, 'sprite-cut', Editor.ctrlKey + '+X');
 	this.addAction('copy', function()
@@ -306,7 +320,7 @@ Actions.prototype.init = function()
 				ui.copiedSize = new mxRectangle(geo.x, geo.y, geo.width, geo.height);
 			}
 		}
-	}, null, null, 'Alt+Shift+X');
+	}, null, null, 'Alt+Shift+F');
 
 	this.addAction('pasteSize', function()
 	{
@@ -550,6 +564,7 @@ Actions.prototype.init = function()
 				graph.setCellStyles(mxConstants.STYLE_ROTATABLE, value, cells);
 				graph.setCellStyles(mxConstants.STYLE_DELETABLE, value, cells);
 				graph.setCellStyles(mxConstants.STYLE_EDITABLE, value, cells);
+				graph.setCellStyles('locked', (value == 1) ? 0 : 1, cells);
 				graph.setCellStyles('connectable', value, cells);
 			}
 			finally
@@ -751,6 +766,10 @@ Actions.prototype.init = function()
 			ui.actions.get('image').funct();
 		}
 	})).isEnabled = isGraphEnabled;
+	this.addAction('editImage...', function()
+	{
+		ui.actions.get('image').funct();
+	});
 	this.put('insertLink', new Action(mxResources.get('link') + '...', function()
 	{
 		if (graph.isEnabled() && !graph.isCellLocked(graph.getDefaultParent()))
@@ -806,7 +825,7 @@ Actions.prototype.init = function()
 				}
 			}, true);
 		}
-	})).isEnabled = isGraphEnabled;
+	}, null, null, 'L')).isEnabled = isGraphEnabled;
 	this.addAction('link...', mxUtils.bind(this, function()
 	{
 		if (graph.isEnabled())
@@ -874,14 +893,17 @@ Actions.prototype.init = function()
 				for (var i = 0; i < cells.length; i++)
 				{
 					var cell = cells[i];
-					
-					if (graph.getModel().getChildCount(cell) > 0)
+
+					if (graph.getModel().isVertex(cell))
 					{
-						graph.updateGroupBounds([cell], 0, true);
-					}
-					else
-					{
-						graph.updateCellSize(cell);
+						if (graph.getModel().getChildCount(cell) > 0)
+						{
+							graph.updateGroupBounds([cell], 0, true);
+						}
+						else
+						{
+							graph.updateCellSize(cell);
+						}
 					}
 				}
 			}
@@ -928,7 +950,7 @@ Actions.prototype.init = function()
 			    		
 			    		// Removes HTML tags
 		    			var temp = document.createElement('div');
-		    			temp.innerHTML = graph.sanitizeHtml(label);
+		    			temp.innerHTML = Graph.sanitizeHtml(label);
 		    			label = mxUtils.extractTextWithWhitespace(temp.childNodes);
 		    			
 						graph.cellLabelChanged(state.cell, label);
@@ -946,7 +968,7 @@ Actions.prototype.init = function()
 			    			label = label.replace(/\n/g, '<br/>');
 						}
 			    		
-			    		graph.cellLabelChanged(state.cell, graph.sanitizeHtml(label));
+			    		graph.cellLabelChanged(state.cell, Graph.sanitizeHtml(label));
 			    		graph.setCellStyles('html', value, [cells[i]]);
 			    	}
 				}
@@ -1201,12 +1223,6 @@ Actions.prototype.init = function()
 	action.setToggleAction(true);
 	action.setSelectedCallback(function() { return graph.foldingEnabled; });
 	action.isEnabled = isGraphEnabled;
-	action = this.addAction('scrollbars', function()
-	{
-		ui.setScrollbars(!ui.hasScrollbars());
-	});
-	action.setToggleAction(true);
-	action.setSelectedCallback(function() { return graph.scrollbars; });
 	action = this.addAction('pageView', mxUtils.bind(this, function()
 	{
 		ui.setPageVisible(!graph.pageVisible);
@@ -1224,7 +1240,7 @@ Actions.prototype.init = function()
 	{
 		graph.setConnectable(!graph.connectionHandler.isEnabled());
 		ui.fireEvent(new mxEventObject('connectionPointsChanged'));
-	}, null, null, 'Alt+Shift+P');
+	}, null, null, 'Alt+Shift+O');
 	action.setToggleAction(true);
 	action.setSelectedCallback(function() { return graph.connectionHandler.isEnabled(); });
 	action = this.addAction('copyConnect', function()
@@ -1611,7 +1627,7 @@ Actions.prototype.init = function()
 				graph.getModel().endUpdate();
 			}
 		}
-	}, null, null, 'Alt+Shift+C');
+	}, null, null, 'Alt+Shift+W');
 	action = this.addAction('subscript', mxUtils.bind(this, function()
 	{
 	    if (graph.cellEditor.isContentEditing())
@@ -1726,32 +1742,37 @@ Actions.prototype.init = function()
 			        		{
 			        			graph.setCellStyles(mxConstants.STYLE_SHAPE, null, cells);
 			        		}
+
+							if (clipPath == null)
+							{
+								graph.setCellStyles(mxConstants.STYLE_CLIP_PATH, null, cells); //Reset clip path
+							}
 				        	
-				        	if (graph.getSelectionCount() == 1)
-				        	{
-					        	if (w != null && h != null)
-					        	{
-					        		var cell = cells[0];
-					        		var geo = graph.getModel().getGeometry(cell);
-					        		
-					        		if (geo != null)
-					        		{
-					        			geo = geo.clone();
-						        		geo.width = w;
-						        		geo.height = h;
-						        		graph.getModel().setGeometry(cell, geo);
-					        		}
+							if (w != null && h != null)
+							{
+								for (var i = 0; i < cells.length; i++)
+								{
+									var cell = cells[i];
+
+									if (graph.getCurrentCellStyle(cell)['expand'] != '0')
+									{
+										var geo = graph.getModel().getGeometry(cell);
+										
+										if (geo != null)
+										{
+											geo = geo.clone();
+											geo.width = w;
+											geo.height = h;
+											graph.getModel().setGeometry(cell, geo);
+										}
+									}
 
 									if (clipPath != null)
 									{
 										applyClipPath(cell, clipPath, cW, cH, graph);
 									}
-									else
-									{
-										graph.setCellStyles(mxConstants.STYLE_CLIP_PATH, null, cells); //Reset clip path
-									}
-					        	}
-				        	}
+								}
+							}
 			        	}
 			        	finally
 			        	{
@@ -1818,12 +1839,12 @@ Actions.prototype.init = function()
 	}), null, null, Editor.ctrlKey + '+Shift+L');
 	action.setToggleAction(true);
 	action.setSelectedCallback(mxUtils.bind(this, function() { return this.layersWindow != null && this.layersWindow.window.isVisible(); }));
-	action = this.addAction('formatPanel', mxUtils.bind(this, function()
+	action = this.addAction('format', mxUtils.bind(this, function()
 	{
 		ui.toggleFormatPanel();
 	}), null, null, Editor.ctrlKey + '+Shift+P');
 	action.setToggleAction(true);
-	action.setSelectedCallback(mxUtils.bind(this, function() { return ui.formatWidth > 0; }));
+	action.setSelectedCallback(mxUtils.bind(this, function() { return ui.isFormatPanelVisible(); }));
 	action = this.addAction('outline', mxUtils.bind(this, function()
 	{
 		if (this.outlineWindow == null)
@@ -1863,7 +1884,7 @@ Actions.prototype.init = function()
 			});
 			dlg.init();
 		}
-	}).isEnabled = isGraphEnabled;
+	}, null, null, 'Alt+Shift+Q').isEnabled = isGraphEnabled;
 };
 
 /**

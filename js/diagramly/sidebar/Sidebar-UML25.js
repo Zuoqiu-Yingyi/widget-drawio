@@ -12,13 +12,19 @@
 
 		var divider = new mxCell('', new mxGeometry(0, 0, 40, 8), 'line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;');
 		divider.vertex = true;
+
+		var sequenceEdgeStyle = 'newEdgeStyle={"edgeStyle":"elbowEdgeStyle","elbow":"vertical","curved":0,"rounded":0};';
+		var lifelineStyle = 'shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;' +
+			'collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;' + sequenceEdgeStyle;
+		// UML frames below are containers not shapes as used in sequence diagrams
+		var frameStyle = 'shape=umlFrame;whiteSpace=wrap;html=1;pointerEvents=0;recursiveResize=0;container=1;collapsible=0;';
 		
 		// Default tags
 		var dt = 'uml ';
 		this.setCurrentSearchEntryLibrary('uml25');
 		
 		var fns = [
-			this.createVertexTemplateEntry('shape=umlFrame;whiteSpace=wrap;html=1;width=120;height=30;boundedLbl=1;verticalAlign=middle;align=left;spacingLeft=5;', 340, 180, 'Diagram1 heading', 'Diagram', null, null, 'diagram'),
+			this.createVertexTemplateEntry(frameStyle + 'width=160;', 340, 180, 'Diagram Heading', 'Diagram', null, null, 'diagram'),
 			this.createVertexTemplateEntry('shape=note2;boundedLbl=1;whiteSpace=wrap;html=1;size=25;verticalAlign=top;align=center;', 120, 60, 'Comment1 body', 'Comment', null, null, 'uml comment note'),
 			this.createVertexTemplateEntry('shape=partialRectangle;html=1;top=1;align=left;dashed=1;', 200, 20, 'Template1 signature', 'Template signature', null, null, 'template signature'),
 			this.createVertexTemplateEntry('shape=partialRectangle;html=1;top=1;align=left;dashed=1;', 200, 50, 'Template parameter 1\nTemplate parameter 2', 'Template signature', null, null, 'template signature'),
@@ -416,49 +422,48 @@
 				   	'State1', 'State', null, null, dt + 'state'),
 		 	this.addEntry(dt + 'state entry point', function()
 			{
-		 		var cell1 = new mxCell('State1', new mxGeometry(40, 0, 140, 50),
+		 		var cell1 = new mxCell('State1', new mxGeometry(0, 0, 140, 50),
 		 			'shape=umlState;rounded=1;verticalAlign=middle;align=center;absoluteArcSize=1;arcSize=10;umlStateConnection=connPointRefEntry;boundedLbl=1;');
 				cell1.vertex = true;
 		 		var field1 = new mxCell('Entry1', 
-		 				new mxGeometry(0, 40, 50, 20), 'text;verticalAlign=middle;align=center;');
+		 				new mxGeometry(-40, 40, 50, 20), 'text;verticalAlign=middle;align=center;');
 		 		field1.vertex = true;
 		 		cell1.insert(field1);
-		 		
-				return sb.createVertexTemplateFromCells([cell1, field1], 180, 60, 'State with entry point'); 
+				return sb.createVertexTemplateFromCells([cell1], 140, 60, 'State with entry point'); 
 			}),
 		 	this.addEntry(dt + 'state exit point', function()
 			{
-		 		var cell1 = new mxCell('State1', new mxGeometry(40, 0, 140, 50),
+		 		var cell1 = new mxCell('State1', new mxGeometry(0, 0, 140, 50),
 		 			'shape=umlState;rounded=1;verticalAlign=middle;spacingTop=0;absoluteArcSize=1;arcSize=10;umlStateConnection=connPointRefExit;boundedLbl=1;');
 				cell1.vertex = true;
 		 		var field1 = new mxCell('Exit1', 
-		 				new mxGeometry(0, 40, 50, 20), 'text;verticalAlign=middle;align=center;');
+		 				new mxGeometry(-40, 40, 50, 20), 'text;verticalAlign=middle;align=center;');
 		 		field1.vertex = true;
 		 		cell1.insert(field1);
 		 		
-				return sb.createVertexTemplateFromCells([cell1, field1], 180, 60, 'State with exit point'); 
+				return sb.createVertexTemplateFromCells([cell1], 140, 60, 'State with exit point'); 
 			}),
-			this.createVertexTemplateEntry('ellipse;fillColor=#000000;strokeColor=none;', 30, 30,
+			this.createVertexTemplateEntry('ellipse;fillColor=strokeColor;', 30, 30,
 				   	'', 'Initial preudostate / node', null, null, dt + 'initial pseudostate'),
-			this.createVertexTemplateEntry('ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;', 30, 30,
+			this.createVertexTemplateEntry('ellipse;html=1;shape=endState;fillColor=strokeColor;', 30, 30,
 				   	'', 'Final state / node', null, null, dt + 'final state'),
-			this.createVertexTemplateEntry('ellipse;fillColor=#ffffff;strokeColor=#000000;', 30, 30,
+			this.createVertexTemplateEntry('ellipse;', 30, 30,
 				   	'H', 'Shallow History', null, null, dt + 'shallow history pseudostate'),
-			this.createVertexTemplateEntry('ellipse;fillColor=#ffffff;strokeColor=#000000;', 30, 30,
+			this.createVertexTemplateEntry('ellipse;', 30, 30,
 				   	'H*', 'Deep History', null, null, dt + 'deep history pseudostate'),
-			this.createVertexTemplateEntry('ellipse;fillColor=#ffffff;strokeColor=#000000;', 30, 30,
+			this.createVertexTemplateEntry('ellipse;', 30, 30,
 				   	'', 'Entry Point', null, null, dt + 'entry point pseudostate'),
 			this.createVertexTemplateEntry('shape=sumEllipse;perimeter=ellipsePerimeter;whiteSpace=wrap;html=1;backgroundOutline=1;', 30, 30,
 				   	'', 'Exit Point / Flow Final Node', null, null, dt + 'exit point pseudostate'),
-			this.createVertexTemplateEntry('ellipse;fillColor=#000000;strokeColor=none;', 20, 20,
+			this.createVertexTemplateEntry('ellipse;fillColor=strokeColor;', 20, 20,
 				   	'', 'Junction', null, null, dt + 'junction pseudostate'),
 			this.createVertexTemplateEntry('rhombus;', 30, 30,
 				   	'', 'Choice / Merge Node / Decision Node', null, null, dt + 'choice pseudostate merge decision node'),
 			this.createVertexTemplateEntry('shape=umlDestroy;', 30, 30,
 				   	'', 'Terminate', null, null, dt + 'terminate pseudostate'),
-			this.createVertexTemplateEntry('html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#000000;strokeColor=none;', 5, 80,
+			this.createVertexTemplateEntry('html=1;points=[];perimeter=orthogonalPerimeter;fillColor=strokeColor;', 5, 80,
 				   	'', 'Join/Fork Node', null, null, dt + 'join fork pseudostate'),
-			this.createVertexTemplateEntry('text;align=center;verticalAlign=middle;dashed=0;fillColor=#ffffff;strokeColor=#000000;', 140, 40,
+			this.createVertexTemplateEntry('text;align=center;verticalAlign=middle;dashed=0;', 140, 40,
 				   	'OpaqueAction1 spec.', 'Opaque Action', null, null, dt + 'opaque action'),
 			this.createVertexTemplateEntry('html=1;shape=mxgraph.infographic.ribbonSimple;notch1=20;notch2=0;align=center;verticalAlign=middle;fontSize=14;fontStyle=0;flipH=1;fillColor=#FFFFFF;', 160, 40,
 				   	'Trigger1 spec.', 'Trigger', null, null, dt + 'trigger'),
@@ -469,7 +474,7 @@
 		 	this.addEntry(dt + 'parameter', function()
 			{
 		 		var cell1 = new mxCell('', new mxGeometry(0, 10, 30, 30),
-		 			'fillColor=#ffffff;strokeColor=#000000;');
+		 			'');
 				cell1.vertex = true;
 		 		var field1 = new mxCell('Parameter1 spec.', 
 		 				new mxGeometry(40, 0, 100, 20), 'text;verticalAlign=middle;align=center;');
@@ -523,7 +528,7 @@
 		
 				return sb.createVertexTemplateFromCells([cell], cell.geometry.width, cell.geometry.height, 'Behavior');
 			}),
-			this.createVertexTemplateEntry('html=1;points=[];perimeter=orthogonalPerimeter;fillColor=#000000;strokeColor=none;align=left;verticalAlign=top;spacingLeft=10;', 5, 80,
+			this.createVertexTemplateEntry('html=1;points=[];perimeter=orthogonalPerimeter;fillColor=strokeColor;align=left;verticalAlign=top;spacingLeft=10;', 5, 80,
 				   	'{joinSpec = join spec}', 'Join Node', null, null, dt + 'join node'),
 		    this.addDataEntry('activity partition', 180, 200, 'Activity Partition', '7ZjRbtowFIafJrdTnMBobwltbzZpWvcCLjkQa45P5Jw20KefnRjCBikBnKlURUGyj30c5/vt/JggTvLVg+ZF9h1TkEF8F8SJRqSmlK8SkDKIQpEG8SyIotB8g+i+o5XVrWHBNSjqkxA1CS9cPkMTSUUOqhSo3FglraVrKjNe2CLxJxuaZpSbCc+YKVaZIHgs+Ny2V+ZxTKwkrulRvNqQmUY8naMiLhRolzRHKXlRinq0Wd0jEzL9xtf4TJv7bGrThZAyQYk2W6GyEygrkUuu4H6nKYjiRf2pZ6DxN/yT5J4YNMGqk1odcsgeAHMgvTZdKpFS5nrcNGTDDMQyc2lR6IK8bALLbW4rgik4HQ5rEu9p0qmEmTIJLn/CnLha9hFln3mqsfjF9RLIBQoUikDfvRgapYsdgE9YuEYJi03uExJh7iragdkOWkMZT81lMCXhl3EwNk+TmDpr6+ay3TUlqIyAZsHYMYCXVEFJF6kaHVZ1vRGvyTgu8uUaj4bVWCnbu9W4Uz7Wysd25WM78tkyGrILiZWpZiJNQV2kQ3x0d0UDcR/vcf9h8dKb77t3q8AlsFedi36oNf+1m/0Vrn4P7Fn4/+BPrslU+uri0VQ8+Meop39MPMh5072X4uvbSxlq8Wp/HEp3l15qTM5yER/0bz+Ae1+C+DTv8EGchZ/IT7EML8zZp2cM7RmM9TSNWx+C7p/2t64xur7tdJ5rsONH+0O24YX/wCf79/MS64J8mnF4Yf4RTto+mPd1jjOgm2r7j2Xd9tcfmn8A'),		    
 			this.createVertexTemplateEntry('html=1;align=center;verticalAlign=top;rounded=1;absoluteArcSize=1;arcSize=20;dashed=1;', 200, 100,
@@ -561,7 +566,7 @@
 				
 				return sb.createEdgeTemplateFromCells([cell1, edge1, edge2], 160, 30, 'Object Flow');
 			}),
-			this.createVertexTemplateEntry('fontStyle=0;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=2;html=1;points=[[0,0.5],[1,0.5]];fillColor=#000000;strokeColor=none;', 30, 30, '', 'Pin ', null, null, 'pin'),
+			this.createVertexTemplateEntry('fontStyle=0;labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=2;html=1;points=[[0,0.5],[1,0.5]];fillColor=strokeColor;', 30, 30, '', 'Pin ', null, null, 'pin'),
 			this.createVertexTemplateEntry('shape=mxgraph.uml25.inputPin;html=1;points=[[0,0.5],[1,0.5]];', 30, 30, '', 'Input Pin', null, null, 'input pin'),
 			this.createVertexTemplateEntry('shape=mxgraph.uml25.inputPin;html=1;points=[[0,0.5],[1,0.5]];strokeColor=#ffffff;fillColor=#000000;', 30, 30, '', 'Input Pin', null, null, 'input pin'),
 			this.createVertexTemplateEntry('shape=mxgraph.uml25.inputPin;html=1;points=[[0,0.5],[1,0.5]];flipH=1;', 30, 30, '', 'Output Pin', null, null, 'output pin'),
@@ -648,8 +653,7 @@
 			this.addDataEntry(dt + 'execution node action', 210, 60, 'Execution node with action', '7ZhNb4MwDIZ/TY6bklC67tjSrbtMmrTDzhm4ECk0KKRdu18/UwJdvwSTyr6EBBJ24uT1E0sWIV6QrmdGZMmjjkAR7454gdHall/pOgClCKcyIt6UcE7xJfz+zCjbjtJMGFjYNgG8DFgJtYTSMw6t1Au3UG43yvkTm6K6KSPeJBJ5AsUCFA2jl4toaxVD4jXXamlhbMJn+Q6Vt7Z4EbICY2Uo1FjJeIHOVEZRsc1EOEeI6sGgw6nD+bA+m+HW5dKbgU7Bmg1OeZORTVyWrKRAE5Bx4sKGzify0o7r0B0v/HDITuPzjvAdcYsRUFZwghwRvDhRtPY8VJJo23x5Y76jE+m6QqAGlLByBXvLn2LgdnjSEjfm1Onx3DKb0rxiBxT1fJ6DPWJY62yFddCMtRXOrNC+FeZP8EGpASU+hgeFde3v2ayy8Gl5El5z5XVwEhdF7feom4ued1Hkw558M/lBF+RvevLN5A/b40XIj35Rv9zsBfyj7nnbXXmzg/Jme+XNvlbeo7/fPavz61l/e/tkrEf/Q/2THf819ug7aaBo7u4Cyumfrwo+AA=='),
 		 	this.addEntry(dt + 'interaction', function()
 			{
-		 		var cell1 = new mxCell('Interaction1 heading', new mxGeometry(0, 0, 290, 160),
-		 			'shape=umlFrame;tabWidth=110;tabHeight=30;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;width=140;height=30;recursiveResize=0;');
+		 		var cell1 = new mxCell('Interaction heading', new mxGeometry(0, 0, 290, 160), frameStyle + 'width=170;');
 				cell1.vertex = true;
 		 		var field1 = new mxCell('Property1', 
 		 				new mxGeometry(0, 0, 100, 20), 'text');
@@ -666,13 +670,15 @@
 
 				return sb.createVertexTemplateFromCells([cell1], cell1.geometry.width, cell1.geometry.height, 'Interaction'); 
 			}),
-			this.addDataEntry(dt + 'lifeline sequence participant', 220, 300, 'Lifelines', '1ZPBbsMgDIafhjuFN2iy9bJJ0/oELPEKEgQETpPu6ecEaDRpkXbYDjsgmc/+4/gHmGzcfIoq6Gffg2Xygckmeo85cnMD1jLBTc9ky4TgtJh43Mke1iwPKsKAPxGILLgqO0ImT+YdrBmgfCrhzZZM0ios4ehsLWLyGCAaBwiRMrbgl40dJ20QzkF1i3SiQYlpdDRpe6Cw8wMqksT73loVknlbu3IiEboxJnOFV0jmo1I/4tKp8cMAHRZYhoGIMO8asqLixgk8/We8UclketSlgmfTuAZz0UUmK1Qpg8tdu/lLQbH4e7vlrt3iH9pd+7cqaeh/4QyqoFzaPzkT2m7Pa819eX2f'),
-			this.addDataEntry(dt + 'lifeline execution', 220, 300, 'Lifelines', '5ZTbasMwDIafxvdu3MB223TrzQZjewIvVWuDYhlH6WFPPydx2m5pR2FsDEYISL8syfoQFqqodougvXmkJaBQd0IVgYh7q9oVgCgyaZdCzUWWyfiL7P5CdNJFpdcBHF+TkPUJG40N9MqDXQFaBylS8x5TpDbat2ZT4XBIqJmHYCtgCDGCSX46arOtsQwvXpdt6jYOGjXDVZx0PolmSY51TAkHH1H72r52XWVUApRNqO0GnqG2b4NKDbedCnIOSk5iGgYCw+4ikE5KNBZA8Z5hH48MCQmY3Nolm6TJpBmwa5PKqEHUdS+sD7WOvKORkJ/Hr0b4R9RPWHmyjrtu+Uzk80/wKbChNTmNp/hXFrEgpNBVUzey/a5FlX2Japr3GfvevT0HbsztAPg73KYX13byz9b2V9Y0//E1vQrB9I+sY3SPL3QX+/CAvwM='),
-			this.addDataEntry(dt + 'destruction occurence specification', 100, 300, 'Destruction Occurence Specification', 'lZJBboMwEEVP471jZ9F1oM2mlaL2BC5MY0sGW/YQoKfvgE1oVVI1C6SZP/Nt/pOZLJrhGJTXL64Gy+Qjk0VwDlPVDAVYywQ3NZMlE4LTx8TTjelunnKvArT4H4NIhouyHSTl2XyANS3koyKONk+iVn4qu8YuS0wePATTAEKgic3yadUOvTYIb15Vk7WnoKRpbChpuaOyci0qsoRrb63y0bzPt3JSAlRdiOYCrxDN56K6DqebCte2UGEWcxgICMNNILOUaRzB0X+GkVZ6U6POGzxB4xrMWWebXEQVk3C+ele+VGTE27jlL9x/US4hYnAjBatV1FDfk1JspxyWMMkx5uWH3H+DsN9gsL8fAbXra55nPx77Fw=='),
+			this.addDataEntry(dt + 'lifeline sequence participant', 220, 300, 'Lifelines',
+				'7VRLboMwED2N98SWmnUhaTaNVDW9gANTsGRsd2wg6ek7gAlJW6RuumoXSOP3GXvwk5nI6tMOpav2tgDNxJaJDK0NY1WfMtCa8UQVTGwY5wl9jD8ssKuBTZxEMOEnBj4aWqkbGJFH9QpaGYitfDjryPhKur5saj2JmEgdoKohABKjI/w0Y2lXqQAHJ/Pe2tGghFWhpkk3Kypza4IkC8Z1gda9SCyhP34yCLSWzqvjcIweQcgb9KqFZ/DqfUJtE/qtM2sM5JPZWQyE+IC0Rw+C9KEDT2VqoNsWJRymAdcp43dvTf/nU7gQF4iJ+yteH+2Vexbx7JNooUELGFQu9YKVBmyhuPEmNwK0jSm+KNabodFwo7QBnBZTMUAxEjuwdFl4JkmnilBFRTImJ6lAlVW0iQmUfgTKi3cOGRUxZ99nTixmjv9n7u9lbjLEl+pXMkjL+U0duJsn9wM='),
+			this.addDataEntry(dt + 'lifeline execution', 220, 300, 'Lifelines',
+				'7ZZdT4MwFIZ/Te8Z3fy4FKbeaGKcf6DCEZoUWtsyNn+9p6XsQ4ZZYmJcXAjJ6XvO21L65KSEptXqXjNVPsocBKG3hKZaSttF1SoFIUgc8ZzQOYnjCF8S341kJz4bKaahtscY4s6wZKKBTnngbyB4DSFj7FqEjCmZcmFTib6I0ESB5hVY0JgRQX7aaklbcgsLxTJnbXGjqJW2wp3OJxhmsrYMLTqMcy3VC9MFuM+PfIEQTBn+6j/DKRqyRhu+hGcw/KNXZWPd0qmsa8h6s5LaomKsxjWcCMzYFgyGSQ3tbV7Aot/gZULii/fG/fkENomNROjNTl68yh33tihOvxSNTLAEbXnGxIgVN7iEfM8b7RVo2dT5oOJy7ifyJ4oLwGqUCi8FJO5B4mHpNZb0hkBN1PLclkGLglYCL8owDe1FZjqh2My1hQ6DwN1hBumAwQF6O8AoiSfpV5slZDb/QiCedykLWTOxy+BBNqynbOGgNkOq/yE4b1yIVAqp/T+nV5F7jgUq/hao6axzrLvh9SG8hnRtMPwJXdPRDjc5d7jTBPUnHe5XOtrs3NFOB5TpH+lcONze+3xu71r4CQ=='),
+			this.addDataEntry(dt + 'destruction occurence specification', 100, 300, 'Destruction Occurence Specification',
+				'lVTLbsMgEPwa7g6Oml5rO82llaqmP0DsrUHCxgX86td3wTiPJq7Sg6VldgbY3TEkTqthp1nDX1UBksRbEqdaKTtF1ZCClIRGoiBxRiiN8CP0eSG78tmoYRpqe4+AToKOyRYm5EV8ghQ1hK2MHWXIGM4aF7aVnEkkThrQogILGjMywG8nLOm5sLBvWO6kPRaKGLcVVpqtMMxVbRlKdFgXWjUfTJfgrh95gpSsMeLgr+EQDXmrjejgHYz4nlHVWnd0quoa8lncKG0RMVbjGQ4EZmwPBsOkhn5blLCfC9wkhD58ta7zCRwTR4jET2d5eVBn6hOJpr9ICxt0oK3ImVyQYoEdFBfa6IKgVVsXV4xN5jfyE8UDYFh0hYeCJXagcFh6REovCssDI5qcE3EQJQ+yeAaZmYDyqD2ZDIPgs9uei68895fVMpyWVqOzBjMcijBZ6z2ydzxz5cm7WkBvt2CYK50UYyA/hvVZh9Y3GrT+f39wefrffe7iOfgB'),
 		 	this.addEntry(dt + 'interaction', function()
 			{
-		 		var cell1 = new mxCell('Interaction1 heading', new mxGeometry(0, 0, 290, 250),
-		 			'shape=umlFrame;tabWidth=110;tabHeight=30;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;width=140;height=30;');
+		 		var cell1 = new mxCell('Interaction heading', new mxGeometry(0, 0, 290, 250), frameStyle + 'width=170;');
 				cell1.vertex = true;
 		 		var field1 = new mxCell('[constraint1]', 
 		 				new mxGeometry(0, 0, 100, 20), 'text');
@@ -690,29 +696,25 @@
 			}),
 		 	this.addEntry(dt + 'lifeline continuation', function()
 			{
-		 		var cell1 = new mxCell('Continuation1', new mxGeometry(30, 60, 160, 30),
-		 			'rounded=1;dashed=0;');
+		 		var cell1 = new mxCell('Continuation1', new mxGeometry(30, 60, 160, 30), 'rounded=1;dashed=0;');
 				cell1.vertex = true;
-		 		var cell2 = new mxCell('Lifeline1', new mxGeometry(0, 0, 100, 200),
-		 			'shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;');
+		 		var cell2 = new mxCell('Lifeline1', new mxGeometry(0, 0, 100, 200), lifelineStyle);
 				cell2.vertex = true;
-		 		var cell3 = new mxCell('Lifeline2', new mxGeometry(120, 0, 100, 200),
-		 			'shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;');
+		 		var cell3 = new mxCell('Lifeline2', new mxGeometry(120, 0, 100, 200), lifelineStyle);
 				cell3.vertex = true;
 				
 				return sb.createVertexTemplateFromCells([cell1, cell2, cell3], 220, 200, 'Lifeline Continuation'); 
 			}),
 		 	this.addEntry(dt + 'lifeline state invariant', function()
 			{
-		 		var cell1 = new mxCell('Lifeline1', new mxGeometry(0, 0, 100, 200),
-		 			'shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;');
+		 		var cell1 = new mxCell('Lifeline1', new mxGeometry(0, 0, 100, 200), lifelineStyle);
 				cell1.vertex = true;
 				var cell2 = new mxCell('State1 inv.', new mxGeometry(10, 50, 80, 30),
-		 			'rounded=1;dashed=0;point=[];connectable=0;');
+		 			'rounded=1;dashed=0;point=[];connectable=0;targetShapes=umlLifeline;');
 				cell2.vertex = true;
 				cell1.insert(cell2);
 		 		var cell3 = new mxCell('{State2 inv.}', new mxGeometry(0, 140, 100, 30),
-		 			'text;align=center;point=[];connectable=0;');
+		 			'text;align=center;point=[];connectable=0;targetShapes=umlLifeline;');
 				cell3.vertex = true;
 				cell1.insert(cell3);
 
@@ -720,8 +722,7 @@
 			}),
 		 	this.addEntry(dt + 'interaction use', function()
 			{
-		 		var cell1 = new mxCell('ref', new mxGeometry(0, 0, 260, 120),
-		 			'shape=umlFrame;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;width=50;height=30;');
+		 		var cell1 = new mxCell('Ref', new mxGeometry(0, 0, 260, 120), frameStyle + 'width=50;');
 				cell1.vertex = true;
 		 		var field1 = new mxCell('Interaction1', 
 		 				new mxGeometry(0, 0, 100, 20), 'text;align=center;');
@@ -732,17 +733,16 @@
 		 		
 				return sb.createVertexTemplateFromCells([cell1], cell1.geometry.width, cell1.geometry.height, 'Interaction'); 
 			}),
-		 	this.addEntry(dt + 'lifeline state invariant', function()
+		 	this.addEntry(dt + 'lifeline', function()
 			{
-		 		var cell1 = new mxCell('Lifeline1', new mxGeometry(0, 0, 100, 200),
-		 			'shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;');
+		 		var cell1 = new mxCell('Lifeline1', new mxGeometry(0, 0, 100, 200), lifelineStyle);
 				cell1.vertex = true;
 		 		var cell2 = new mxCell('', new mxGeometry(30, 70, 40, 20),
-		 			'shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;fillColor=none;point=[];connectable=0;');
+		 			'shape=partialRectangle;whiteSpace=wrap;html=1;bottom=0;fillColor=none;point=[];connectable=0;targetShapes=umlLifeline;');
 				cell2.vertex = true;
 				cell1.insert(cell2);
 		 		var cell3 = new mxCell('', new mxGeometry(30, 150, 40, 20),
-		 			'shape=partialRectangle;whiteSpace=wrap;html=1;top=0;fillColor=none;point=[];connectable=0;');
+		 			'shape=partialRectangle;whiteSpace=wrap;html=1;top=0;fillColor=none;point=[];connectable=0;targetShapes=umlLifeline;');
 				cell3.vertex = true;
 				cell1.insert(cell3);
 
@@ -753,8 +753,8 @@
 		 		var cell1 = new mxCell('Class1', new mxGeometry(0, 0, 180, 140),
 		 			'swimlane;fontStyle=1;align=center;horizontal=1;startSize=30;collapsible=0;html=1;');
 				cell1.vertex = true;
-		 		var field1 = new mxCell('heading1', 
-		 				new mxGeometry(0, 0, 140, 70), 'shape=umlFrame;tabPosition=left;html=1;boundedLbl=1;labelInHeader=1;width=80;height=30;swimlaneFillColor=#ffffff;align=left;spacingLeft=5;');
+		 		var field1 = new mxCell('Heading1', 
+		 				new mxGeometry(0, 0, 140, 70), frameStyle + 'width=80;');
 		 		field1.geometry.relative = true;
 		 		field1.geometry.offset = new mxPoint(20, 50);
 		 		field1.vertex = true;
@@ -817,11 +817,11 @@
 		 		divider1.vertex = true;
 		 		cell1.insert(divider1);
 		 		var field2 = new mxCell('extension points', 
-		 				new mxGeometry(0, 40, 180, 30), 'text;html=1;align=center;verticalAlign=middle;rotatable=0;');
+		 				new mxGeometry(0, 40, 180, 30), 'text;html=1;align=center;verticalAlign=middle;rotatable=0;fillColor=none;strokeColor=none;');
 		 		field2.vertex = true;
 		 		cell1.insert(field2);
 		 		var field3 = new mxCell('Extension point 1', 
-		 				new mxGeometry(0, 70, 180, 30), 'text;html=1;align=left;verticalAlign=middle;rotatable=0;spacingLeft=25;');
+		 				new mxGeometry(0, 70, 180, 30), 'text;html=1;align=left;verticalAlign=middle;rotatable=0;spacingLeft=25;fillColor=none;strokeColor=none;');
 		 		field3.vertex = true;
 		 		cell1.insert(field3);
 
@@ -850,7 +850,7 @@
 			    return sb.createVertexTemplateFromCells([cell1], cell1.geometry.width, cell1.geometry.height, 'Extension Point Classifier');
 			}),
 			this.createVertexTemplateEntry('shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;', 30, 60, 'Actor', 'Actor', false, null, 'uml actor'),
-			this.createVertexTemplateEntry('text;html=1;align=center;verticalAlign=middle;dashed=0;fillColor=#ffffff;strokeColor=#000000;', 160, 70,
+			this.createVertexTemplateEntry('html=1;align=center;verticalAlign=middle;dashed=0;', 160, 70,
 				   	'&lt;&lt;actor&gt;&gt;<br><br><b>Actor1</b>', 
 				   	'Actor', null, null, dt + 'actor'),
 
@@ -877,17 +877,17 @@
 		
 				return sb.createVertexTemplateFromCells([cell1], cell1.geometry.width, cell1.geometry.height, 'Deployment');
 			}),
-			this.createVertexTemplateEntry('text;html=1;align=center;verticalAlign=middle;dashed=0;fillColor=#ffffff;strokeColor=#000000;', 180, 60,
+			this.createVertexTemplateEntry('html=1;align=center;verticalAlign=middle;dashed=0;', 180, 60,
 				   	'&lt;&lt;deployment spec&gt;&gt;<br><br><b>Deployment1</b>', 
 				   	'Deployment Specification', null, null, dt + 'deployment specification'),
-			this.createVertexTemplateEntry('text;html=1;align=center;verticalAlign=middle;dashed=0;fillColor=#ffffff;strokeColor=#000000;', 180, 60,
+			this.createVertexTemplateEntry('html=1;align=center;verticalAlign=middle;dashed=0;', 180, 60,
 				   	'&lt;&lt;artifact&gt;&gt;<br><br><b>Artifact1</b>', 
 				   	'Artifact', null, null, dt + 'artifact'),
 			this.addEntry('information item', function()
 			{
 		    	var cell1 = new mxCell('InformationItem1', new mxGeometry(0, 0, 200, 50), 'align=left;spacingLeft=10;html=1;dashed=0;');
 		    	cell1.vertex = true;
-		    	var cell2 = new mxCell('', new mxGeometry(1, 0.5, 30, 20), 'shape=triangle;fillColor=#000000;');
+		    	var cell2 = new mxCell('', new mxGeometry(1, 0.5, 30, 20), 'shape=triangle;fillColor=strokeColor;');
 		    	cell2.geometry.relative = true;
 		    	cell2.geometry.offset = new mxPoint(-45, -10);
 		    	cell2.vertex = true;
@@ -930,7 +930,7 @@
 			}),
 			this.addEntry('dependency', function()
 			{
-		    	var cell1 = new mxCell('', new mxGeometry(68, 38, 4, 4), 'ellipse;resizable=0;aspect=fixed;fillColor=#000000;');
+		    	var cell1 = new mxCell('', new mxGeometry(68, 38, 4, 4), 'ellipse;resizable=0;aspect=fixed;fillColor=strokeColor;');
 		    	cell1.vertex = true;
 				var edge1 = new mxCell('&lt;&lt;keyword&gt;&gt;', new mxGeometry(0, 0, 0, 0), 'endArrow=open;html=1;rounded=0;align=center;verticalAlign=bottom;dashed=1;endFill=0;labelBackgroundColor=none;spacingBottom=35;');
 				edge1.geometry.setTerminalPoint(new mxPoint(0, 0), true);
@@ -1005,7 +1005,7 @@
 			}),
 			this.addEntry('association instance specification connector', function()
 			{
-		    	var cell1 = new mxCell('', new mxGeometry(65, 0, 6, 12), 'triangle;aspect=fixed;fillColor=#000000;');
+		    	var cell1 = new mxCell('', new mxGeometry(65, 0, 6, 12), 'triangle;aspect=fixed;fillColor=strokeColor;');
 		    	cell1.vertex = true;
 				var edge1 = new mxCell('', new mxGeometry(0, 0, 0, 0), 'endArrow=none;html=1;rounded=0;align=center;verticalAlign=bottom;labelBackgroundColor=none;');
 				edge1.geometry.setTerminalPoint(new mxPoint(0, 22), true);
@@ -1045,7 +1045,7 @@
 				
 				return sb.createEdgeTemplateFromCells([edge], 200, 0, 'Redefine');
 			}),
-			this.createVertexTemplateEntry('text;html=1;align=center;verticalAlign=middle;dashed=0;fillColor=#ffffff;strokeColor=#000000;', 60, 30,
+			this.createVertexTemplateEntry('html=1;align=center;verticalAlign=middle;dashed=0;', 60, 30,
 				   	'qualifier1', 
 				   	'Qualifier', null, null, dt + 'qualifier'),
 			this.addEntry('connector', function()
@@ -1232,7 +1232,7 @@
 		 	this.createEdgeTemplateEntry('html=1;verticalAlign=bottom;labelBackgroundColor=none;endArrow=open;endFill=0;dashed=1;', 160, 0, '', 'Message, create', null, 'message create'),
 			this.addEntry('message lost', function()
 			{
-		    	var cell1 = new mxCell('', new mxGeometry(160, 0, 4, 4), 'ellipse;html=1;fillColor=#000000;');
+		    	var cell1 = new mxCell('', new mxGeometry(160, 0, 4, 4), 'ellipse;html=1;fillColor=strokeColor;');
 		    	cell1.vertex = true;
 				var edge1 = new mxCell('', new mxGeometry(0, 0, 0, 0), 'endArrow=open;html=1;rounded=0;align=center;verticalAlign=top;endFill=0;labelBackgroundColor=none;endSize=6;');
 				edge1.geometry.setTerminalPoint(new mxPoint(0, 2), true);
@@ -1244,7 +1244,7 @@
 			}),
 			this.addEntry('message found', function()
 			{
-		    	var cell1 = new mxCell('', new mxGeometry(0, 0, 4, 4), 'ellipse;html=1;fillColor=#000000;');
+		    	var cell1 = new mxCell('', new mxGeometry(0, 0, 4, 4), 'ellipse;html=1;fillColor=strokeColor;');
 		    	cell1.vertex = true;
 				var edge1 = new mxCell('', new mxGeometry(0, 0, 0, 0), 'endArrow=open;html=1;rounded=0;align=center;verticalAlign=top;endFill=0;labelBackgroundColor=none;endSize=6;');
 				edge1.geometry.setTerminalPoint(new mxPoint(164, 2), false);

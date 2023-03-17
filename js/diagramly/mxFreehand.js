@@ -28,10 +28,10 @@ function mxFreehand(graph)
 	var openFill = true;
 	var buffer = []; // Contains the last positions of the mouse cursor
 	var enabled = false;
-	var stopClickEnabled = true;
+	var stopClickEnabled = false;
 	var selectInserted = false;
 	var perfectFreehandOptions = {
-		size: 12,
+		size: 5,
 		thinning: 0.5,
 		smoothing: 0.5,
 		streamline: 0.5,
@@ -47,7 +47,8 @@ function mxFreehand(graph)
 		  cap: true
 		}
 	};
-	var perfectFreehandMode = false;
+
+	var perfectFreehandMode = true;
 
 	this.setClosedPath = function(isClosed)//TODO add closed settings
 	{
@@ -94,6 +95,11 @@ function mxFreehand(graph)
 		perfectFreehandMode = value;
 	};
 
+	this.isPerfectFreehandMode = function()
+	{
+		return perfectFreehandMode;
+	};
+
 	this.setBrushSize = function(value)
 	{
 		perfectFreehandOptions.size = value;
@@ -133,7 +139,7 @@ function mxFreehand(graph)
 	    	// Click stops drawing
 	    	var doStop = stopClickEnabled && drawPoints.length > 0 &&
 	    		lastPart != null && lastPart.length < 2;
-	    	
+			
 			if (!doStop)
 			{
 				drawPoints.push.apply(drawPoints, lastPart);
@@ -149,7 +155,7 @@ function mxFreehand(graph)
 				this.stopDrawing();
 			}
 			
-			if (autoInsert && lastLength >= 2)
+			if (autoInsert && (!doStop || lastLength >= 2))
 			{
 				this.startDrawing();
 			}

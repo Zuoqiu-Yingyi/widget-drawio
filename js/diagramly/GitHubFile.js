@@ -54,18 +54,54 @@ GitHubFile.prototype.getHash = function()
 /**
  * Returns true if copy, export and print are not allowed for this file.
  */
+GitHubFile.prototype.getFileUrl = function()
+{
+	return 'https://github.com/' + encodeURIComponent(this.meta.org) + '/' +
+		encodeURIComponent(this.meta.repo) + '/blob/' +
+		this.meta.ref + '/' + this.meta.path;
+};
+
+/**
+ * Returns true if copy, export and print are not allowed for this file.
+ */
+GitHubFile.prototype.getFolderUrl = function()
+{
+	return 'https://github.com/' + encodeURIComponent(this.meta.org) + '/' +
+		encodeURIComponent(this.meta.repo) + '/tree/' + this.meta.ref + '/' +
+		this.meta.path.split('/').slice(0, -1).join('/');
+};
+
+/**
+ * Returns true if copy, export and print are not allowed for this file.
+ */
 GitHubFile.prototype.getPublicUrl = function(fn)
 {
-	// LATER: Check if download_url is always null for private repos
 	if (this.meta.download_url != null)
 	{
-		mxUtils.get(this.meta.download_url, mxUtils.bind(this, function(req)
+		try
 		{
-			fn((req.getStatus() >= 200 && req.getStatus() <= 299) ? this.meta.download_url : null);
-		}), mxUtils.bind(this, function()
+			// Checks for short-term token in URL which means private repo
+			var url = new URL(this.meta.download_url);
+
+			if (url.search != '')
+			{
+				fn(null);
+			}
+			else
+			{
+				mxUtils.get(this.meta.download_url, mxUtils.bind(this, function(req)
+				{
+					fn((req.getStatus() >= 200 && req.getStatus() <= 299) ? this.meta.download_url : null);
+				}), mxUtils.bind(this, function()
+				{
+					fn(null);
+				}));
+			}
+		}
+		catch (e)
 		{
 			fn(null);
-		}));
+		}
 	}
 	else
 	{

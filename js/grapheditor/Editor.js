@@ -25,9 +25,10 @@ Editor = function(chromeless, themes, model, graph, editable)
 	};
 	
 	// Sets the status and fires a statusChanged event
-	this.setStatus = function(value)
+	this.setStatus = function(value, fn)
 	{
 		this.status = value;
+		this.statusFunction = fn;
 		this.fireEvent(new mxEventObject('statusChanged'));
 	};
 	
@@ -103,32 +104,19 @@ Editor.defaultHtmlFont = '-apple-system, BlinkMacSystemFont, "Segoe UI Variable"
 Editor.useLocalStorage = typeof(Storage) != 'undefined' && mxClient.IS_IOS;
 
 /**
- * 
+ * Window width for simple mode to collapse panels.
  */
-Editor.rowMoveImage = (mxClient.IS_SVG) ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAEBAMAAACw6DhOAAAAGFBMVEUzMzP///9tbW1QUFCKiopBQUF8fHxfX1/IXlmXAAAAFElEQVQImWNgNVdzYBAUFBRggLMAEzYBy29kEPgAAAAASUVORK5CYII=' :
-	IMAGE_PATH + '/thumb_horz.png';
-
-/**
- * Sets the default font size.
- */
-Editor.lightCheckmarkImage = (mxClient.IS_SVG) ? 'data:image/gif;base64,R0lGODlhFQAVAMQfAGxsbHx8fIqKioaGhvb29nJycvr6+sDAwJqamltbW5OTk+np6YGBgeTk5Ly8vJiYmP39/fLy8qWlpa6ursjIyOLi4vj4+N/f3+3t7fT09LCwsHZ2dubm5r6+vmZmZv///yH/C1hNUCBEYXRhWE1QPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS4wLWMwNjAgNjEuMTM0Nzc3LCAyMDEwLzAyLzEyLTE3OjMyOjAwICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IFdpbmRvd3MiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OEY4NTZERTQ5QUFBMTFFMUE5MTVDOTM5MUZGMTE3M0QiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OEY4NTZERTU5QUFBMTFFMUE5MTVDOTM5MUZGMTE3M0QiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Rjg1NkRFMjlBQUExMUUxQTkxNUM5MzkxRkYxMTczRCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Rjg1NkRFMzlBQUExMUUxQTkxNUM5MzkxRkYxMTczRCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PgH//v38+/r5+Pf29fTz8vHw7+7t7Ovq6ejn5uXk4+Lh4N/e3dzb2tnY19bV1NPS0dDPzs3My8rJyMfGxcTDwsHAv769vLu6ubi3trW0s7KxsK+urayrqqmop6alpKOioaCfnp2cm5qZmJeWlZSTkpGQj46NjIuKiYiHhoWEg4KBgH9+fXx7enl4d3Z1dHNycXBvbm1sa2ppaGdmZWRjYmFgX15dXFtaWVhXVlVUU1JRUE9OTUxLSklIR0ZFRENCQUA/Pj08Ozo5ODc2NTQzMjEwLy4tLCsqKSgnJiUkIyIhIB8eHRwbGhkYFxYVFBMSERAPDg0MCwoJCAcGBQQDAgEAACH5BAEAAB8ALAAAAAAVABUAAAVI4CeOZGmeaKqubKtylktSgCOLRyLd3+QJEJnh4VHcMoOfYQXQLBcBD4PA6ngGlIInEHEhPOANRkaIFhq8SuHCE1Hb8Lh8LgsBADs=' :
-	IMAGE_PATH + '/checkmark.gif';
+Editor.smallScreenWidth = 800;
 
 /**
  *
  */
-Editor.darkHelpImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAP1BMVEUAAAD///////////////////////////////////////////////////////////////////////////////9Du/pqAAAAFXRSTlMAT30qCJRBboyDZyCgRzUUdF46MJlgXETgAAAAeklEQVQY022O2w4DIQhEQUURda/9/28tUO2+7CQS5sgQ4F1RapX78YUwRqQjTU8ILqQfKerTKTvACJ4nLX3krt+8aS82oI8aQC4KavRgtvEW/mDvsICgA03PSGRr79MqX1YPNIxzjyqtw8ZnnRo4t5a5undtJYRywau+ds4Cyza3E6YAAAAASUVORK5CYII=';
-
-/**
- *
- */
+Editor.rowMoveImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAEBAMAAACw6DhOAAAAGFBMVEUzMzP///9tbW1QUFCKiopBQUF8fHxfX1/IXlmXAAAAFElEQVQImWNgNVdzYBAUFBRggLMAEzYBy29kEPgAAAAASUVORK5CYII=';
+Editor.lightCheckmarkImage = 'data:image/gif;base64,R0lGODlhFQAVAMQfAGxsbHx8fIqKioaGhvb29nJycvr6+sDAwJqamltbW5OTk+np6YGBgeTk5Ly8vJiYmP39/fLy8qWlpa6ursjIyOLi4vj4+N/f3+3t7fT09LCwsHZ2dubm5r6+vmZmZv///yH/C1hNUCBEYXRhWE1QPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS4wLWMwNjAgNjEuMTM0Nzc3LCAyMDEwLzAyLzEyLTE3OjMyOjAwICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M1IFdpbmRvd3MiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OEY4NTZERTQ5QUFBMTFFMUE5MTVDOTM5MUZGMTE3M0QiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OEY4NTZERTU5QUFBMTFFMUE5MTVDOTM5MUZGMTE3M0QiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Rjg1NkRFMjlBQUExMUUxQTkxNUM5MzkxRkYxMTczRCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Rjg1NkRFMzlBQUExMUUxQTkxNUM5MzkxRkYxMTczRCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PgH//v38+/r5+Pf29fTz8vHw7+7t7Ovq6ejn5uXk4+Lh4N/e3dzb2tnY19bV1NPS0dDPzs3My8rJyMfGxcTDwsHAv769vLu6ubi3trW0s7KxsK+urayrqqmop6alpKOioaCfnp2cm5qZmJeWlZSTkpGQj46NjIuKiYiHhoWEg4KBgH9+fXx7enl4d3Z1dHNycXBvbm1sa2ppaGdmZWRjYmFgX15dXFtaWVhXVlVUU1JRUE9OTUxLSklIR0ZFRENCQUA/Pj08Ozo5ODc2NTQzMjEwLy4tLCsqKSgnJiUkIyIhIB8eHRwbGhkYFxYVFBMSERAPDg0MCwoJCAcGBQQDAgEAACH5BAEAAB8ALAAAAAAVABUAAAVI4CeOZGmeaKqubKtylktSgCOLRyLd3+QJEJnh4VHcMoOfYQXQLBcBD4PA6ngGlIInEHEhPOANRkaIFhq8SuHCE1Hb8Lh8LgsBADs=';
 Editor.darkCheckmarkImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAVCAMAAACeyVWkAAAARVBMVEUAAACZmZkICAgEBASNjY2Dg4MYGBiTk5N5eXl1dXVmZmZQUFBCQkI3NzceHh4MDAykpKSJiYl+fn5sbGxaWlo/Pz8SEhK96uPlAAAAAXRSTlMAQObYZgAAAE5JREFUGNPFzTcSgDAQQ1HJGUfy/Y9K7V1qeOUfzQifCQZai1XHaz11LFysbDbzgDSSWMZiETz3+b8yNUc/MMsktxuC8XQBSncdLwz+8gCCggGXzBcozAAAAABJRU5ErkJggg==';
-
-/**
- * 
- */
-Editor.menuImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iMjRweCIgZmlsbD0iIzAwMDAwMCI+PHBhdGggZD0iTTAgMGgyNHYyNEgwVjB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTMgMThoMTh2LTJIM3Yyem0wLTVoMTh2LTJIM3Yyem0wLTd2MmgxOFY2SDN6Ii8+PC9zdmc+';
+Editor.darkHelpImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAP1BMVEUAAAD///////////////////////////////////////////////////////////////////////////////9Du/pqAAAAFXRSTlMAT30qCJRBboyDZyCgRzUUdF46MJlgXETgAAAAeklEQVQY022O2w4DIQhEQUURda/9/28tUO2+7CQS5sgQ4F1RapX78YUwRqQjTU8ILqQfKerTKTvACJ4nLX3krt+8aS82oI8aQC4KavRgtvEW/mDvsICgA03PSGRr79MqX1YPNIxzjyqtw8ZnnRo4t5a5undtJYRywau+ds4Cyza3E6YAAAAASUVORK5CYII=';
 Editor.lightHelpImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJub25lIiBkPSJNMCAwaDI0djI0SDB6Ii8+PHBhdGggZD0iTTExIDE4aDJ2LTJoLTJ2MnptMS0xNkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptMCAxOGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4LTMuNTkgOC04IDh6bTAtMTRjLTIuMjEgMC00IDEuNzktNCA0aDJjMC0xLjEuOS0yIDItMnMyIC45IDIgMmMwIDItMyAxLjc1LTMgNWgyYzAtMi4yNSAzLTIuNSAzLTUgMC0yLjIxLTEuNzktNC00LTR6Ii8+PC9zdmc+';
+Editor.menuImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iMjRweCIgZmlsbD0iIzAwMDAwMCI+PHBhdGggZD0iTTAgMGgyNHYyNEgwVjB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTMgMThoMTh2LTJIM3Yyem0wLTVoMTh2LTJIM3Yyem0wLTd2MmgxOFY2SDN6Ii8+PC9zdmc+';
 Editor.moveImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI4cHgiIGhlaWdodD0iMjhweCI+PGc+PC9nPjxnPjxnPjxnPjxwYXRoIHRyYW5zZm9ybT0idHJhbnNsYXRlKDIuNCwyLjQpc2NhbGUoMC44KXJvdGF0ZSg0NSwxMiwxMikiIHN0cm9rZT0iIzI5YjZmMiIgZmlsbD0iIzI5YjZmMiIgZD0iTTE1LDNsMi4zLDIuM2wtMi44OSwyLjg3bDEuNDIsMS40MkwxOC43LDYuN0wyMSw5VjNIMTV6IE0zLDlsMi4zLTIuM2wyLjg3LDIuODlsMS40Mi0xLjQyTDYuNyw1LjNMOSwzSDNWOXogTTksMjEgbC0yLjMtMi4zbDIuODktMi44N2wtMS40Mi0xLjQyTDUuMywxNy4zTDMsMTV2Nkg5eiBNMjEsMTVsLTIuMywyLjNsLTIuODctMi44OWwtMS40MiwxLjQybDIuODksMi44N0wxNSwyMWg2VjE1eiIvPjwvZz48L2c+PC9nPjwvc3ZnPgo=';
 Editor.zoomInImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTUuNSAxNGgtLjc5bC0uMjgtLjI3QzE1LjQxIDEyLjU5IDE2IDExLjExIDE2IDkuNSAxNiA1LjkxIDEzLjA5IDMgOS41IDNTMyA1LjkxIDMgOS41IDUuOTEgMTYgOS41IDE2YzEuNjEgMCAzLjA5LS41OSA0LjIzLTEuNTdsLjI3LjI4di43OWw1IDQuOTlMMjAuNDkgMTlsLTQuOTktNXptLTYgMEM3LjAxIDE0IDUgMTEuOTkgNSA5LjVTNy4wMSA1IDkuNSA1IDE0IDcuMDEgMTQgOS41IDExLjk5IDE0IDkuNSAxNHptMi41LTRoLTJ2Mkg5di0ySDdWOWgyVjdoMXYyaDJ2MXoiLz48L3N2Zz4=';
 Editor.zoomOutImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTUuNSAxNGgtLjc5bC0uMjgtLjI3QzE1LjQxIDEyLjU5IDE2IDExLjExIDE2IDkuNSAxNiA1LjkxIDEzLjA5IDMgOS41IDNTMyA1LjkxIDMgOS41IDUuOTEgMTYgOS41IDE2YzEuNjEgMCAzLjA5LS41OSA0LjIzLTEuNTdsLjI3LjI4di43OWw1IDQuOTlMMjAuNDkgMTlsLTQuOTktNXptLTYgMEM3LjAxIDE0IDUgMTEuOTkgNSA5LjVTNy4wMSA1IDkuNSA1IDE0IDcuMDEgMTQgOS41IDExLjk5IDE0IDkuNSAxNHpNNyA5aDV2MUg3eiIvPjwvc3ZnPg==';
@@ -153,22 +141,38 @@ Editor.refreshImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy5
 Editor.backImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMThweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iMThweCIgZmlsbD0iIzAwMDAwMCI+PHBhdGggZD0iTTAgMGgyNHYyNEgwVjB6IiBmaWxsPSJub25lIiBvcGFjaXR5PSIuODciLz48cGF0aCBkPSJNMTcuNTEgMy44N0wxNS43MyAyLjEgNS44NCAxMmw5LjkgOS45IDEuNzctMS43N0w5LjM4IDEybDguMTMtOC4xM3oiLz48L3N2Zz4=';
 Editor.closeImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMThweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iMThweCIgZmlsbD0iIzAwMDAwMCI+PHBhdGggZD0iTTAgMGgyNHYyNEgwVjB6IiBmaWxsPSJub25lIiBvcGFjaXR5PSIuODciLz48cGF0aCBkPSJNMTIgMkM2LjQ3IDIgMiA2LjQ3IDIgMTJzNC40NyAxMCAxMCAxMCAxMC00LjQ3IDEwLTEwUzE3LjUzIDIgMTIgMnptMCAxOGMtNC40MSAwLTgtMy41OS04LThzMy41OS04IDgtOCA4IDMuNTkgOCA4LTMuNTkgOC04IDh6bTMuNTktMTNMMTIgMTAuNTkgOC40MSA3IDcgOC40MSAxMC41OSAxMiA3IDE1LjU5IDguNDEgMTcgMTIgMTMuNDEgMTUuNTkgMTcgMTcgMTUuNTkgMTMuNDEgMTIgMTcgOC40MXoiLz48L3N2Zz4='
 Editor.closeBlackImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjZweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iMjZweCI+PGVsbGlwc2UgY3g9IjEyIiBjeT0iMTIiIHJ4PSI5IiByeT0iOSIgc3Ryb2tlPSJub25lIiBmaWxsPSIjMDAwIi8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE0LjU5IDhMMTIgMTAuNTkgOS40MSA4IDggOS40MSAxMC41OSAxMiA4IDE0LjU5IDkuNDEgMTYgMTIgMTMuNDEgMTQuNTkgMTYgMTYgMTQuNTkgMTMuNDEgMTIgMTYgOS40MSAxNC41OSA4ek0xMiAyQzYuNDcgMiAyIDYuNDcgMiAxMnM0LjQ3IDEwIDEwIDEwIDEwLTQuNDcgMTAtMTBTMTcuNTMgMiAxMiAyem0wIDE4Yy00LjQxIDAtOC0zLjU5LTgtOHMzLjU5LTggOC04IDggMy41OSA4IDgtMy41OSA4LTggOHoiLz48L3N2Zz4=';
+Editor.minusImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iNDgiIHdpZHRoPSI0OCI+PHBhdGggZD0iTTEwIDI1LjV2LTNoMjh2M1oiLz48L3N2Zz4=';
 Editor.plusImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTkgMTNoLTZ2NmgtMnYtNkg1di0yaDZWNWgydjZoNnYyeiIvPjwvc3ZnPg==';
-Editor.shapesImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDI0IDI0IiBoZWlnaHQ9IjI0cHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0cHgiIGZpbGw9IiMwMDAwMDAiPjxnPjxwYXRoIGQ9Ik0wLDBoMjR2MjRIMFYweiIgZmlsbD0ibm9uZSIvPjwvZz48Zz48Zz48cGF0aCBkPSJNMywxMWg4VjNIM1YxMXogTTUsNWg0djRINVY1eiIvPjxwYXRoIGQ9Ik0xMywzdjhoOFYzSDEzeiBNMTksOWgtNFY1aDRWOXoiLz48cGF0aCBkPSJNMywyMWg4di04SDNWMjF6IE01LDE1aDR2NEg1VjE1eiIvPjxwb2x5Z29uIHBvaW50cz0iMTgsMTMgMTYsMTMgMTYsMTYgMTMsMTYgMTMsMTggMTYsMTggMTYsMjEgMTgsMjEgMTgsMTggMjEsMTggMjEsMTYgMTgsMTYiLz48L2c+PC9nPjwvc3ZnPg==';
-Editor.formatImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTIgM2MtNC45NyAwLTkgNC4wMy05IDlzNC4wMyA5IDkgOWMuODMgMCAxLjUtLjY3IDEuNS0xLjUgMC0uMzktLjE1LS43NC0uMzktMS4wMS0uMjMtLjI2LS4zOC0uNjEtLjM4LS45OSAwLS44My42Ny0xLjUgMS41LTEuNUgxNmMyLjc2IDAgNS0yLjI0IDUtNSAwLTQuNDItNC4wMy04LTktOHptLTUuNSA5Yy0uODMgMC0xLjUtLjY3LTEuNS0xLjVTNS42NyA5IDYuNSA5IDggOS42NyA4IDEwLjUgNy4zMyAxMiA2LjUgMTJ6bTMtNEM4LjY3IDggOCA3LjMzIDggNi41UzguNjcgNSA5LjUgNXMxLjUuNjcgMS41IDEuNVMxMC4zMyA4IDkuNSA4em01IDBjLS44MyAwLTEuNS0uNjctMS41LTEuNVMxMy42NyA1IDE0LjUgNXMxLjUuNjcgMS41IDEuNVMxNS4zMyA4IDE0LjUgOHptMyA0Yy0uODMgMC0xLjUtLjY3LTEuNS0xLjVTMTYuNjcgOSAxNy41IDlzMS41LjY3IDEuNSAxLjUtLjY3IDEuNS0xLjUgMS41eiIvPjwvc3ZnPg==';
+Editor.addBoxImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCI+PHBhdGggZD0iTTExIDE3aDJ2LTRoNHYtMmgtNFY3aC0ydjRIN3YyaDRabS02IDRxLS44MjUgMC0xLjQxMy0uNTg3UTMgMTkuODI1IDMgMTlWNXEwLS44MjUuNTg3LTEuNDEzUTQuMTc1IDMgNSAzaDE0cS44MjUgMCAxLjQxMy41ODdRMjEgNC4xNzUgMjEgNXYxNHEwIC44MjUtLjU4NyAxLjQxM1ExOS44MjUgMjEgMTkgMjFabTAtMmgxNFY1SDV2MTRaTTUgNXYxNFY1WiIvPjwvc3ZnPg==';
+Editor.shapesImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCI+PHBhdGggZD0iTTE1IDE1Wm0tNyAyLjk1cS4yNS4wMjUuNDg4LjAzOFE4LjcyNSAxOCA5IDE4dC41MTItLjAxMnEuMjM4LS4wMTMuNDg4LS4wMzhWMjBoMTBWMTBoLTIuMDVxLjAyNS0uMjUuMDM4LS40ODhRMTggOS4yNzUgMTggOXQtLjAxMi0uNTEyUTE3Ljk3NSA4LjI1IDE3Ljk1IDhIMjBxLjgyNSAwIDEuNDEzLjU4N1EyMiA5LjE3NSAyMiAxMHYxMHEwIC44MjUtLjU4NyAxLjQxM1EyMC44MjUgMjIgMjAgMjJIMTBxLS44MjUgMC0xLjQxMi0uNTg3UTggMjAuODI1IDggMjBaTTkgMTZxLTIuOTI1IDAtNC45NjMtMi4wMzhRMiAxMS45MjUgMiA5dDIuMDM3LTQuOTYzUTYuMDc1IDIgOSAycTIuOTI1IDAgNC45NjMgMi4wMzdRMTYgNi4wNzUgMTYgOXEwIDIuOTI1LTIuMDM3IDQuOTYyUTExLjkyNSAxNiA5IDE2Wm0wLTJxMi4wNzUgMCAzLjUzOC0xLjQ2M1ExNCAxMS4wNzUgMTQgOXQtMS40NjItMy41MzdRMTEuMDc1IDQgOSA0IDYuOTI1IDQgNS40NjMgNS40NjMgNCA2LjkyNSA0IDl0MS40NjMgMy41MzdRNi45MjUgMTQgOSAxNFptMC01WiIvPjwvc3ZnPg==';
+Editor.formatImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCI+PHBhdGggZD0iTTExIDIycS0uODI1IDAtMS40MTItLjU4N1E5IDIwLjgyNSA5IDIwdi00SDZxLS44MjUgMC0xLjQxMi0uNTg4UTQgMTQuODI1IDQgMTRWN3EwLTEuNjUgMS4xNzUtMi44MjVRNi4zNSAzIDggM2gxMnYxMXEwIC44MjUtLjU4NyAxLjQxMlExOC44MjUgMTYgMTggMTZoLTN2NHEwIC44MjUtLjU4NyAxLjQxM1ExMy44MjUgMjIgMTMgMjJaTTYgMTBoMTJWNWgtMXY0aC0yVjVoLTF2MmgtMlY1SDhxLS44MjUgMC0xLjQxMi41ODhRNiA2LjE3NSA2IDdabTAgNGgxMnYtMkg2djJabTAtMnYyWiIvPjwvc3ZnPg==';
 Editor.freehandImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iMjRweCIgZmlsbD0iIzAwMDAwMCI+PHJlY3QgZmlsbD0ibm9uZSIgaGVpZ2h0PSIyNCIgd2lkdGg9IjI0Ii8+PHBhdGggZD0iTTQuNSw4YzEuMDQsMCwyLjM0LTEuNSw0LjI1LTEuNWMxLjUyLDAsMi43NSwxLjIzLDIuNzUsMi43NWMwLDIuMDQtMS45OSwzLjE1LTMuOTEsNC4yMkM1LjQyLDE0LjY3LDQsMTUuNTcsNCwxNyBjMCwxLjEsMC45LDIsMiwydjJjLTIuMjEsMC00LTEuNzktNC00YzAtMi43MSwyLjU2LTQuMTQsNC42Mi01LjI4YzEuNDItMC43OSwyLjg4LTEuNiwyLjg4LTIuNDdjMC0wLjQxLTAuMzQtMC43NS0wLjc1LTAuNzUgQzcuNSw4LjUsNi4yNSwxMCw0LjUsMTBDMy4xMiwxMCwyLDguODgsMiw3LjVDMiw1LjQ1LDQuMTcsMi44Myw1LDJsMS40MSwxLjQxQzUuNDEsNC40Miw0LDYuNDMsNCw3LjVDNCw3Ljc4LDQuMjIsOCw0LjUsOHogTTgsMjEgbDMuNzUsMGw4LjA2LTguMDZsLTMuNzUtMy43NUw4LDE3LjI1TDgsMjF6IE0xMCwxOC4wOGw2LjA2LTYuMDZsMC45MiwwLjkyTDEwLjkyLDE5TDEwLDE5TDEwLDE4LjA4eiBNMjAuMzcsNi4yOSBjLTAuMzktMC4zOS0xLjAyLTAuMzktMS40MSwwbC0xLjgzLDEuODNsMy43NSwzLjc1bDEuODMtMS44M2MwLjM5LTAuMzksMC4zOS0xLjAyLDAtMS40MUwyMC4zNyw2LjI5eiIvPjwvc3ZnPg==';
-Editor.darkImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDI0IDI0IiBoZWlnaHQ9IjI0cHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0cHgiIGZpbGw9IiMwMDAwMDAiPjxyZWN0IGZpbGw9Im5vbmUiIGhlaWdodD0iMjQiIHdpZHRoPSIyNCIvPjxwYXRoIGQ9Ik05LjM3LDUuNTFDOS4xOSw2LjE1LDkuMSw2LjgyLDkuMSw3LjVjMCw0LjA4LDMuMzIsNy40LDcuNCw3LjRjMC42OCwwLDEuMzUtMC4wOSwxLjk5LTAuMjdDMTcuNDUsMTcuMTksMTQuOTMsMTksMTIsMTkgYy0zLjg2LDAtNy0zLjE0LTctN0M1LDkuMDcsNi44MSw2LjU1LDkuMzcsNS41MXogTTEyLDNjLTQuOTcsMC05LDQuMDMtOSw5czQuMDMsOSw5LDlzOS00LjAzLDktOWMwLTAuNDYtMC4wNC0wLjkyLTAuMS0xLjM2IGMtMC45OCwxLjM3LTIuNTgsMi4yNi00LjQsMi4yNmMtMi45OCwwLTUuNC0yLjQyLTUuNC01LjRjMC0xLjgxLDAuODktMy40MiwyLjI2LTQuNEMxMi45MiwzLjA0LDEyLjQ2LDMsMTIsM0wxMiwzeiIvPjwvc3ZnPg==';
-Editor.lightImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDI0IDI0IiBoZWlnaHQ9IjI0cHgiIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0cHgiIGZpbGw9IiMwMDAwMDAiPjxyZWN0IGZpbGw9Im5vbmUiIGhlaWdodD0iMjQiIHdpZHRoPSIyNCIvPjxwYXRoIGQ9Ik0xMiw5YzEuNjUsMCwzLDEuMzUsMywzcy0xLjM1LDMtMywzcy0zLTEuMzUtMy0zUzEwLjM1LDksMTIsOSBNMTIsN2MtMi43NiwwLTUsMi4yNC01LDVzMi4yNCw1LDUsNXM1LTIuMjQsNS01IFMxNC43Niw3LDEyLDdMMTIsN3ogTTIsMTNsMiwwYzAuNTUsMCwxLTAuNDUsMS0xcy0wLjQ1LTEtMS0xbC0yLDBjLTAuNTUsMC0xLDAuNDUtMSwxUzEuNDUsMTMsMiwxM3ogTTIwLDEzbDIsMGMwLjU1LDAsMS0wLjQ1LDEtMSBzLTAuNDUtMS0xLTFsLTIsMGMtMC41NSwwLTEsMC40NS0xLDFTMTkuNDUsMTMsMjAsMTN6IE0xMSwydjJjMCwwLjU1LDAuNDUsMSwxLDFzMS0wLjQ1LDEtMVYyYzAtMC41NS0wLjQ1LTEtMS0xUzExLDEuNDUsMTEsMnogTTExLDIwdjJjMCwwLjU1LDAuNDUsMSwxLDFzMS0wLjQ1LDEtMXYtMmMwLTAuNTUtMC40NS0xLTEtMUMxMS40NSwxOSwxMSwxOS40NSwxMSwyMHogTTUuOTksNC41OGMtMC4zOS0wLjM5LTEuMDMtMC4zOS0xLjQxLDAgYy0wLjM5LDAuMzktMC4zOSwxLjAzLDAsMS40MWwxLjA2LDEuMDZjMC4zOSwwLjM5LDEuMDMsMC4zOSwxLjQxLDBzMC4zOS0xLjAzLDAtMS40MUw1Ljk5LDQuNTh6IE0xOC4zNiwxNi45NSBjLTAuMzktMC4zOS0xLjAzLTAuMzktMS40MSwwYy0wLjM5LDAuMzktMC4zOSwxLjAzLDAsMS40MWwxLjA2LDEuMDZjMC4zOSwwLjM5LDEuMDMsMC4zOSwxLjQxLDBjMC4zOS0wLjM5LDAuMzktMS4wMywwLTEuNDEgTDE4LjM2LDE2Ljk1eiBNMTkuNDIsNS45OWMwLjM5LTAuMzksMC4zOS0xLjAzLDAtMS40MWMtMC4zOS0wLjM5LTEuMDMtMC4zOS0xLjQxLDBsLTEuMDYsMS4wNmMtMC4zOSwwLjM5LTAuMzksMS4wMywwLDEuNDEgczEuMDMsMC4zOSwxLjQxLDBMMTkuNDIsNS45OXogTTcuMDUsMTguMzZjMC4zOS0wLjM5LDAuMzktMS4wMywwLTEuNDFjLTAuMzktMC4zOS0xLjAzLTAuMzktMS40MSwwbC0xLjA2LDEuMDYgYy0wLjM5LDAuMzktMC4zOSwxLjAzLDAsMS40MXMxLjAzLDAuMzksMS40MSwwTDcuMDUsMTguMzZ6Ii8+PC9zdmc+';
 Editor.undoImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTIuNSA4Yy0yLjY1IDAtNS4wNS45OS02LjkgMi42TDIgN3Y5aDlsLTMuNjItMy42MmMxLjM5LTEuMTYgMy4xNi0xLjg4IDUuMTItMS44OCAzLjU0IDAgNi41NSAyLjMxIDcuNiA1LjVsMi4zNy0uNzhDMjEuMDggMTEuMDMgMTcuMTUgOCAxMi41IDh6Ii8+PC9zdmc+';
 Editor.redoImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTguNCAxMC42QzE2LjU1IDguOTkgMTQuMTUgOCAxMS41IDhjLTQuNjUgMC04LjU4IDMuMDMtOS45NiA3LjIyTDMuOSAxNmMxLjA1LTMuMTkgNC4wNS01LjUgNy42LTUuNSAxLjk1IDAgMy43My43MiA1LjEyIDEuODhMMTMgMTZoOVY3bC0zLjYgMy42eiIvPjwvc3ZnPg==';
-Editor.outlineImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iMjRweCIgZmlsbD0iIzAwMDAwMCI+PHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0yMC41IDNsLS4xNi4wM0wxNSA1LjEgOSAzIDMuMzYgNC45Yy0uMjEuMDctLjM2LjI1LS4zNi40OFYyMC41YzAgLjI4LjIyLjUuNS41bC4xNi0uMDNMOSAxOC45bDYgMi4xIDUuNjQtMS45Yy4yMS0uMDcuMzYtLjI1LjM2LS40OFYzLjVjMC0uMjgtLjIyLS41LS41LS41ek0xNSAxOWwtNi0yLjExVjVsNiAyLjExVjE5eiIvPjwvc3ZnPg==';
+Editor.outlineImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCI+PHBhdGggZD0ibTE1IDIxLTYtMi4xLTQuNjUgMS44cS0uNS4yLS45MjUtLjExM1EzIDIwLjI3NSAzIDE5Ljc1di0xNHEwLS4zMjUuMTg4LS41NzUuMTg3LS4yNS41MTItLjM3NUw5IDNsNiAyLjEgNC42NS0xLjhxLjUtLjIuOTI1LjExMi40MjUuMzEzLjQyNS44Mzh2MTRxMCAuMzI1LS4xODguNTc1LS4xODcuMjUtLjUxMi4zNzVabS0xLTIuNDVWNi44NWwtNC0xLjR2MTEuN1ptMiAwIDMtMVY1LjdsLTMgMS4xNVpNNSAxOC4zbDMtMS4xNVY1LjQ1bC0zIDFaTTE2IDYuODV2MTEuN1ptLTgtMS40djExLjdaIi8+PC9zdmc+';
 Editor.saveImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMThweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iMThweCIgZmlsbD0iIzAwMDAwMCI+PHBhdGggZD0iTTAgMGgyNHYyNEgwVjB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTE5IDEydjdINXYtN0gzdjdjMCAxLjEuOSAyIDIgMmgxNGMxLjEgMCAyLS45IDItMnYtN2gtMnptLTYgLjY3bDIuNTktMi41OEwxNyAxMS41bC01IDUtNS01IDEuNDEtMS40MUwxMSAxMi42N1YzaDJ2OS42N3oiLz48L3N2Zz4=';
+Editor.compareImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iNDgiIHdpZHRoPSI0OCI+PHBhdGggZD0ibTE1Ljg1IDQwLTIuMS0yLjEgNi4wNS02LjA1SDR2LTNoMTUuOGwtNi4wNS02LjA1IDIuMS0yLjEgOS42NSA5LjY1Wm0xNi4zLTEyLjctOS42NS05LjY1TDMyLjE1IDhsMi4xIDIuMS02LjA1IDYuMDVINDR2M0gyOC4ybDYuMDUgNi4wNVoiLz48L3N2Zz4=';
+Editor.expandMoreImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCI+PHBhdGggZD0ibTEyIDE1LjM3NS02LTYgMS40LTEuNCA0LjYgNC42IDQuNi00LjYgMS40IDEuNFoiLz48L3N2Zz4=';
+Editor.expandLessImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCI+PHBhdGggZD0ibTcuNCAxNS4zNzUtMS40LTEuNCA2LTYgNiA2LTEuNCAxLjQtNC42LTQuNloiLz48L3N2Zz4=';
+Editor.gearImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCI+PHBhdGggZD0ibTkuMjUgMjItLjQtMy4ycS0uMzI1LS4xMjUtLjYxMi0uMy0uMjg4LS4xNzUtLjU2My0uMzc1TDQuNyAxOS4zNzVsLTIuNzUtNC43NSAyLjU3NS0xLjk1UTQuNSAxMi41IDQuNSAxMi4zMzd2LS42NzVxMC0uMTYyLjAyNS0uMzM3TDEuOTUgOS4zNzVsMi43NS00Ljc1IDIuOTc1IDEuMjVxLjI3NS0uMi41NzUtLjM3NS4zLS4xNzUuNi0uM2wuNC0zLjJoNS41bC40IDMuMnEuMzI1LjEyNS42MTMuMy4yODcuMTc1LjU2Mi4zNzVsMi45NzUtMS4yNSAyLjc1IDQuNzUtMi41NzUgMS45NXEuMDI1LjE3NS4wMjUuMzM3di42NzVxMCAuMTYzLS4wNS4zMzhsMi41NzUgMS45NS0yLjc1IDQuNzUtMi45NS0xLjI1cS0uMjc1LjItLjU3NS4zNzUtLjMuMTc1LS42LjNsLS40IDMuMlptMi44LTYuNXExLjQ1IDAgMi40NzUtMS4wMjVRMTUuNTUgMTMuNDUgMTUuNTUgMTJxMC0xLjQ1LTEuMDI1LTIuNDc1UTEzLjUgOC41IDEyLjA1IDguNXEtMS40NzUgMC0yLjQ4OCAxLjAyNVE4LjU1IDEwLjU1IDguNTUgMTJxMCAxLjQ1IDEuMDEyIDIuNDc1UTEwLjU3NSAxNS41IDEyLjA1IDE1LjVabTAtMnEtLjYyNSAwLTEuMDYyLS40MzgtLjQzOC0uNDM3LS40MzgtMS4wNjJ0LjQzOC0xLjA2MnEuNDM3LS40MzggMS4wNjItLjQzOHQxLjA2My40MzhxLjQzNy40MzcuNDM3IDEuMDYydC0uNDM3IDEuMDYycS0uNDM4LjQzOC0xLjA2My40MzhaTTEyIDEyWm0tMSA4aDEuOTc1bC4zNS0yLjY1cS43NzUtLjIgMS40MzgtLjU4OC42NjItLjM4NyAxLjIxMi0uOTM3bDIuNDc1IDEuMDI1Ljk3NS0xLjctMi4xNS0xLjYyNXEuMTI1LS4zNS4xNzUtLjczOC4wNS0uMzg3LjA1LS43ODd0LS4wNS0uNzg4cS0uMDUtLjM4Ny0uMTc1LS43MzdsMi4xNS0xLjYyNS0uOTc1LTEuNy0yLjQ3NSAxLjA1cS0uNTUtLjU3NS0xLjIxMi0uOTYzLS42NjMtLjM4Ny0xLjQzOC0uNTg3TDEzIDRoLTEuOTc1bC0uMzUgMi42NXEtLjc3NS4yLTEuNDM3LjU4Ny0uNjYzLjM4OC0xLjIxMy45MzhMNS41NSA3LjE1bC0uOTc1IDEuNyAyLjE1IDEuNnEtLjEyNS4zNzUtLjE3NS43NS0uMDUuMzc1LS4wNS44IDAgLjQuMDUuNzc1dC4xNzUuNzVsLTIuMTUgMS42MjUuOTc1IDEuNyAyLjQ3NS0xLjA1cS41NS41NzUgMS4yMTMuOTYyLjY2Mi4zODggMS40MzcuNTg4WiIvPjwvc3ZnPg==';
+Editor.extensionImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjQiIHdpZHRoPSIyNCI+PHBhdGggZD0iTTguOCAyMUg1cS0uODI1IDAtMS40MTMtLjU4N1EzIDE5LjgyNSAzIDE5di0zLjhxMS4yIDAgMi4xLS43NjIuOS0uNzYzLjktMS45MzggMC0xLjE3NS0uOS0xLjkzOFE0LjIgOS44IDMgOS44VjZxMC0uODI1LjU4Ny0xLjQxMlE0LjE3NSA0IDUgNGg0cTAtMS4wNS43MjUtMS43NzVRMTAuNDUgMS41IDExLjUgMS41cTEuMDUgMCAxLjc3NS43MjVRMTQgMi45NSAxNCA0aDRxLjgyNSAwIDEuNDEzLjU4OFEyMCA1LjE3NSAyMCA2djRxMS4wNSAwIDEuNzc1LjcyNS43MjUuNzI1LjcyNSAxLjc3NSAwIDEuMDUtLjcyNSAxLjc3NVEyMS4wNSAxNSAyMCAxNXY0cTAgLjgyNS0uNTg3IDEuNDEzUTE4LjgyNSAyMSAxOCAyMWgtMy44cTAtMS4yNS0uNzg3LTIuMTI1UTEyLjYyNSAxOCAxMS41IDE4dC0xLjkxMi44NzVROC44IDE5Ljc1IDguOCAyMVpNNSAxOWgyLjEyNXEuNi0xLjY1IDEuOTI1LTIuMzI1UTEwLjM3NSAxNiAxMS41IDE2cTEuMTI1IDAgMi40NS42NzUgMS4zMjUuNjc1IDEuOTI1IDIuMzI1SDE4di02aDJxLjIgMCAuMzUtLjE1LjE1LS4xNS4xNS0uMzUgMC0uMi0uMTUtLjM1UTIwLjIgMTIgMjAgMTJoLTJWNmgtNlY0cTAtLjItLjE1LS4zNS0uMTUtLjE1LS4zNS0uMTUtLjIgMC0uMzUuMTVRMTEgMy44IDExIDR2Mkg1djIuMnExLjM1LjUgMi4xNzUgMS42NzVROCAxMS4wNSA4IDEyLjVxMCAxLjQyNS0uODI1IDIuNlQ1IDE2LjhabTcuNzUtNy43NVoiLz48L3N2Zz4=';
+Editor.colorDropperImage = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iNDgiIHdpZHRoPSI0OCI+PHBhdGggZD0iTTYgNDJ2LTguNGwxOC44NS0xOC44NS0zLjYtMy42TDIzLjMgOS4xbDQuNiA0LjZMMzUgNi42cS41NS0uNTUgMS4xNzUtLjU1dDEuMTc1LjU1bDQuMDUgNC4wNXEuNTUuNTUuNTUgMS4xNzVUNDEuNCAxM2wtNy4xIDcuMSA0LjYgNC42LTIuMDUgMi4wNS0zLjYtMy42TDE0LjQgNDJabTMtM2g0LjM1TDMxLjEgMjEuMjVsLTQuMzUtNC4zNUw5IDM0LjY1Wm0yMy4xNS0yMSA2LjItNi4yLTIuMTUtMi4xNS02LjIgNi4yWm0wIDBMMzAgMTUuODUgMzIuMTUgMThaIi8+PC9zdmc+';
+Editor.helpImage = Editor.lightHelpImage;
+Editor.checkmarkImage = Editor.lightCheckmarkImage;
 
 /**
  * All fill styles supported by rough.js.
  */
 Editor.roughFillStyles = [{val: 'auto', dispName: 'Auto'}, {val: 'hachure', dispName: 'Hachure'},
 	{val: 'solid', dispName: 'Solid'}, {val: 'zigzag', dispName: 'ZigZag'},
+	{val: 'cross-hatch', dispName: 'Cross Hatch'}, {val: 'dashed', dispName: 'Dashed'},
+	{val: 'zigzag-line', dispName: 'ZigZag Line'}];
+
+/**
+ * Fill styles for normal mode.
+ */
+Editor.fillStyles = [{val: 'auto', dispName: 'Auto'}, {val: 'hatch', dispName: 'Hatch'},
+	{val: 'solid', dispName: 'Solid'}, {val: 'dots', dispName: 'Dots'}, 
 	{val: 'cross-hatch', dispName: 'Cross Hatch'}, {val: 'dashed', dispName: 'Dashed'},
 	{val: 'zigzag-line', dispName: 'ZigZag Line'}];
 
@@ -227,12 +231,25 @@ Editor.darkMode = false;
 /**
  * Dynamic change of dark mode for minimal and sketch theme.
  */
-Editor.darkColor = '#2a2a2a';
+Editor.currentTheme = uiTheme;
+
+/**
+ * Dynamic change of dark mode for minimal and sketch theme.
+ */
+Editor.darkColor = '#18141D';
 
 /**
  * Dynamic change of dark mode for minimal and sketch theme.
  */
 Editor.lightColor = '#f0f0f0';
+
+/**
+ * Returns the current state of the dark mode.
+ */
+Editor.isDarkMode = function(value)
+{
+	return Editor.darkMode;
+};
 
 /**
  * Returns true if the given URL is a PNG data URL.
@@ -324,24 +341,6 @@ Editor.extractGraphModelFromPng = function(data)
 	
 	return result;
 };
-
-/**
- * Dynamic change of dark mode.
- */
-Editor.isDarkMode = function(value)
-{
-	return Editor.darkMode || uiTheme == 'dark';
-};
-
-/**
- * Images below are for lightbox and embedding toolbars.
- */
-Editor.helpImage = (Editor.isDarkMode() && mxClient.IS_SVG) ? Editor.darkHelpImage : Editor.lightHelpImage;
-
-/**
- * Images below are for lightbox and embedding toolbars.
- */
-Editor.checkmarkImage = (Editor.isDarkMode() && mxClient.IS_SVG) ? Editor.darkCheckmarkImage : Editor.lightCheckmarkImage;
 
 /**
  * Editor inherits from mxEventSource
@@ -1122,7 +1121,7 @@ Dialog.prototype.close = function(cancel, isEsc)
 		this.onDialogClose = null;
 	}
 	
-	if (this.dialogImg != null)
+	if (this.dialogImg != null && this.dialogImg.parentNode != null)
 	{
 		this.dialogImg.parentNode.removeChild(this.dialogImg);
 		this.dialogImg = null;
@@ -1134,7 +1133,11 @@ Dialog.prototype.close = function(cancel, isEsc)
 	}
 	
 	mxEvent.removeListener(window, 'resize', this.resizeListener);
+
+	if (this.container.parentNode != null)
+	{
 	this.container.parentNode.removeChild(this.container);
+	}
 };
 
 /**
@@ -1381,7 +1384,10 @@ PrintDialog.prototype.create = function(editorUi)
 		}
 		
 		// Workaround to match available paper size in actual print output
+		if (mxClient.IS_SF)
+		{
 		printScale *= 0.75;
+		}
 
 		var pf = graph.pageFormat || mxConstants.PAGE_FORMAT_A4_PORTRAIT;
 		var scale = 1 / graph.pageScale;
@@ -1397,7 +1403,6 @@ PrintDialog.prototype.create = function(editorUi)
 		}
 
 		// Negative coordinates are cropped or shifted if page visible
-		var gb = graph.getGraphBounds();
 		var border = 0;
 		var x0 = 0;
 		var y0 = 0;
@@ -1487,18 +1492,10 @@ PrintDialog.printPreview = function(preview)
 				preview.wnd.close();
 			};
 			
-			// Workaround for Google Chrome which needs a bit of a
-			// delay in order to render the SVG contents
-			// Needs testing in production
-			if (mxClient.IS_GC)
-			{
+			// Workaround for rendering SVG output and
+			// make window available for printing
 				window.setTimeout(printFn, 500);
 			}
-			else
-			{
-				printFn();
-			}
-		}
 	}
 	catch (e)
 	{
@@ -1513,6 +1510,7 @@ PrintDialog.createPrintPreview = function(graph, scale, pf, border, x0, y0, auto
 {
 	var preview = new mxPrintPreview(graph, scale, pf, border, x0, y0);
 	preview.title = mxResources.get('preview');
+	preview.addPageCss = !mxClient.IS_SF;
 	preview.printBackgroundImage = true;
 	preview.autoOrigin = autoOrigin;
 	var bg = graph.background;
@@ -1580,61 +1578,11 @@ var PageSetupDialog = function(editorUi)
 	row = document.createElement('tr');
 	
 	td = document.createElement('td');
-	mxUtils.write(td, mxResources.get('background') + ':');
-	
+	mxUtils.write(td, mxResources.get('gridSize') + ':');
 	row.appendChild(td);
 	
 	td = document.createElement('td');
 	td.style.whiteSpace = 'nowrap';
-	
-	var backgroundInput = document.createElement('input');
-	backgroundInput.setAttribute('type', 'text');
-
-	var backgroundButton = document.createElement('button');
-	backgroundButton.style.width = '22px';
-	backgroundButton.style.height = '22px';
-	backgroundButton.style.cursor = 'pointer';
-	backgroundButton.style.marginRight = '20px';
-	backgroundButton.style.backgroundPosition = 'center center';
-	backgroundButton.style.backgroundRepeat = 'no-repeat';
-
-	if (mxClient.IS_FF)
-	{
-		backgroundButton.style.position = 'relative';
-		backgroundButton.style.top = '-6px';
-	}
-	
-	var newBackgroundColor = graph.background;
-	
-	function updateBackgroundColor()
-	{
-		if (newBackgroundColor == null || newBackgroundColor == mxConstants.NONE)
-		{
-			backgroundButton.style.backgroundColor = '';
-			backgroundButton.style.backgroundImage = 'url(\'' + Dialog.prototype.noColorImage + '\')';
-		}
-		else
-		{
-			backgroundButton.style.backgroundColor = newBackgroundColor;
-			backgroundButton.style.backgroundImage = '';
-		}
-	};
-	
-	updateBackgroundColor();
-
-	mxEvent.addListener(backgroundButton, 'click', function(evt)
-	{
-		editorUi.pickColor(newBackgroundColor || 'none', function(color)
-		{
-			newBackgroundColor = color;
-			updateBackgroundColor();
-		});
-		mxEvent.consume(evt);
-	});
-	
-	td.appendChild(backgroundButton);
-	
-	mxUtils.write(td, mxResources.get('gridSize') + ':');
 	
 	var gridSizeInput = document.createElement('input');
 	gridSizeInput.setAttribute('type', 'number');
@@ -1657,7 +1605,7 @@ var PageSetupDialog = function(editorUi)
 	row = document.createElement('tr');
 	td = document.createElement('td');
 	
-	mxUtils.write(td, mxResources.get('image') + ':');
+	mxUtils.write(td, mxResources.get('background') + ':');
 	
 	row.appendChild(td);
 	td = document.createElement('td');
@@ -1667,50 +1615,71 @@ var PageSetupDialog = function(editorUi)
 	changeImageLink.style.margin = '0px';
 	mxUtils.write(changeImageLink, mxResources.get('change') + '...');
 
-	var imgPreview = document.createElement('img');
-	imgPreview.setAttribute('valign', 'middle');
+	var imgPreview = document.createElement('div');
+	imgPreview.style.display = 'inline-block';
 	imgPreview.style.verticalAlign = 'middle';
+	imgPreview.style.backgroundPosition = 'center center';
+	imgPreview.style.backgroundRepeat = 'no-repeat';
+	imgPreview.style.backgroundSize = 'contain';
 	imgPreview.style.border = '1px solid lightGray';
 	imgPreview.style.borderRadius = '4px';
 	imgPreview.style.marginRight = '14px';
-	imgPreview.style.maxWidth = '100px';
+	imgPreview.style.height = '32px';
+	imgPreview.style.width = '64px';
 	imgPreview.style.cursor = 'pointer';
-	imgPreview.style.height = '60px';
 	imgPreview.style.padding = '4px';
 	
 	var newBackgroundImage = graph.backgroundImage;
+	var newBackgroundColor = graph.background;
+	var newShadowVisible = graph.shadowVisible;
 	
 	function updateBackgroundImage()
 	{
 		var img = newBackgroundImage;
 
-		if (img != null && Graph.isPageLink(img.src))
+		if (img != null && img.originalSrc != null)
 		{
-			img = editorUi.createImageForPageLink(img.src, null);
+			img = editorUi.createImageForPageLink(img.originalSrc, null);
 		}
 		
 		if (img != null && img.src != null)
 		{
-			imgPreview.setAttribute('src', img.src);
-			imgPreview.style.display = '';
+			imgPreview.style.backgroundImage = 'url(' + img.src + ')';
+			imgPreview.style.display = 'inline-block';
 		}
 		else
 		{
-			imgPreview.removeAttribute('src');
+			imgPreview.style.backgroundImage = '';
 			imgPreview.style.display = 'none';
+		}
+
+		imgPreview.style.backgroundColor = '';
+
+		if (newBackgroundColor != null && newBackgroundColor != mxConstants.NONE)
+		{
+			imgPreview.style.backgroundColor = newBackgroundColor;
+			imgPreview.style.display = 'inline-block';
 		}
 	};
 
 	var changeImage = function(evt)
 	{
-		editorUi.showBackgroundImageDialog(function(image, failed)
+		editorUi.showBackgroundImageDialog(function(image, failed, color, shadowVisible)
 		{
 			if (!failed)
 			{
+				if (image != null && image.src != null && Graph.isPageLink(image.src))
+				{
+					image = {originalSrc: image.src};
+				}
+
 				newBackgroundImage = image;
-				updateBackgroundImage();
+				newShadowVisible = shadowVisible;
 			}
-		}, newBackgroundImage);
+
+			newBackgroundColor = color;
+				updateBackgroundImage();
+		}, newBackgroundImage, newBackgroundColor, true);
 		
 		mxEvent.consume(evt);
 	};
@@ -1761,9 +1730,15 @@ var PageSetupDialog = function(editorUi)
 		
 		change.ignoreImage = oldSrc === newSrc;
 
+		if (newShadowVisible != null)
+		{
+			change.shadowVisible = newShadowVisible;
+		}
+
 		if (graph.pageFormat.width != change.previousFormat.width ||
 			graph.pageFormat.height != change.previousFormat.height ||
-			!change.ignoreColor || !change.ignoreImage)
+			!change.ignoreColor || !change.ignoreImage||
+			change.shadowVisible != graph.shadowVisible)
 		{
 			graph.model.execute(change);
 		}
@@ -1803,7 +1778,8 @@ PageSetupDialog.addPageFormatPanel = function(div, namePostfix, pageFormat, page
 	var paperSizeSelect = document.createElement('select');
 	paperSizeSelect.style.marginBottom = '8px';
 	paperSizeSelect.style.borderRadius = '4px';
-	paperSizeSelect.style.border = '1px solid rgb(160, 160, 160)';
+	paperSizeSelect.style.borderWidth = '1px';
+	paperSizeSelect.style.borderStyle = 'solid';
 	paperSizeSelect.style.width = '206px';
 
 	var formatDiv = document.createElement('div');
@@ -2088,7 +2064,7 @@ PageSetupDialog.getFormats = function()
 /**
  * Constructs a new filename dialog.
  */
-var FilenameDialog = function(editorUi, filename, buttonText, fn, label, validateFn, content, helpLink, closeOnBtn, cancelFn, hints, w)
+var FilenameDialog = function(editorUi, filename, buttonText, fn, label, validateFn, content, helpLink, closeOnBtn, cancelFn, hints, w, lblW)
 {
 	closeOnBtn = (closeOnBtn != null) ? closeOnBtn : true;
 	var row, td;
@@ -2104,9 +2080,9 @@ var FilenameDialog = function(editorUi, filename, buttonText, fn, label, validat
 	td = document.createElement('td');
 	td.style.textOverflow = 'ellipsis';
 	td.style.textAlign = 'right';
-	td.style.maxWidth = '100px';
+	td.style.maxWidth = (lblW? lblW + 15 : 100) + 'px';
 	td.style.fontSize = '10pt';
-	td.style.width = '84px';
+	td.style.width = (lblW? lblW : 84) + 'px';
 	mxUtils.write(td, (label || mxResources.get('filename')) + ':');
 	
 	row.appendChild(td);
@@ -2398,12 +2374,12 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 		var ext = types[typeSelect.value].extension;
 		var idx2 = nameInput.value.lastIndexOf('.drawio.');
 		var idx = (idx2 > 0) ? idx2 : nameInput.value.lastIndexOf('.');
-
+		/* 👇 SIYUAN 👇 */
 		// if (ext != 'drawio')
 		// {
 		// 	ext = 'drawio.' + ext;
 		// }
-		
+		/* 👆 SIYUAN 👆 */
 		if (idx > 0)
 		{
 			nameInput.value = nameInput.value.substring(0, idx + 1) + ext;
@@ -2458,6 +2434,39 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 	nameInputChanged();
 	
 	return typeSelect;
+};
+
+/**
+ * 
+ */
+var WrapperWindow = function(editorUi, title, x, y, w, h, fn)
+{
+	var div = editorUi.createSidebarContainer();
+	fn(div);
+
+	this.window = new mxWindow(title, div, x, y, w, h, true, true);
+	this.window.destroyOnClose = false;
+	this.window.setMaximizable(false);
+	this.window.setResizable(true);
+	this.window.setClosable(true);
+	this.window.setVisible(true);
+
+	editorUi.installResizeHandler(this, true);
+	
+	// Workaround for text selection starting in Safari
+	// when dragging shapes outside of window
+	if (mxClient.IS_SF)
+	{
+		this.window.div.onselectstart = mxUtils.bind(this, function(evt)
+		{
+			if (evt == null)
+			{
+				evt = window.event;
+			}
+			
+			return (evt != null && editorUi.isSelectionAllowed(evt));
+		});
+	}
 };
 
 /**
@@ -2556,10 +2565,12 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 	};
 
 	// Updates the CSS of the background to draw the grid
-	mxGraphView.prototype.validateBackgroundStyles = function()
+	mxGraphView.prototype.validateBackgroundStyles = function(factor, cx, cy)
 	{
 		var graph = this.graph;
-		var color = (graph.background == null || graph.background == mxConstants.NONE) ? graph.defaultPageBackgroundColor : graph.background;
+		factor = (factor != null) ? factor : 1;
+		var color = (graph.background == null || graph.background == mxConstants.NONE) ?
+			graph.defaultPageBackgroundColor : graph.background;
 		var gridColor = (color != null && this.gridColor != color.toLowerCase()) ? this.gridColor : '#ffffff';
 		var image = 'none';
 		var position = '';
@@ -2571,10 +2582,10 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 			if (mxClient.IS_SVG)
 			{
 				// Generates the SVG required for drawing the dynamic grid
-				image = unescape(encodeURIComponent(this.createSvgGrid(gridColor)));
+				image = unescape(encodeURIComponent(this.createSvgGrid(gridColor, factor)));
 				image = (window.btoa) ? btoa(image) : Base64.encode(image, true);
 				image = 'url(' + 'data:image/svg+xml;base64,' + image + ')'
-				phase = graph.gridSize * this.scale * this.gridSteps;
+				phase = graph.gridSize * this.scale * this.gridSteps * factor;
 			}
 			else
 			{
@@ -2585,6 +2596,13 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 			var x0 = 0;
 			var y0 = 0;
 			
+			var dx = (cx != null) ? cx - this.translate.x * this.scale : 0;
+			var dy = (cy != null) ? cy - this.translate.y * this.scale : 0;
+
+			var p = graph.gridSize * this.scale * this.gridSteps;
+			var ddx = dx % p;
+			var ddy = dy % p;
+			
 			if (graph.view.backgroundPageShape != null)
 			{
 				var bds = this.getBackgroundPageBounds();
@@ -2594,8 +2612,8 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 			}
 			
 			// Computes the offset to maintain origin for grid
-			position = -Math.round(phase - mxUtils.mod(this.translate.x * this.scale - x0, phase)) + 'px ' +
-				-Math.round(phase - mxUtils.mod(this.translate.y * this.scale - y0, phase)) + 'px';
+			position = -Math.round(phase - mxUtils.mod(this.translate.x * this.scale - x0 + dx, phase) + ddx * factor) + 'px ' +
+				-Math.round(phase - mxUtils.mod(this.translate.y * this.scale - y0 + dy, phase) + ddy * factor) + 'px';
 		}
 		
 		var canvas = graph.view.canvas;
@@ -2604,6 +2622,8 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 		{
 			canvas = canvas.ownerSVGElement;
 		}
+
+		var useDiagramBackground = !Editor.isDarkMode() && graph.enableDiagramBackground;
 		
 		if (graph.view.backgroundPageShape != null)
 		{
@@ -2614,20 +2634,40 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 			graph.container.className = 'geDiagramContainer geDiagramBackdrop';
 			canvas.style.backgroundImage = 'none';
 			canvas.style.backgroundColor = '';
+
+			if (useDiagramBackground)
+			{
+				graph.container.style.backgroundColor = graph.diagramBackgroundColor;
+			}
+			else
+			{
+				graph.container.style.backgroundColor = '';
+			}
 		}
 		else
 		{
 			graph.container.className = 'geDiagramContainer';
 			canvas.style.backgroundPosition = position;
-			canvas.style.backgroundColor = color;
 			canvas.style.backgroundImage = image;
+			
+			if (useDiagramBackground && (graph.background == null ||
+				graph.background == mxConstants.NONE))
+			{
+				canvas.style.backgroundColor = graph.diagramBackgroundColor;
+				graph.container.style.backgroundColor = '';
+			}
+			else
+			{
+				canvas.style.backgroundColor = color;
+			}
 		}
 	};
 	
 	// Returns the SVG required for painting the background grid.
-	mxGraphView.prototype.createSvgGrid = function(color)
+	mxGraphView.prototype.createSvgGrid = function(color, factor)
 	{
-		var tmp = this.graph.gridSize * this.scale;
+		factor = (factor != null) ? factor : 1;
+		var tmp = this.graph.gridSize * this.scale * factor;
 		
 		while (tmp < this.minGridSize)
 		{
@@ -2745,7 +2785,10 @@ FilenameDialog.createFileTypes = function(editorUi, nameInput, types)
 				
 				for (var i = count; i < breaks.length; i++)
 				{
+					if (breaks[i] != null)
+					{
 					breaks[i].destroy();
+					}
 				}
 				
 				breaks.splice(count, breaks.length - count);
