@@ -335,9 +335,9 @@ App.pluginRegistry = {
 	'page': 'plugins/page.js', 'gd': 'plugins/googledrive.js',
 	'tags': 'plugins/tags.js',
 };
+/* 👆 SIYUAN 👆 */
 
 App.publicPlugin = [
-	'siyuan',
 	'ex',
 	'voice',
 	'tips',
@@ -358,7 +358,6 @@ App.publicPlugin = [
 //	'rnd', 'page', 'gd',
 	'tags',
 ];
-/* 👆 SIYUAN 👆 */
 /**
  * Loads all given scripts and invokes onload after
  * all scripts have finished loading.

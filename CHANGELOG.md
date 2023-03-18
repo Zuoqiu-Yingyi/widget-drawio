@@ -7,6 +7,7 @@
 - 更新 draw.io 至 [v20.8.24](https://github.com/jgraph/drawio/releases/tag/v20.8.24) | Update draw.io to [v20.8.24](https://github.com/jgraph/drawio/releases/tag/v20.8.24).
 - 支持保存为 `*.png` 文件 | Support saving as `*.png` file.
 - 修复 `siyuan` 插件加载问题 | Fixed the issue of `siyuan` plugin loading.
+- 添加思源菜单 | Add Siyuan menu.
 
 ## v0.1.5/2022-05-17
 

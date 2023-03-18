@@ -34,7 +34,7 @@
         }
     }
 
-    const url = new URL(window.location.href);
+    const url = new URL(window.location);
     // console.log(urlParams);
     // console.log(window.location);
 
@@ -44,11 +44,11 @@
     if (!reg.test(id)) {
         const node = window.frameElement?.parentElement?.parentElement;
         if (node) {
-            if (node.getAttribute('data-type') == 'NodeIFrame') {
+            if (node.dataset.type === 'NodeIFrame') {
                 alert('在 iframe 块中无法保存资源文件至思源笔记！\nUnable to save resource file to SiYuan Note in an iframe block.');
                 return;
             }
-            id = node.getAttribute('data-node-id');
+            id = node.dataset.nodeId;
         }
     }
 

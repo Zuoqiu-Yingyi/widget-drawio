@@ -3,6 +3,12 @@
  */
 /* 👇 SIYUAN 👇 */
 Draw.loadPlugin(function (editorUi) {
+    const url = new URL(window.location);
+
+    const regs = {
+        id: /^\d{14}\-[0-9a-z]{7}$/,
+    };
+
     /* Minimal 主题默认隐藏形状面板与格式面板 */
     window.addEventListener('load', async () => {
         if (window.uiTheme === 'min') {
@@ -11,8 +17,161 @@ Draw.loadPlugin(function (editorUi) {
         }
     });
 
+    /* 工具栏菜单项 */
+    (() => {
+        /* 添加菜单 */
+        editorUi.menubar?.addMenu(
+            mxResources.get('siyuan'),
+            function (menu, parent) {
+                editorUi.menus.addMenuItem(menu, 'save');
+                menu.addSeparator(parent);
+                editorUi.menus.addMenuItem(menu, 'siyuanOpenByNewWindow');
+                editorUi.menus.addMenuItem(menu, 'siyuanFullscreen');
+            },
+            document.querySelector('.geStatus'),
+        );
+
+        /* 注册菜单项 */
+        /* 使用新窗口打开 */
+        editorUi.actions.addAction('siyuanOpenByNewWindow', () => {
+            try {
+                const {
+                    BrowserWindow,
+                    Menu,
+                } = window.top.require('@electron/remote');
+
+                /* 新窗口菜单 */
+                const menu = Menu.buildFromTemplate([
+                    // REF [菜单项 | Electron](https://www.electronjs.org/zh/docs/latest/api/menu-item)
+                    {
+                        label: 'SiYuan',
+                        submenu: [
+                            {
+                                label: 'About SiYuan',
+                                role: 'about',
+                            },
+                            { type: 'separator' },
+                            {
+                                label: 'Quit SiYuan',
+                                role: 'quit',
+                            },
+                        ],
+                    },
+                    {
+                        role: 'editMenu',
+                        submenu: [
+                            { role: 'selectAll' },
+                            { role: 'cut' },
+                            { role: 'copy' },
+                            { role: 'paste' },
+                            { role: 'pasteAndMatchStyle', accelerator: 'CmdOrCtrl+Shift+V' },
+                            { type: 'separator' },
+                            { role: 'toggleSpellChecker' },
+                        ],
+                    },
+                    {
+                        role: 'viewMenu',
+                        submenu: [
+                            { role: 'resetZoom' },
+                            { role: 'zoomIn', accelerator: 'CmdOrCtrl+=' },
+                            { role: 'zoomOut' },
+                        ],
+                    },
+                    {
+                        role: 'windowMenu',
+                        submenu: [
+                            { role: 'minimize' },
+                            { role: 'zoom' },
+                            { role: 'togglefullscreen' },
+                            { type: 'separator' },
+                            { role: 'toggledevtools' },
+                            { type: 'separator' },
+                            { role: 'front' },
+                            { type: 'separator' },
+                            { role: 'reload', accelerator: 'F5' },
+                            { role: 'forcereload', accelerator: 'CmdOrCtrl+F5' },
+                            { role: 'close' },
+                            { type: 'separator' },
+                            {
+                                label: 'Pinned',
+                                click: (menuItem, browserWindow, event) => {
+                                    if (browserWindow) browserWindow.setAlwaysOnTop(!browserWindow.isAlwaysOnTop());
+                                },
+                                type: 'checkbox',
+                                checked: false,
+                                // REF [快捷键 | Electron](https://www.electronjs.org/zh/docs/latest/api/accelerator)
+                                accelerator: 'Alt+Shift+P',
+                            },
+                        ],
+                    },
+                ]);
+
+                /* 新窗口 */
+                const win = new BrowserWindow({
+                    autoHideMenuBar: true,
+                });
+
+                win.setMenu(menu);
+                win.loadURL(url.href);
+            } catch (err) {
+                console.warn(err);
+                window.open(
+                    url.href,
+                    url.href,
+                    `
+                        popup = true,
+                    `,
+                );
+            }
+        });
+
+        /* 全屏切換 */
+        editorUi.actions.addAction('siyuanFullscreen', () => {
+            if (document.fullscreenElement) {
+                document.exitFullscreen()
+            } else {
+                document.documentElement.requestFullscreen()
+            }
+        });
+
+        // /* 将菜单组添加到菜单 */
+        // const menu_extras = editorUi.menus.get('extras');
+        // const old_funct = menu_extras.funct;
+        // menu_extras.funct = function (menu, parent) {
+        //     editorUi.menus.addMenuItems(menu, ['siyuanOpenByNewWindow', 'siyuanFullscreen', '-'], parent);
+        //     old_funct.apply(this, arguments);
+        // };
+    })();
+
+
     /* 挂载的对象 */
     window.siyuan = {
+        /* 思源配置 */
+        config: window.top.siyuan?.config,
+        /* URL */
+        url,
+        /* 正则表达式 */
+        regs,
+        /* 模式 */
+        mode: (() => {
+            const node = window.frameElement?.parentElement?.parentElement;
+            if (node) {
+                switch (node.dataset.type) {
+                    case 'NodeIFrame':
+                        return 'iframe';
+                    case 'NodeWidget':
+                        return 'widget';
+                    default:
+                        return node.dataset.type;
+                }
+            }
+            else if (regs.id.test(url.searchParams.get('id'))) {
+                return 'window';
+            }
+            else {
+                return null;
+            }
+        })(),
         /* 保存方法 */
         save: function (
             nameInput,

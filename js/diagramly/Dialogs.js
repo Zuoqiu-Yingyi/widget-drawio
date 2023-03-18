@@ -4780,7 +4780,7 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 				count,
 				rowLimit,
 				`${IMAGE_PATH}/siyuan-log.png`,
-				mxResources.get('siyuan') || 'SiYuan Note',
+				mxResources.get('siyuanNote'),
 			);
 		}
 		/* 👆 SIYUAN 👆 */

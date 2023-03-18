@@ -185,6 +185,61 @@ if (window.mxLanguages == null)
 		}
 	}
 
+	/* 👇 SIYUAN 👇 */
+	// 设置语言
+	if (window.mxLanguage == null && window.mxIsSiyuan) {
+		switch (window.top.siyuan?.config.appearance.lang) {
+			case 'en_US':
+				window.mxLanguage = 'en';
+				break;
+			case 'es_ES':
+				window.mxLanguage = 'es';
+				break;
+			case 'fr_FR':
+				window.mxLanguage = 'fr';
+				break;
+			case 'zh_CN':
+				window.mxLanguage = 'zh';
+				break;
+			case 'zh_CHT':
+				window.mxLanguage = 'zh-tw';
+				break;
+			default:
+				let lang = navigator.language;
+				switch (true) {
+					case lang.startsWith("zh-CNS"):
+						window.mxLanguage = "zh";
+						break;
+					case lang.startsWith("zh-CNT"):
+						window.mxLanguage = "zh-tw";
+						break;
+
+					case lang.startsWith("zh-Hans"):
+					case lang.startsWith("zh-CN"):
+					case lang.startsWith("zh-SG"):
+						window.mxLanguage = "zh";
+						break;
+
+					case lang.startsWith("zh-Hant"):
+					case lang.startsWith("zh-TW"):
+					case lang.startsWith("zh-HK"):
+					case lang.startsWith("zh-MO"):
+						window.mxLanguage = "zh-tw";
+						break;
+
+					case lang.startsWith("zh"):
+						window.mxLanguage = "zh";
+						break;
+					
+					default:
+						window.mxLanguage = window.mxLanguages.find(l => lang.startsWith(l));
+						break;
+				}
+				break;
+		}
+	}
+	/* 👆 SIYUAN 👆 */
+
 	// Uses browser language if supported
 	if (window.mxLanguage == null &&
 		(window.location.hostname == 'test.draw.io' ||

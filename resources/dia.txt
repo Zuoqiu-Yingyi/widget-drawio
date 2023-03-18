@@ -1,6 +1,9 @@
 # *DO NOT DIRECTLY EDIT THIS FILE, IT IS AUTOMATICALLY GENERATED AND IT IS BASED ON:*
 # https://docs.google.com/spreadsheet/ccc?key=0AmQEO36liL4FdDJLWVNMaVV2UmRKSnpXU09MYkdGbEE
-siyuan=SiYuan Note
+siyuan=Siyuan
+siyuanNote=SiYuan Note
+siyuanOpenByNewWindow=Open with New Window
+siyuanFullscreen=Toggle Fullscreen
 about=About
 aboutDrawio=About draw.io
 accessDenied=Access Denied
