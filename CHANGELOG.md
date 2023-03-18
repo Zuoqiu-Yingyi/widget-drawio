@@ -8,6 +8,7 @@
 - 支持保存为 `*.png` 文件 | Support saving as `*.png` file.
 - 修复 `siyuan` 插件加载问题 | Fixed the issue of `siyuan` plugin loading.
 - 添加思源菜单 | Add Siyuan menu.
+- 灯箱模式添加编辑按钮 | Add edit button in lightbox mode.
 
 ## v0.1.5/2022-05-17
 

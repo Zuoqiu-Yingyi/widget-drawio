@@ -4,7 +4,7 @@
 /* 👇 SIYUAN 👇 */
 Draw.loadPlugin(function (editorUi) {
     const url = new URL(window.location);
-
+    const id = url.searchParams.get('id');
     const regs = {
         id: /^\d{14}\-[0-9a-z]{7}$/,
     };
@@ -24,6 +24,8 @@ Draw.loadPlugin(function (editorUi) {
             mxResources.get('siyuan'),
             function (menu, parent) {
                 editorUi.menus.addMenuItem(menu, 'save');
+                menu.addSeparator(parent);
+                editorUi.menus.addMenuItem(menu, 'siyuanLightbox');
                 menu.addSeparator(parent);
                 editorUi.menus.addMenuItem(menu, 'siyuanOpenByNewWindow');
                 editorUi.menus.addMenuItem(menu, 'siyuanFullscreen');
@@ -133,6 +135,18 @@ Draw.loadPlugin(function (editorUi) {
                 document.documentElement.requestFullscreen()
             }
         });
+        
+        /* 灯箱模式 */
+        editorUi.actions.addAction('siyuanLightbox', () => {
+            window.siyuan.setBlockAttrs({
+                'custom-lightbox': '1',
+            }).then(response => {
+                if (response.ok) {
+                    window.siyuan.url.searchParams.set('lightbox', 1);
+                    window.location.href = window.siyuan.url.href;
+                }
+            })
+        });
 
         // /* 将菜单组添加到菜单 */
         // const menu_extras = editorUi.menus.get('extras');
@@ -148,6 +162,8 @@ Draw.loadPlugin(function (editorUi) {
     window.siyuan = {
         /* 思源配置 */
         config: window.top.siyuan?.config,
+        /* 挂件块 ID */
+        id,
         /* URL */
         url,
         /* 正则表达式 */
@@ -172,6 +188,14 @@ Draw.loadPlugin(function (editorUi) {
                 return null;
             }
         })(),
+        /* 设置块属性 */
+        setBlockAttrs: async (attrs, id = window.siyuan.id) => fetch('/api/attr/setBlockAttrs', {
+            body: JSON.stringify({
+                id,
+                attrs,
+            }),
+            method: 'POST',
+        }),
         /* 保存方法 */
         save: function (
             nameInput,
@@ -209,28 +233,24 @@ Draw.loadPlugin(function (editorUi) {
 
             function initButton() {
                 mxEvent.addListener(button, 'click', async () => {
-                    let id = (window.frameElement != null
-                        ? window.frameElement.parentElement.parentElement.dataset.nodeId
-                        : null)
-                        || (new URL(window.location.href)).searchParams.get('id')
-                        || null;
+                    const id = window.siyuan.id;
                     // console.log(id);
 
                     /* 提取主文件名与文件扩展名 */
                     function filenameParse(filename) {
-                        let idx2 = filename.lastIndexOf('.drawio.');
-                        let idx = (idx2 > 0) ? idx2 : filename.lastIndexOf('.');
-                        let file_name_main = idx > 0 ? filename.substring(0, idx) : filename;
-                        let file_name_ext = idx > 0 ? filename.substring(filename.lastIndexOf('.') + 1) : 'drawio';
+                        const idx2 = filename.lastIndexOf('.drawio.');
+                        const idx = (idx2 > 0) ? idx2 : filename.lastIndexOf('.');
+                        const file_name_main = idx > 0 ? filename.substring(0, idx) : filename;
+                        const file_name_ext = idx > 0 ? filename.substring(filename.lastIndexOf('.') + 1) : 'drawio';
                         filename = `${file_name_main}.${file_name_ext}`;
                         return { name: filename, main: file_name_main, ext: file_name_ext };
                     }
 
                     /* 上传至资源文件夹 */
                     async function saveDataToSiyuan(filename, _format, filedata, mime, base64Encoded = false) {
-                        let { name, ext } = filenameParse(filename);
+                        const { name, ext } = filenameParse(filename);
 
-                        let blob = base64Encoded
+                        const blob = base64Encoded
                             ? (() => {
                                 // base64 to Blob
                                 let bytes = atob(filedata);
@@ -242,17 +262,17 @@ Draw.loadPlugin(function (editorUi) {
                                 return new Blob([ab], { type: mime });
                             })()
                             : new Blob([filedata], { type: mime });
-                        let file = new File([blob], name, { lastModified: Date.now() });
-                        let formdata = new FormData();
+                        const file = new File([blob], name, { lastModified: Date.now() });
+                        const formdata = new FormData();
                         formdata.append("assetsDirPath", "/assets/drawio/");
                         formdata.append("file[]", file);
                         fetch("/api/asset/upload", {
                             body: formdata,
                             method: "POST",
                             // headers: { Authorization: "Token " + this.apitoken },
-                        }).then((response) => {
+                        }).then(response => {
                             return response.json();
-                        }).then((data) => {
+                        }).then(data => {
                             // console.log(data);
                             let asset = data.data.succMap[name];
                             console.log(asset);
@@ -274,24 +294,21 @@ Draw.loadPlugin(function (editorUi) {
                                         break;
                                 }
                                 // console.log(filename, asset);
-                                fetch('/api/attr/setBlockAttrs', {
-                                    body: JSON.stringify({
-                                        id: id,
-                                        attrs: {
-                                            'custom-data-assets': asset,
-                                            'data-export-md': markdown,
-                                            'data-export-html': html,
-                                        },
-                                    }),
-                                    method: 'POST',
-                                }).then((response) => {
+                                window.siyuan.setBlockAttrs(
+                                    {
+                                        'custom-data-assets': asset,
+                                        'data-export-md': markdown,
+                                        'data-export-html': html,
+                                    },
+                                    id,
+                                ).then((response) => {
                                     return response.json();
                                 }).then((data) => {
                                     if (data.code == 0) {
-                                        let name = asset.substring(asset.lastIndexOf('/') + 1);
+                                        const name = asset.substring(asset.lastIndexOf('/') + 1);
                                         // console.log(editorUi);
                                         editorUi.getCurrentFile().rename(name);
-                                        let url = new URL(window.location.href);
+                                        const url = new URL(window.location);
                                         url.hash = `#U${url.origin}/${asset}`
                                         console.log(url.href);
                                         // REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
@@ -307,7 +324,7 @@ Draw.loadPlugin(function (editorUi) {
                         });
                     };
 
-                    if (/^\d{14}\-[0-9a-z]{7}$/.test(id)) {
+                    if (window.siyuan.regs.id.test(id)) {
                         // change(App.MODE_DEVICE);
                         let filename = filenameParse(nameInput.value);
                         file_name = filename.name;

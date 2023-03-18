@@ -4,6 +4,7 @@ siyuan=思源
 siyuanNote=思源笔记
 siyuanOpenByNewWindow=使用新窗口打开
 siyuanFullscreen=全屏切换
+siyuanLightbox=灯箱模式
 about=关于
 aboutDrawio=关于 draw.io
 accessDenied=没有权限访问

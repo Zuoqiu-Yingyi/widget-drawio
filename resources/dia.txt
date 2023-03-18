@@ -4,6 +4,7 @@ siyuan=Siyuan
 siyuanNote=SiYuan Note
 siyuanOpenByNewWindow=Open with New Window
 siyuanFullscreen=Toggle Fullscreen
+siyuanLightbox=Lightbox
 about=About
 aboutDrawio=About draw.io
 accessDenied=Access Denied

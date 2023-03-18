@@ -3,10 +3,10 @@
 (() => {
     const SIYUAN_PLUGIN_ID = 'siyuan'; // 思源插件 ID
 
-    function updateURL(url, id, asset = null, lightbox = null) {
+    function updateURL(url, id, asset = null, params = {}) {
         url.searchParams.set('id', id); // 块 ID
         url.searchParams.set('client', 1); // 跳过新建时选择储存位置
-        
+
         /* 加载思源插件 */
         const p = url.searchParams.get('p');
         if (p) {
@@ -23,8 +23,8 @@
             url.hash = `#U${url.origin}/${asset}`;
         }
 
-        if (lightbox) {
-            url.searchParams.set('lightbox', lightbox);
+        for (const key in params) {
+            url.searchParams.set(key, params[key]);
         }
 
         if (url.searchParams.get('dev') !== '1') {
@@ -65,7 +65,18 @@
             // console.log(data);
             const asset = data.data['custom-data-assets'];
             const lightbox = data.data['custom-lightbox'];
-            updateURL(url, id, asset, lightbox);
+            const dark = data.data['custom-dark'];
+            const ui = data.data['custom-ui'];
+            updateURL(
+                url,
+                id,
+                asset,
+                {
+                    lightbox,
+                    dark,
+                    ui,
+                },
+            );
         });
     }
 })();
