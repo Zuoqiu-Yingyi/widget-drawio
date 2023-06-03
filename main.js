@@ -79,5 +79,9 @@
             );
         });
     }
+    else if (url.searchParams.get('dev') !== '1') {
+        url.searchParams.set('dev', '1');
+        window.location.href = url.href;
+    }
 })();
 /* 👆 SIYUAN 👆 */

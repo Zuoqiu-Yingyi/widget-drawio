@@ -297,60 +297,6 @@
 			
 			mxscript(drawDevUrl + 'js/PostConfig.js');
 		}
-		else
-		{
-			(function()
-			{
-				var hostName = window.location.hostname;
-				
-				// Supported domains are *.draw.io and the packaged version in Quip
-				var supportedDomain = (hostName.substring(hostName.length - 8, hostName.length) === '.draw.io') ||
-					(hostName.substring(hostName.length - 13, hostName.length) === '.diagrams.net');
-				
-				function loadAppJS()
-				{
-					mxscript('js/app.min.js', function()
-					{
-						mxScriptsLoaded = true;
-						checkAllLoaded();
-						
-						// Electron
-						if (mxIsElectron)
-						{
-							mxscript('js/diagramly/DesktopLibrary.js', function()
-							{
-								mxscript('js/diagramly/ElectronApp.js', function()
-								{
-									mxscript('js/extensions.min.js', function()
-									{
-										mxscript('js/stencils.min.js', function()
-										{
-											mxscript('js/shapes-14-6-5.min.js', function()
-											{
-												mxscript('js/PostConfig.js');
-											});
-										});
-									});
-								});
-							});
-						}
-						else if (!supportedDomain)
-						{
-							mxscript('js/PostConfig.js');
-						}
-					});
-				};
-				
-				if (!supportedDomain || mxIsElectron)
-				{
-					mxscript('js/PreConfig.js', loadAppJS);
-				}
-				else
-				{
-					loadAppJS();
-				}
-			})();
-		}
 
 		// Adds basic error handling
 		window.onerror = function()

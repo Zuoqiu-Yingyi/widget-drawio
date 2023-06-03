@@ -1,5 +1,7 @@
 # 更改日志 | CHANGE LOG
 
+- 移除仅在非开发模式下加载的文件 | Remove files that are only loaded in non-development mode.
+
 ## v0.2.0/2023-03-27
 
 - [v0.1.5 <=> v0.2.0](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.1.5...v0.2.0)
