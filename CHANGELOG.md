@@ -2,6 +2,7 @@
 
 - 移除仅在非开发模式下加载的文件 | Remove files that are only loaded in non-development mode.
 - 中英文文档分离 | Separate Chinese and English documents.
+- 调整清单附件内容 | Adjust the content of the manifest file.
 
 ## v0.2.0/2023-03-27
 

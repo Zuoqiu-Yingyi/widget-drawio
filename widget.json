@@ -2,5 +2,27 @@
     "name": "drawio",
     "author": "Zuoqiu-Yingyi",
     "url": "https://github.com/Zuoqiu-Yingyi/widget-drawio",
-    "version": "0.2.0"
+    "version": "0.2.0",
+    "displayName": {
+        "default": "draw.io"
+    },
+    "description": {
+        "default": "A <a href='https://www.drawio.com'>draw.io</a> client that can save the diagram in SiYuan to edit and preview it",
+        "zh_CN": "可以将图保存在思源中并编辑预览的 <a href='https://www.drawio.com'>draw.io</a> 客户端",
+        "zh_CHT": "可以將圖保存在思源中並編輯預覽的 <a href='https://www.drawio.com'>draw.io</a> 客戶端"
+    },
+    "readme": {
+        "default": "README.md",
+        "zh_CN": "README_zh_CN.md",
+        "zh_CHT": "README_zh_CN.md"
+    },
+    "funding": {
+        "openCollective": "",
+        "patreon": "",
+        "github": "",
+        "custom": [
+            "https://afdian.net/a/zuoqiu",
+            "https://ko-fi.com/zuoqiu"
+        ]
+    }
 }
