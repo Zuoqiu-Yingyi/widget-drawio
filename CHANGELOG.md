@@ -1,10 +1,6 @@
 # 更改日志 | CHANGE LOG
 
-- 移除仅在非开发模式下加载的文件 | Remove files that are only loaded in non-development mode.
-- 中英文文档分离 | Separate Chinese and English documents.
-- 调整清单附件内容 | Adjust the content of the manifest file.
-
-## v0.2.0/2023-03-27
+## v0.2.0/2023-06-05
 
 - [v0.1.5 <=> v0.2.0](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.1.5...v0.2.0)
 - [#16](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/16) 修复使用思源 API `setBlockAttrs` 时设置块属性值为 `null` 时无法设置任何属性的问题 | Fixed an issue where no attributes could be set when setting block attribute values to `null` when using the Siyuan API `setBlockAttrs`.
@@ -16,6 +12,9 @@
 - 修复 `siyuan` 插件加载问题 | Fixed the issue of `siyuan` plugin loading.
 - 添加思源菜单 | Add Siyuan menu.
 - 灯箱模式添加编辑按钮 | Add edit button in lightbox mode.
+- 移除仅在非开发模式下加载的文件 | Remove files that are only loaded in non-development mode.
+- 中英文文档分离 | Separate Chinese and English documents.
+- 调整清单附件内容 | Adjust the content of the manifest file.
 
 ## v0.1.5/2022-05-17
 
