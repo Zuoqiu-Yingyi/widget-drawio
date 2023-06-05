@@ -1,6 +1,7 @@
 # 更改日志 | CHANGE LOG
 
 - 移除仅在非开发模式下加载的文件 | Remove files that are only loaded in non-development mode.
+- 中英文文档分离 | Separate Chinese and English documents.
 
 ## v0.2.0/2023-03-27
 
