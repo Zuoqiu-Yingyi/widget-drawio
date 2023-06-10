@@ -32,7 +32,7 @@
 
 - 加载与保存
   - 加载时自动加载块属性 `custom-data-assets` 与 `data-assets` 中设置的资源文件
-  - 使用 `文件` -> `保存` <kbd>Ctrl + S</kbd> 或 `另存为` <kbd>Ctrl + Shift + S</kbd> -> `思源笔记` 保存资源文件至资源文件夹 `data/assets``SiYuan Note`
+  - 使用 `文件` -> `保存` <kbd>Ctrl + S</kbd> 或 `另存为` <kbd>Ctrl + Shift + S</kbd> -> `思源笔记` 保存资源文件至资源文件夹 `data/assets`
     - 目前支持保存的格式有 `*.drawio`, `*.png`, `*.svg`, `*.html`, `*.xml`, 均可再次加载并编辑
       - `*.svg` 文件可以使用 `插入图片链接` 或 `插入 IFrame 链接` 的形式插入到笔记本的其他位置, 源文件更改时可以同步更新
       - `*.png` 文件可以使用 `插入图片链接` 或 `插入 IFrame 链接` 的形式插入到笔记本的其他位置, 源文件更改时可以同步更新
