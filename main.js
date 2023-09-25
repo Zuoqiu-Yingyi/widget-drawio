@@ -3,6 +3,11 @@
 (() => {
     const SIYUAN_PLUGIN_ID = 'siyuan'; // 思源插件 ID
 
+    /* 移除字符串后缀 */
+    function trimSuffix(str, suffix) {
+        return str.endsWith(suffix) ? str.slice(0, -suffix.length) : str;
+    }
+
     function updateURL(url, id, asset = null, params = {}) {
         url.searchParams.set('id', id); // 块 ID
         url.searchParams.set('client', 1); // 跳过新建时选择储存位置
@@ -20,11 +25,17 @@
 
         // 加载文件
         if (asset) {
-            url.hash = `#U${url.origin}/${asset}`;
+            const asset_url = new URL(url.origin);
+            const base_pathname = trimSuffix(url.pathname, "/widgets/drawio/");
+            asset_url.pathname = `${base_pathname}/${asset}`;
+            asset_url.searchParams.set("t", Date.now());
+            url.hash = `#U${asset_url.href}`;
         }
 
-        for (const key in params) {
-            url.searchParams.set(key, params[key]);
+        for (const [key, value] in Object.entries(params)) {
+            if (value) {
+                url.searchParams.set(key, params[key]);
+            }
         }
 
         if (url.searchParams.get('dev') !== '1') {
