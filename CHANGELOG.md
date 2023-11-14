@@ -1,6 +1,7 @@
 # 更改日志 | CHANGE LOG
 
 - [#29](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/29) 优化资源文件加载方案 | Optimize resource file loading scheme.
+- [#23](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/23) 优化资源文件加载方案 | Optimize resource file loading scheme.
 
 ## v0.2.0/2023-06-05
 

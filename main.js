@@ -25,11 +25,15 @@
 
         // 加载文件
         if (asset) {
-            const asset_url = new URL(url.origin);
+            const file_name = asset.split('/').pop();
+            const url_asset = new URL(url.origin);
             const base_pathname = trimSuffix(url.pathname, "/widgets/drawio/");
-            asset_url.pathname = `${base_pathname}/${asset}`;
-            asset_url.searchParams.set("t", Date.now());
-            url.hash = `#U${asset_url.href}`;
+
+            url_asset.pathname = `${base_pathname}/${asset}`;
+            url_asset.searchParams.set("t", Date.now());
+
+            url.searchParams.set("url", url_asset.href);
+            url.searchParams.set("title", file_name);
         }
 
         for (const [key, value] in Object.entries(params)) {

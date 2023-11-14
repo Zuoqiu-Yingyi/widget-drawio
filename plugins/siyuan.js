@@ -305,14 +305,22 @@ Draw.loadPlugin(function (editorUi) {
                                     return response.json();
                                 }).then((data) => {
                                     if (data.code == 0) {
-                                        const name = asset.substring(asset.lastIndexOf('/') + 1);
                                         // console.log(editorUi);
-                                        editorUi.getCurrentFile().rename(name);
+                                        const file_name = asset.split('/').pop();
                                         const url = new URL(window.location);
-                                        url.hash = `#U${url.origin}/${asset}`
+                                        const url_asset = new URL(window.location.origin);
+
+                                        url_asset.pathname = `/${asset}`;
+                                        url_asset.searchParams.set("t", Date.now());
+
+                                        url.searchParams.set("url", url_asset.href);
+                                        url.searchParams.set("title", file_name);
                                         console.log(url.href);
+
                                         // REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
                                         history.pushState(null, null, url.href)
+
+                                        editorUi.getCurrentFile().rename(file_name); // 更改标题
                                         editorUi.hideDialog();
                                         editorUi.editor.setStatus(mxResources.get('allChangesSaved'));
                                     }
