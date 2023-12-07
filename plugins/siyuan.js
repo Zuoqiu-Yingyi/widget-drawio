@@ -2,7 +2,9 @@
  * SiYuan Note plugin.
  */
 /* 👇 SIYUAN 👇 */
-Draw.loadPlugin(function (editorUi) {
+Draw.loadPlugin(function (
+    app, // window.sb.editorUi instanceof window.App
+) {
     const url = new URL(window.location);
     const id = url.searchParams.get('id');
     const regs = {
@@ -12,30 +14,30 @@ Draw.loadPlugin(function (editorUi) {
     /* Minimal 主题默认隐藏形状面板与格式面板 */
     window.addEventListener('load', async () => {
         if (window.uiTheme === 'min') {
-            editorUi.toggleFormatPanel(false);
-            editorUi.sidebarWindow.window.setVisible(false);
+            app.toggleFormatPanel(false);
+            app.sidebarWindow.window.setVisible(false);
         }
     });
 
     /* 工具栏菜单项 */
-    (() => {
+    {
         /* 添加菜单 */
-        editorUi.menubar?.addMenu(
+        app.menubar?.addMenu(
             mxResources.get('siyuan'),
             function (menu, parent) {
-                editorUi.menus.addMenuItem(menu, 'save');
+                app.menus.addMenuItem(menu, 'save');
                 menu.addSeparator(parent);
-                editorUi.menus.addMenuItem(menu, 'siyuanLightbox');
+                app.menus.addMenuItem(menu, 'siyuanLightbox');
                 menu.addSeparator(parent);
-                editorUi.menus.addMenuItem(menu, 'siyuanOpenByNewWindow');
-                editorUi.menus.addMenuItem(menu, 'siyuanFullscreen');
+                app.menus.addMenuItem(menu, 'siyuanOpenByNewWindow');
+                app.menus.addMenuItem(menu, 'siyuanFullscreen');
             },
             document.querySelector('.geStatus'),
         );
 
         /* 注册菜单项 */
         /* 使用新窗口打开 */
-        editorUi.actions.addAction('siyuanOpenByNewWindow', () => {
+        app.actions.addAction('siyuanOpenByNewWindow', () => {
             try {
                 const {
                     BrowserWindow,
@@ -128,7 +130,7 @@ Draw.loadPlugin(function (editorUi) {
         });
 
         /* 全屏切換 */
-        editorUi.actions.addAction('siyuanFullscreen', () => {
+        app.actions.addAction('siyuanFullscreen', () => {
             if (document.fullscreenElement) {
                 document.exitFullscreen()
             } else {
@@ -137,7 +139,7 @@ Draw.loadPlugin(function (editorUi) {
         });
         
         /* 灯箱模式 */
-        editorUi.actions.addAction('siyuanLightbox', () => {
+        app.actions.addAction('siyuanLightbox', () => {
             window.siyuan.setBlockAttrs({
                 'custom-lightbox': '1',
             }).then(response => {
@@ -155,8 +157,7 @@ Draw.loadPlugin(function (editorUi) {
         //     editorUi.menus.addMenuItems(menu, ['siyuanOpenByNewWindow', 'siyuanFullscreen', '-'], parent);
         //     old_funct.apply(this, arguments);
         // };
-    })();
-
+    }
 
     /* 挂载的对象 */
     window.siyuan = {
@@ -196,8 +197,8 @@ Draw.loadPlugin(function (editorUi) {
             }),
             method: 'POST',
         }),
-        /* 保存方法 */
-        save: function (
+        /* 添加保存按钮 */
+        addSaveButton: function (
             nameInput,
             buttons,
             count,
@@ -320,14 +321,14 @@ Draw.loadPlugin(function (editorUi) {
                                         // REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
                                         history.pushState(null, null, url.href)
 
-                                        editorUi.getCurrentFile().rename(file_name); // 更改标题
-                                        editorUi.hideDialog();
-                                        editorUi.editor.setStatus(mxResources.get('allChangesSaved'));
+                                        app.getCurrentFile().rename(file_name); // 更改标题
+                                        app.hideDialog();
+                                        app.editor.setStatus(mxResources.get('allChangesSaved'));
                                     }
                                 })
                             } else {
-                                editorUi.hideDialog();
-                                editorUi.editor.setStatus(mxResources.get('allChangesSaved'));
+                                app.hideDialog();
+                                app.editor.setStatus(mxResources.get('allChangesSaved'));
                             }
                         });
                     };
@@ -353,7 +354,7 @@ Draw.loadPlugin(function (editorUi) {
                                     /**
                                      * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.getFileData
                                      */
-                                    file_content = editorUi.getFileData(
+                                    file_content = app.getFileData(
                                         true,
                                         undefined,
                                         undefined,
@@ -378,7 +379,7 @@ Draw.loadPlugin(function (editorUi) {
                                  *     👉~/js/diagramly/EditorUi.js -> EditorUi.prototype.exportToCanvas
                                  *       👉~/js/diagramly/EditorUi.js -> EditorUi.prototype.saveCanvas
                                  */
-                                editorUi.showExportDialog(
+                                app.showExportDialog(
                                     mxResources.get('formatPng'),
                                     false,
                                     mxResources.get('save'),
@@ -404,9 +405,9 @@ Draw.loadPlugin(function (editorUi) {
 
                                             if (!isNaN(val) && val > 0) {
                                                 /* 劫持保存文件方法 */
-                                                let temp_saveData = editorUi.saveData;
+                                                let temp_saveData = app.saveData;
 
-                                                editorUi.saveData = (
+                                                app.saveData = (
                                                     filename,
                                                     ext,
                                                     filedata,
@@ -421,10 +422,10 @@ Draw.loadPlugin(function (editorUi) {
                                                         base64Encoded,
                                                     );
 
-                                                    editorUi.saveData = temp_saveData;
+                                                    app.saveData = temp_saveData;
                                                 };
 
-                                                editorUi.exportImage(
+                                                app.exportImage(
                                                     val / 100,
                                                     transparentBackground,
                                                     ignoreSelection,
@@ -453,7 +454,7 @@ Draw.loadPlugin(function (editorUi) {
                                  * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.showExportDialog
                                  * REF ~/js/diagramly/Menus.js -> editorUi.showExportDialog(mxResources.get('formatSvg')
                                  */
-                                editorUi.showExportDialog(
+                                app.showExportDialog(
                                     mxResources.get('formatSvg'),
                                     true,
                                     mxResources.get('save'),
@@ -481,21 +482,21 @@ Draw.loadPlugin(function (editorUi) {
 
                                             if (!isNaN(val) && val > 0) {
                                                 /* 劫持保存文件方法 */
-                                                let temp_isLocalFileSave = editorUi.isLocalFileSave;
-                                                let temp_getBaseFilename = editorUi.getBaseFilename;
-                                                let temp_saveData = editorUi.saveData;
+                                                let temp_isLocalFileSave = app.isLocalFileSave;
+                                                let temp_getBaseFilename = app.getBaseFilename;
+                                                let temp_saveData = app.saveData;
 
-                                                editorUi.isLocalFileSave = (..._args) => true;
-                                                editorUi.getBaseFilename = (..._args) => file_name_main;
-                                                editorUi.saveData = (...args) => {
+                                                app.isLocalFileSave = (..._args) => true;
+                                                app.getBaseFilename = (..._args) => file_name_main;
+                                                app.saveData = (...args) => {
                                                     saveDataToSiyuan(...args);
 
-                                                    editorUi.isLocalFileSave = temp_isLocalFileSave;
-                                                    editorUi.getBaseFilename = temp_getBaseFilename;
-                                                    editorUi.saveData = temp_saveData;
+                                                    app.isLocalFileSave = temp_isLocalFileSave;
+                                                    app.getBaseFilename = temp_getBaseFilename;
+                                                    app.saveData = temp_saveData;
                                                 };
 
-                                                editorUi.exportSvg(
+                                                app.exportSvg(
                                                     val / 100,
                                                     transparentBackground,
                                                     ignoreSelection,
@@ -524,7 +525,7 @@ Draw.loadPlugin(function (editorUi) {
                                  * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.showHtmlDialog
                                  * REF ~/js/diagramly/Menus.js -> editorUi.showHtmlDialog(mxResources.get('export')
                                  */
-                                editorUi.showHtmlDialog(
+                                app.showHtmlDialog(
                                     mxResources.get('save'),
                                     'https://www.diagrams.net/doc/faq/embed-html-options',
                                     undefined,
@@ -545,7 +546,7 @@ Draw.loadPlugin(function (editorUi) {
                                          * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.createHtml
                                          * REF ~/js/diagramly/Menus.js -> editorUi.showHtmlDialog(mxResources.get('export')
                                          */
-                                        editorUi.createHtml(
+                                        app.createHtml(
                                             publicUrl,
                                             zoomEnabled,
                                             initialZoom,
@@ -563,7 +564,7 @@ Draw.loadPlugin(function (editorUi) {
                                                     html,
                                                     scriptTag,
                                                 ) {
-                                                    var basename = editorUi.getBaseFilename(allPages);
+                                                    var basename = app.getBaseFilename(allPages);
                                                     var result = '<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=5,IE=9" ><![endif]-->\n'
                                                         + '<!DOCTYPE html>\n<html>\n<head>\n<title>'
                                                         + mxUtils.htmlEntities(basename)
@@ -594,7 +595,7 @@ Draw.loadPlugin(function (editorUi) {
                                      */
                                     let div = document.createElement('div');
                                     div.style.whiteSpace = 'nowrap';
-                                    let noPages = editorUi.pages == null || editorUi.pages.length <= 1;
+                                    let noPages = app.pages == null || app.pages.length <= 1;
 
                                     let hd = document.createElement('h3');
                                     mxUtils.write(
@@ -604,18 +605,18 @@ Draw.loadPlugin(function (editorUi) {
                                     hd.style.cssText = 'width:100%;text-align:center;margin-top:0px;margin-bottom:4px';
                                     div.appendChild(hd);
 
-                                    let selection = editorUi.addCheckbox(
+                                    let selection = app.addCheckbox(
                                         div,
                                         mxResources.get('selectionOnly'),
                                         false,
-                                        editorUi.editor.graph.isSelectionEmpty(),
+                                        app.editor.graph.isSelectionEmpty(),
                                     );
-                                    let compressed = editorUi.addCheckbox(
+                                    let compressed = app.addCheckbox(
                                         div,
                                         mxResources.get('compressed'),
                                         false,
                                     );
-                                    let pages = editorUi.addCheckbox(
+                                    let pages = app.addCheckbox(
                                         div,
                                         mxResources.get('allPages'),
                                         !noPages,
@@ -639,27 +640,27 @@ Draw.loadPlugin(function (editorUi) {
                                         });
 
                                     let dlg = new CustomDialog(
-                                        editorUi,
+                                        app,
                                         div,
                                         mxUtils.bind(
                                             this,
                                             function () {
                                                 /* 劫持保存文件方法 */
-                                                let temp_isLocalFileSave = editorUi.isLocalFileSave;
-                                                let temp_getBaseFilename = editorUi.getBaseFilename;
-                                                let temp_saveData = editorUi.saveData;
+                                                let temp_isLocalFileSave = app.isLocalFileSave;
+                                                let temp_getBaseFilename = app.getBaseFilename;
+                                                let temp_saveData = app.saveData;
 
-                                                editorUi.isLocalFileSave = (..._args) => true;
-                                                editorUi.getBaseFilename = (..._args) => file_name_main;
-                                                editorUi.saveData = (...args) => {
+                                                app.isLocalFileSave = (..._args) => true;
+                                                app.getBaseFilename = (..._args) => file_name_main;
+                                                app.saveData = (...args) => {
                                                     saveDataToSiyuan(...args);
 
-                                                    editorUi.isLocalFileSave = temp_isLocalFileSave;
-                                                    editorUi.getBaseFilename = temp_getBaseFilename;
-                                                    editorUi.saveData = temp_saveData;
+                                                    app.isLocalFileSave = temp_isLocalFileSave;
+                                                    app.getBaseFilename = temp_getBaseFilename;
+                                                    app.saveData = temp_saveData;
                                                 };
 
-                                                editorUi.downloadFile(
+                                                app.downloadFile(
                                                     'xml',
                                                     !compressed.checked,
                                                     null,
@@ -671,7 +672,7 @@ Draw.loadPlugin(function (editorUi) {
                                         mxResources.get('save'),
                                     );
 
-                                    editorUi.showDialog(
+                                    app.showDialog(
                                         dlg.container,
                                         300,
                                         200,

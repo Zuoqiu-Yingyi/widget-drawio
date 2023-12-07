@@ -36,7 +36,7 @@
             url.searchParams.set("title", file_name);
         }
 
-        for (const [key, value] in Object.entries(params)) {
+        for (const [key, value] of Object.entries(params)) {
             if (value) {
                 url.searchParams.set(key, params[key]);
             }

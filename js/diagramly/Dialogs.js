@@ -4773,8 +4773,8 @@ var CreateDialog = function(editorUi, title, createFn, cancelFn, dlgTitle, btnLa
 	{
 		/* 👇 SIYUAN 👇 */
 		// 添加思源保存按钮
-		if (typeof window.siyuan?.save === 'function') {
-			count = window.siyuan.save(
+		if (typeof window.siyuan?.addSaveButton === 'function') {
+			count = window.siyuan.addSaveButton(
 				nameInput,
 				buttons,
 				count,
