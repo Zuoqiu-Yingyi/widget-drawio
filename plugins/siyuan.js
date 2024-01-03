@@ -21,21 +21,12 @@ Draw.loadPlugin(function (
 
     /* 工具栏菜单项 */
     {
-        /* 添加菜单 */
-        app.menubar?.addMenu(
-            mxResources.get('siyuan'),
-            function (menu, parent) {
-                app.menus.addMenuItem(menu, 'save');
-                menu.addSeparator(parent);
-                app.menus.addMenuItem(menu, 'siyuanLightbox');
-                menu.addSeparator(parent);
-                app.menus.addMenuItem(menu, 'siyuanOpenByNewWindow');
-                app.menus.addMenuItem(menu, 'siyuanFullscreen');
-            },
-            document.querySelector('.geStatus'),
-        );
-
         /* 注册菜单项 */
+        /* 导入本地文件 */
+        app.actions.addAction('siyuanImport', () => {
+            app.importLocalFile(true);
+        });
+
         /* 使用新窗口打开 */
         app.actions.addAction('siyuanOpenByNewWindow', () => {
             try {
@@ -137,7 +128,7 @@ Draw.loadPlugin(function (
                 document.documentElement.requestFullscreen()
             }
         });
-        
+
         /* 灯箱模式 */
         app.actions.addAction('siyuanLightbox', () => {
             window.siyuan.setBlockAttrs({
@@ -149,6 +140,22 @@ Draw.loadPlugin(function (
                 }
             })
         });
+
+        /* 添加菜单 */
+        app.menubar?.addMenu(
+            mxResources.get('siyuan'),
+            function (menu, parent) {
+                app.menus.addMenuItem(menu, 'save');
+                menu.addSeparator(parent);
+                app.menus.addMenuItem(menu, 'siyuanImport');
+                menu.addSeparator(parent);
+                app.menus.addMenuItem(menu, 'siyuanLightbox');
+                menu.addSeparator(parent);
+                app.menus.addMenuItem(menu, 'siyuanOpenByNewWindow');
+                app.menus.addMenuItem(menu, 'siyuanFullscreen');
+            },
+            document.querySelector('.geStatus'),
+        );
 
         // /* 将菜单组添加到菜单 */
         // const menu_extras = editorUi.menus.get('extras');
