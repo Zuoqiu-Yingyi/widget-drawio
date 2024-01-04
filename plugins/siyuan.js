@@ -5,6 +5,9 @@
 Draw.loadPlugin(function (
     app, // window.sb.editorUi instanceof window.App
 ) {
+    // console.debug(app);
+    globalThis.app = app;
+
     const url = new URL(window.location);
     const id = url.searchParams.get('id');
     const regs = {
@@ -328,12 +331,16 @@ Draw.loadPlugin(function (
                                         // REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
                                         history.pushState(null, null, url.href)
 
-                                        app.getCurrentFile().rename(file_name); // 更改标题
+                                        const current_file = app.getCurrentFile();
+                                        current_file.rename(file_name) // 更改标题
+                                        current_file.modified = false;
                                         app.hideDialog();
                                         app.editor.setStatus(mxResources.get('allChangesSaved'));
                                     }
                                 })
                             } else {
+                                const current_file = app.getCurrentFile();
+                                current_file.modified = false;
                                 app.hideDialog();
                                 app.editor.setStatus(mxResources.get('allChangesSaved'));
                             }
