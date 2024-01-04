@@ -17,7 +17,7 @@
     <meta name="mobile-web-app-capable" content="yes">
 	<meta name="theme-color" content="#d89000">
 	<!-- 👇 SIYUAN 👇 -->
-	<script type="module" async src="./main.js" charset="utf-8"></script>
+	<script type="text/javascript" src="./main.js" charset="utf-8"></script>
 	<!-- 👆 SIYUAN 👆 -->
 	<script type="text/javascript">
 		/**
@@ -74,11 +74,11 @@
 				// ignore
 			}
 		}
-		/* 👇 SIYUAN 👇 */
+		
 		// Global variable for desktop
-		var mxIsElectron = window && window.process && window.process.type;
-		var mxIsSiyuan = !!window.top.siyuan || /^\d{14}\-[0-9a-z]{7}$/.test(urlParams['id']);
-		/* 👆 SIYUAN 👆 */
+		var mxIsElectron = navigator.userAgent != null && navigator.userAgent.toLowerCase().indexOf(' electron/') > -1 && 
+							navigator.userAgent.indexOf(' draw.io/') > -1;
+
 		// Redirects page if required
 		if (urlParams['dev'] != '1')
 		{
@@ -256,14 +256,21 @@
 		// Changes paths for local development environment
 		if (urlParams['dev'] == '1')
 		{
-			/* 👇 SIYUAN 👇 */
 			// Used to request grapheditor/mxgraph sources in dev mode
-			var mxDevUrl = '.';
+			var mxDevUrl = document.location.protocol + '//test.draw.io/drawio/src/main';
 			
 			// Used to request draw.io sources in dev mode
-			var drawDevUrl = './';
-			var geBasePath = drawDevUrl + 'js/grapheditor';
+			var drawDevUrl = document.location.protocol + '//test.draw.io/drawio/src/main/webapp/';
+			var geBasePath = drawDevUrl + '/js/grapheditor';
 			var mxBasePath = mxDevUrl + '/mxgraph';
+
+			/* 👇 SIYUAN 👇 */
+			if (window.mxIsSiyuan) {
+				mxDevUrl = '.';
+				drawDevUrl = './';
+				geBasePath = drawDevUrl + 'js/grapheditor';
+				mxBasePath = mxDevUrl + '/mxgraph';
+			}
 			/* 👆 SIYUAN 👆 */
 			
 			if (document.location.protocol == 'file:')

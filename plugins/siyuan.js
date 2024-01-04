@@ -6,13 +6,7 @@ Draw.loadPlugin(function (
     app, // window.sb.editorUi instanceof window.App
 ) {
     // console.debug(app);
-    globalThis.app = app;
-
-    const url = new URL(window.location);
-    const id = url.searchParams.get('id');
-    const regs = {
-        id: /^\d{14}\-[0-9a-z]{7}$/,
-    };
+    window.app = app;
 
     /* Minimal 主题默认隐藏形状面板与格式面板 */
     window.addEventListener('load', async () => {
@@ -110,12 +104,12 @@ Draw.loadPlugin(function (
                 });
 
                 win.setMenu(menu);
-                win.loadURL(url.href);
+                win.loadURL(window.siyuan.url.href);
             } catch (err) {
                 console.warn(err);
                 window.open(
-                    url.href,
-                    url.href,
+                    window.siyuan.url.href,
+                    undefined,
                     `
                         popup = true,
                     `,
@@ -169,36 +163,8 @@ Draw.loadPlugin(function (
         // };
     }
 
-    /* 挂载的对象 */
-    window.siyuan = {
-        /* 思源配置 */
-        config: window.top.siyuan?.config,
-        /* 挂件块 ID */
-        id,
-        /* URL */
-        url,
-        /* 正则表达式 */
-        regs,
-        /* 模式 */
-        mode: (() => {
-            const node = window.frameElement?.parentElement?.parentElement;
-            if (node) {
-                switch (node.dataset.type) {
-                    case 'NodeIFrame':
-                        return 'iframe';
-                    case 'NodeWidget':
-                        return 'widget';
-                    default:
-                        return node.dataset.type;
-                }
-            }
-            else if (regs.id.test(url.searchParams.get('id'))) {
-                return 'window';
-            }
-            else {
-                return null;
-            }
-        })(),
+    /* 挂载额外的属性与方法 */
+    Object.assign(window.siyuan, {
         /* 设置块属性 */
         setBlockAttrs: async (attrs, id = window.siyuan.id) => fetch('/api/attr/setBlockAttrs', {
             body: JSON.stringify({
@@ -712,6 +678,6 @@ Draw.loadPlugin(function (
 
             return count;
         },
-    }
+    });
 });
 /* 👆 SIYUAN 👆 */

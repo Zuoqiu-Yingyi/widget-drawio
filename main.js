@@ -3,6 +3,16 @@
 (() => {
     const SIYUAN_PLUGIN_ID = 'siyuan'; // 思源插件 ID
 
+    const regs = {
+        id: /^\d{14}\-[0-9a-z]{7}$/,
+    };
+    const url = new URL(window.location);
+    const node = window.frameElement?.parentElement?.parentElement;
+    // console.log(urlParams);
+    // console.log(window.location);
+
+    let id = url.searchParams.get('id');
+
     /* 移除字符串后缀 */
     function trimSuffix(str, suffix) {
         return str.endsWith(suffix) ? str.slice(0, -suffix.length) : str;
@@ -49,15 +59,7 @@
         }
     }
 
-    const url = new URL(window.location);
-    // console.log(urlParams);
-    // console.log(window.location);
-
-    let id = url.searchParams.get('id');
-    const reg = /^\d{14}\-[0-9a-z]{7}$/;
-
-    if (!reg.test(id)) {
-        const node = window.frameElement?.parentElement?.parentElement;
+    if (!regs.id.test(id)) {
         if (node) {
             if (node.dataset.type === 'NodeIFrame') {
                 alert('在 iframe 块中无法保存资源文件至思源笔记！\nUnable to save resource file to SiYuan Note in an iframe block.');
@@ -67,7 +69,7 @@
         }
     }
 
-    if (reg.test(id)) {
+    if (regs.id.test(id)) {
         fetch("/api/attr/getBlockAttrs", {
             body: JSON.stringify({
                 id: id,
@@ -98,5 +100,52 @@
         url.searchParams.set('dev', '1');
         window.location.href = url.href;
     }
+
+    /* 获取同源的思源全局属性 */
+    const siyuan = (() => {
+        var frame = window.self;
+        switch (frame) {
+            case window.top:
+            case window.parent:
+                return null;
+
+            default:
+                while (frame !== window.top) {
+                    if (!!frame.siyuan) break;
+                    frame = frame.parent;
+                }
+                return frame?.siyuan;
+        }
+    })();
+
+    /* 模式 */
+    const mode = (() => {
+        if (node) {
+            switch (node.dataset.type) {
+                case 'NodeIFrame':
+                    return 'iframe';
+                case 'NodeWidget':
+                    return 'widget';
+                default:
+                    return node.dataset.type;
+            }
+        }
+        else if (regs.id.test(url.searchParams.get('id'))) {
+            return 'window';
+        }
+        else {
+            return null;
+        }
+    })();
+
+    window.mxIsSiyuan = !!siyuan;
+    window.siyuan = {
+        id,
+        url,
+        regs,
+        mode,
+        global: siyuan,
+        config: siyuan?.config,
+    };
 })();
 /* 👆 SIYUAN 👆 */

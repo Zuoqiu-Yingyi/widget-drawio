@@ -5,6 +5,7 @@
 - [#31](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/31) 修复自定义 URL 参数解析错误问题 | Fixed an issue where custom URL parameters were parsed incorrectly.
 - 添加导入本地绘图文件功能 | Add import local drawing file function.
 - 修复在新窗口中保存文件后无法正常关闭窗口问题 | Fixed an issue where the window could not be closed normally after saving the file in a new window.
+- 优化全局属性 `window.siyuan` 注入方案 | Optimize the global attribute `window.siyuan` injection scheme.
 
 ## v0.2.0/2023-06-05
 
