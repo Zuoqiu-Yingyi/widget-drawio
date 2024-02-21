@@ -1,4 +1,9 @@
 /**
+ * Installing theme.
+ */
+Editor.themes.push('min');
+
+/**
  * Testing dockable windows.
  */
 EditorUi.windowed = urlParams['windows'] != '0';
@@ -233,8 +238,6 @@ EditorUi.initMinimalTheme = function()
 	mxConstants.CONNECT_HANDLE_FILLCOLOR = '#cee7ff';
 	mxConstants.DEFAULT_VALID_COLOR = fill;
 	mxConstants.GUIDE_COLOR = '#C0C0C0';
-	mxConstants.HIGHLIGHT_STROKEWIDTH = 5;
-	mxConstants.HIGHLIGHT_OPACITY = 35;
 	mxConstants.OUTLINE_COLOR = '#29b6f2';
 	mxConstants.OUTLINE_HANDLE_FILLCOLOR = '#29b6f2';
 	mxConstants.OUTLINE_HANDLE_STROKECOLOR = '#fff';
@@ -1035,6 +1038,11 @@ EditorUi.initMinimalTheme = function()
             if (ui.actions.layersWindow != null)
             {
             	ui.actions.layersWindow.window.fit();
+            }
+
+            if (ui.menus.chatWindow != null)
+            {
+            	ui.menus.chatWindow.window.fit();
             }
 
             if (ui.menus.tagsWindow != null)

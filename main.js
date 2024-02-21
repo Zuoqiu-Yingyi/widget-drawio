@@ -2,11 +2,16 @@
 /* 启用开发模式 */
 (() => {
     const SIYUAN_PLUGIN_ID = 'siyuan'; // 思源插件 ID
+    const url = new URL(window.location);
+
+    if (url.searchParams.get('dev') !== '1') {
+        url.searchParams.set('dev', 1);
+        window.location.href = url.href;
+    }
 
     const regs = {
         id: /^\d{14}\-[0-9a-z]{7}$/,
     };
-    const url = new URL(window.location);
     const node = window.frameElement?.parentElement?.parentElement;
     // console.log(urlParams);
     // console.log(window.location);
@@ -18,9 +23,13 @@
         return str.endsWith(suffix) ? str.slice(0, -suffix.length) : str;
     }
 
-    function updateURL(url, id, asset = null, params = {}) {
+    function init(url, id, asset = null, params = {}) {
         url.searchParams.set('id', id); // 块 ID
         url.searchParams.set('client', 1); // 跳过新建时选择储存位置
+        url.searchParams.set('stealth', 1); // 静默模式
+        // url.searchParams.set('local', 1); // 本地模式
+        // url.searchParams.set('offline', 1); // 离线模式
+        // url.searchParams.set('lockdown', 1); // 禁闭模式
 
         /* 加载思源插件 */
         const p = url.searchParams.get('p');
@@ -52,8 +61,8 @@
             }
         }
 
-        if (url.searchParams.get('dev') !== '1') {
-            url.searchParams.set('dev', 1);
+        if (url.searchParams.get('siyuan-inited') !== '1') {
+            url.searchParams.set('siyuan-inited', 1);
             // console.log(url.href);
             window.location.href = url.href;
         }
@@ -84,7 +93,7 @@
             const lightbox = data.data['custom-lightbox'];
             const dark = data.data['custom-dark'];
             const ui = data.data['custom-ui'];
-            updateURL(
+            init(
                 url,
                 id,
                 asset,
@@ -95,10 +104,6 @@
                 },
             );
         });
-    }
-    else if (url.searchParams.get('dev') !== '1') {
-        url.searchParams.set('dev', '1');
-        window.location.href = url.href;
     }
 
     /* 获取同源的思源全局属性 */

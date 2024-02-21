@@ -40,7 +40,7 @@ GitHubClient.prototype.redirectUri = window.location.protocol + '//' + window.lo
 /**
  * Maximum file size of the GitHub REST API.
  */
-GitHubClient.prototype.maxFileSize = 1000000 /*1MB*/;
+GitHubClient.prototype.maxFileSize = 50000000 /*50MB*/;
 
 /**
  * Name for the auth token header.
@@ -92,7 +92,9 @@ GitHubClient.prototype.updateUser = function(success, error, failOnAuth)
 				}
 				else
 				{
-					error({message: mxResources.get('accessDenied')});
+					error({code: userReq.getStatus(), message:
+						this.getErrorMessage(userReq,
+						mxResources.get('accessDenied'))});
 				}
 			}
 			else if (userReq.getStatus() < 200 || userReq.getStatus() >= 300)
@@ -148,7 +150,7 @@ GitHubClient.prototype.authenticateStep2 = function(state, success, error)
 			
 			if (authRemembered != null)
 			{
-				var req = new mxXmlRequest(this.redirectUri + '?state=' + encodeURIComponent('cId=' + this.clientId + '&domain=' + window.location.hostname + '&token=' + state), null, 'GET'); //To identify which app/domain is used
+				var req = new mxXmlRequest(this.redirectUri + '?state=' + encodeURIComponent('cId=' + this.clientId + '&domain=' + window.location.host + '&token=' + state), null, 'GET'); //To identify which app/domain is used
 				
 				req.send(mxUtils.bind(this, function(req)
 				{
@@ -182,7 +184,7 @@ GitHubClient.prototype.authenticateStep2 = function(state, success, error)
 					var win = window.open(this.baseHostUrl + '/login/oauth/authorize?client_id=' +
 						this.clientId +  
 						'&state=' + encodeURIComponent('cId=' + this.clientId + //To identify which app/domain is used
-							'&domain=' + window.location.hostname + '&token=' + state), 'ghauth');
+							'&domain=' + window.location.host + '&token=' + state), 'ghauth');
 					
 					if (win != null)
 					{
@@ -280,7 +282,7 @@ GitHubClient.prototype.showAuthorizeDialog = function(retryFn, cancelFn)
 	this.ui.showError(mxResources.get('accessDenied'), mxResources.get('authorizationRequired'),
 		mxResources.get('help'), mxUtils.bind(this, function()
 		{
-			this.ui.openLink('https://www.diagrams.net/blog/single-repository-diagrams');
+			this.ui.openLink('https://www.drawio.com/blog/single-repository-diagrams');
 		}), retryFn, mxResources.get('authorize'), mxUtils.bind(this, function()
 		{
 			this.ui.openLink((window.location.hostname == 'test.draw.io') ?
@@ -520,7 +522,34 @@ GitHubClient.prototype.getFile = function(path, success, error, asLibrary, check
 		{
 			try
 			{
-				success(this.createGitHubFile(org, repo, ref, JSON.parse(req.getText()), asLibrary));
+				var obj = JSON.parse(req.getText());
+
+				// Additional request needed to get file contents
+				if (obj.content == '' && obj.git_url != null)
+				{
+					var contentReq = new mxXmlRequest(obj.git_url, null, 'GET');
+
+					this.executeRequest(contentReq, mxUtils.bind(this, function(contentReq)
+					{
+						var contentObject = JSON.parse(contentReq.getText());
+						
+						if (contentObject.content != '')
+						{
+							obj.content = contentObject.content;
+							obj.encoding = contentObject.encoding;
+
+							success(this.createGitHubFile(org, repo, ref, obj, asLibrary));
+						}
+						else
+						{
+							error({message: mxResources.get('errorLoadingFile')});
+						}
+					}), error);
+				}
+				else
+				{
+					success(this.createGitHubFile(org, repo, ref, obj, asLibrary));
+				}
 			}
 			catch (e)
 			{
@@ -664,12 +693,14 @@ GitHubClient.prototype.showCommitDialog = function(filename, isNew, success, can
 	var dlg = new FilenameDialog(this.ui, mxResources.get((isNew) ? 'addedFile' : 'updateFile',
 		[filename]), mxResources.get('ok'), mxUtils.bind(this, function(message)
 	{
-		resume();
-		success(message);
+		resume(function()
+		{
+			success(message);
+		});
 	}), mxResources.get('commitMessage'), null, null, null, null, mxUtils.bind(this, function()
 	{
 		cancel();
-	}), null, 280);
+	}));
 
 	this.ui.showDialog(dlg.container, 400, 80, true, false);
 	dlg.init();
@@ -902,7 +933,7 @@ GitHubClient.prototype.showGitHubDialog = function(showFiles, fn, hideNoFilesErr
 	var dlg = new CustomDialog(this.ui, content, mxUtils.bind(this, function()
 		{
 			fn(org + '/' + repo + '/' + encodeURIComponent(ref) + '/' + path);
-		}), null, null, 'https://www.diagrams.net/blog/single-repository-diagrams', null, null, null, null,
+		}), null, null, 'https://www.drawio.com/blog/single-repository-diagrams', null, null, null, null,
 		[[mxResources.get('authorize'), mxUtils.bind(this, function()
 		{
 			this.ui.openLink((window.location.hostname == 'test.draw.io') ?
@@ -1211,7 +1242,7 @@ GitHubClient.prototype.showGitHubDialog = function(showFiles, fn, hideNoFilesErr
 					}), '4px'));
 				}
 
-				var branches = [];//JSON.parse(req.getText());
+				var branches = JSON.parse(req.getText());
 				
 				if (branches == null || branches.length == 0)
 				{
@@ -1421,7 +1452,7 @@ GitHubClient.prototype.showGitHubDialog = function(showFiles, fn, hideNoFilesErr
 GitHubClient.prototype.logout = function()
 {
 	//NOTE: GitHub doesn't provide a refresh token, so no need to clear the token cookie
-	//this.ui.editor.loadUrl(this.redirectUri + '?doLogout=1&state=' + encodeURIComponent('cId=' + this.clientId + '&domain=' + window.location.hostname));
+	//this.ui.editor.loadUrl(this.redirectUri + '?doLogout=1&state=' + encodeURIComponent('cId=' + this.clientId + '&domain=' + window.location.host));
 	this.clearPersistentToken();
 	this.setUser(null);
 	_token = null;

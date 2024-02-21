@@ -11,7 +11,7 @@ try
 		document.body.appendChild(document.createElement('br'));
 	};
 	
-	write('Clearing Cache...');
+	write('Clearing Cached version ' + EditorUi.VERSION + '...');
 
 	navigator.serviceWorker.getRegistrations().then(function(registrations)
 	{
@@ -29,16 +29,37 @@ try
 			writeln('OK');
 		}
 		
+		var link = document.createElement('a');
+		link.style.marginRight = '6px';
+		link.setAttribute('href', 'javascript:window.location.reload();');
+		link.appendChild(document.createTextNode('Reload'));
+		document.body.appendChild(link);
+
 		if ((/test\.draw\.io$/.test(window.location.hostname)) ||
 			(/stage\.diagrams\.net$/.test(window.location.hostname)) ||
 			(/app\.diagrams\.net$/.test(window.location.hostname)))
 		{
-			var link = document.createElement('a');
+			link = link.cloneNode(false);
 			link.setAttribute('href', './');
 			link.appendChild(document.createTextNode('Start App'));
 			document.body.appendChild(link);
 		}
 	});
+
+	// Clears corresponding domain of current domain
+	var iframe = document.createElement('iframe');
+	iframe.style.display = 'none';
+
+	if (window.location.hostname == 'ac.draw.io')
+	{
+		iframe.src = 'https://clear.diagrams.net';
+	}
+	else
+	{
+		iframe.src = 'https://clear.draw.io';
+	}
+
+	document.body.appendChild(iframe);
 }
 catch (e)
 {

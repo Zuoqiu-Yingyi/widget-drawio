@@ -288,6 +288,89 @@ var com;
 	                    	}
                     };
                     
+                    var emfChunkSize = window.EMF_CHUNK_SIZE || 10;
+                    
+                    function handleEmfEntriesPartition(emfEntries, index, mediaData)
+                    {
+                        var limit = Math.min(index + emfChunkSize, emfEntries.length);
+
+                        function done()
+                        {
+                            processedFiles++;
+                            doneCheck();
+                            index++;
+
+                            if (index == limit)
+                            {
+                                handleEmfEntriesPartition(emfEntries, index, mediaData);
+                            }
+                        }
+
+                        for (var i = index; i < limit; i++)
+                        {
+                            (function (zipEntry)
+                            {
+                                var retries = 0;
+
+                                function convertEmf(emfBlob)
+                                {
+                                    //send to emf conversion service
+                                    var formData = new FormData();
+                                    formData.append('img', emfBlob, zipEntry.name);
+                                    formData.append('inputformat', 'emf');
+                                    formData.append('outputformat', 'png');
+                                    var xhr = new XMLHttpRequest();
+                                    xhr.open('POST', EMF_CONVERT_URL);
+                                    xhr.responseType = 'blob';
+                                    _this.editorUi.addRemoteServiceSecurityCheck(xhr);
+                                    
+                                    xhr.onreadystatechange = mxUtils.bind(this, function()
+                                    {
+                                        if (xhr.readyState == 4)
+                                        {	
+                                            if (xhr.status >= 200 && xhr.status <= 299)
+                                            {
+                                                try
+                                                {
+                                                    var reader = new FileReader();
+                                                    reader.readAsDataURL(xhr.response); 
+                                                    reader.onloadend = function() 
+                                                    {
+                                                        var dataPos = reader.result.indexOf(',') + 1;
+                                                        mediaData[zipEntry.name] = reader.result.substr(dataPos);
+                                                        done();
+                                                    }
+                                                }
+                                                catch (e)
+                                                {
+                                                    console.log(e);
+                                                    done();
+                                                }
+                                            }
+                                            else
+                                            {
+                                                retries++;
+
+                                                if (retries < 3)
+                                                {
+                                                    convertEmf(emfBlob);
+                                                }
+                                                else
+                                                {
+                                                    done();
+                                                }
+                                            }
+                                        }
+                                    });
+                                    
+                                    xhr.send(formData);
+                                };
+
+                                zipEntry.async("blob").then(convertEmf);
+                            })(emfEntries[i]);
+                        }
+                    };
+
                     JSZip.loadAsync(file)                                   
                     .then(function(zip) 
                     {
@@ -302,6 +385,7 @@ var com;
                     	{
 	                        var dateAfter = new Date();
 	                       	//console.log(" (loaded in " + (dateAfter - dateBefore) + "ms)");
+                            var emfEntries = [];
 	                       	
 	                        zip.forEach(function (relativePath, zipEntry) 
 	                        {  
@@ -360,64 +444,14 @@ var com;
 	                            	filesCount++;
 	                            	if ((function (str, searchString) { var pos = str.length - searchString.length; var lastIndex = str.indexOf(searchString, pos); return lastIndex !== -1 && lastIndex === pos; })(name, ".emf")) 
 	                            	{
-                            			var emfDone = function()
-                            			{
-                            				processedFiles++;
-                            				
-		        	                    	doneCheck();
-                            			}
-                            			
 	                            		if (JSZip.support.blob && window.EMF_CONVERT_URL) 
 	                            		{
-	                            			zipEntry.async("blob").then(function (emfBlob)
-			           	                  	{
-	                            				//send to emf conversion service
-	                        					var formData = new FormData();
-	                        					formData.append('img', emfBlob, name);
-	                        					formData.append('inputformat', 'emf');
-	                        					formData.append('outputformat', 'png');
-	                        					
-	                        					var xhr = new XMLHttpRequest();
-	                        					xhr.open('POST', EMF_CONVERT_URL);
-	                        					xhr.responseType = 'blob';
-	                        					_this.editorUi.addRemoteServiceSecurityCheck(xhr);
-	                        					
-	                        					xhr.onreadystatechange = mxUtils.bind(this, function()
-	                        					{
-	                        						if (xhr.readyState == 4)
-	                        						{	
-	                        							if (xhr.status >= 200 && xhr.status <= 299)
-	                        							{
-	                        								try
-	                        								{
-	                        									var reader = new FileReader();
-	                        									reader.readAsDataURL(xhr.response); 
-	                        									reader.onloadend = function() 
-	                        									{
-	                        										var dataPos = reader.result.indexOf(',') + 1;
-	                        									    mediaData[filename] = reader.result.substr(dataPos);
-		                        									emfDone();
-	                        									}
-	                        								}
-	                        								catch (e)
-	                        								{
-	                        									console.log(e);
-	                        									emfDone();
-	                        								}
-	                        							}
-	                        							else
-	                        							{
-	                        								emfDone();
-	                        							}
-	                        						}
-	                        					});
-	                        					
-	                        					xhr.send(formData);
-			           	                  	});
+                                            emfEntries.push(zipEntry);
 	                            		}
 	                            		else
                             			{
-	                            			emfDone();
+	                            			processedFiles++;
+			        	                    doneCheck();
                             			}
 	                            	}
 	                            	else if ((function (str, searchString) { var pos = str.length - searchString.length; var lastIndex = str.indexOf(searchString, pos); return lastIndex !== -1 && lastIndex === pos; })(name, ".bmp")) {
@@ -479,6 +513,8 @@ var com;
 	                            	}
 	                           	}
 	                        });
+
+                            handleEmfEntriesPartition(emfEntries, 0, mediaData);
                     	}
                     }, function (e) {
                     		//console.log("Error!" + e.message);
@@ -663,6 +699,8 @@ var com;
                 	var layers = page.getLayers();
                     var shapes = page.getShapes();
                     var hiddenTags = [];
+
+                    //console.log('layers', layers);
 					
                     for (var k = 0; k < layers.length; k++)
                     {
@@ -1238,6 +1276,33 @@ var com;
 					catch(e){} //Ignore
 				};
 				
+                function addEdgeSublabel(graph, edge, edgeShape, rotation, lblOffset)
+                {
+                    var label = edgeShape.createLabelSubShape(graph, edge);
+
+                    if (label != null)
+                    {
+                        if (rotation !== 0) 
+                        {
+                            var lblRot = label.getStyle().match(/;rotation=(\d+\.*\d+)/);
+                            
+                            if (lblRot != null)
+                            {
+                                rotation += parseFloat(lblRot[1]);
+                            }
+
+                            label.setStyle(label.getStyle().replace(/;rotation=(\d+\.*\d+)/, '') + ";rotation=" + (rotation > 60 && rotation < 240 ? (rotation + 180) % 360 : rotation));
+                        }
+
+                        var geo = label.getGeometry();
+                        geo.x = (0);
+                        geo.y = (0);
+                        geo.relative = (true);
+                        lblOffset = lblOffset || new mxPoint(0, 0);
+                        geo.offset = (new mxPoint(lblOffset.x - geo.width / 2, lblOffset.y - geo.height / 2));
+                    }
+                };
+
                 /**
                  * Adds a connected edge to the graph.
                  * These edged are the referenced in one Connect element at least.
@@ -1339,46 +1404,49 @@ var com;
                     var styleMap = edgeShape.getStyleFromEdgeShape(parentHeight);
                     var edge;
                     var rotation = edgeShape.getRotation();
-                    if (rotation !== 0) {
-                        edge = graph.insertEdge(parent, null, null, source, target, com.mxgraph.io.vsdx.mxVsdxUtils.getStyleString(styleMap, "="));
-                        var label = edgeShape.createLabelSubShape(graph, edge);
-                        if (label != null) {
-                            label.setStyle(label.getStyle() + ";rotation=" + (rotation > 60 && rotation < 240 ? (rotation + 180) % 360 : rotation));
-                            var geo = label.getGeometry();
-                            geo.x = (0);
-                            geo.y = (0);
-                            geo.relative = (true);
-                            geo.offset = (new mxPoint(-geo.width / 2, -geo.height / 2));
-                        }
+                    var textLabel = "";
+                    var hasSubLabel = edgeShape.isDisplacedLabel() || edgeShape.isRotatedLabel() || rotation !== 0;
+                    var lblOffset = edgeShape.getLblEdgeOffset(graph.getView(), points);
+
+                    if (!hasSubLabel) 
+                    {
+                        textLabel = edgeShape.getTextLabel(true);
                     }
-                    else {
-                        edge = graph.insertEdge(parent, null, edgeShape.getTextLabel(), source, target, com.mxgraph.io.vsdx.mxVsdxUtils.getStyleString(styleMap, "="));
-                        var lblOffset = edgeShape.getLblEdgeOffset(graph.getView(), points);
-                        edge.getGeometry().offset = (lblOffset);
-                        
-                        //add entry/exit points when edge, src, and trg are not rotated
-                        if (fromConstraint != null)
-            			{
-            				graph.setConnectionConstraint(edge, source, true,
-            						new mxConnectionConstraint(fromConstraint, false));
-            			}
-                        
-                        if (removeFirstPt)
-                    	{
-	                        points.shift();
-                    	}
-                        
-            			if (toConstraint != null)
-            			{
-            				graph.setConnectionConstraint(edge, target, false,
-            						new mxConnectionConstraint(toConstraint, false));
-            			}
-            			
-            			if (removeLastPt)
-        				{
-	        				points.pop();
-                        }
+
+                    edge = graph.insertEdge(parent, null, textLabel, source, target, com.mxgraph.io.vsdx.mxVsdxUtils.getStyleString(styleMap, "="));
+                    
+                    if (hasSubLabel) 
+                    {
+                        addEdgeSublabel(graph, edge, edgeShape, rotation, lblOffset);
                     }
+                    else
+                    {
+                        edge.getGeometry().offset = lblOffset;
+                    }
+
+                    //add entry/exit points when edge, src, and trg are not rotated
+                    if (fromConstraint != null)
+                    {
+                        graph.setConnectionConstraint(edge, source, true,
+                                new mxConnectionConstraint(fromConstraint, false));
+                    }
+                    
+                    if (removeFirstPt)
+                    {
+                        points.shift();
+                    }
+                    
+                    if (toConstraint != null)
+                    {
+                        graph.setConnectionConstraint(edge, target, false,
+                                new mxConnectionConstraint(toConstraint, false));
+                    }
+                    
+                    if (removeLastPt)
+                    {
+                        points.pop();
+                    }
+                    
                     var edgeGeometry = graph.getModel().getGeometry(edge);
                     
                     //when source.parent != target.parent the front end will change the edge parent to parent 1 but waypoints are not corrected
@@ -1456,35 +1524,32 @@ var com;
                     var edge;
                     var points = edgeShape.getRoutingPoints(parentHeight, beginXY, edgeShape.getRotation());
                     var rotation = edgeShape.getRotation();
-                    if (rotation !== 0) {
-                        if (edgeShape.getShapeIndex() === 0) {
-                            edge = graph.insertEdge(parent, null, null, null, null, com.mxgraph.io.vsdx.mxVsdxUtils.getStyleString(styleMap, "="));
-                        }
-                        else {
-                            edge = graph.createEdge(parent, null, null, null, null, com.mxgraph.io.vsdx.mxVsdxUtils.getStyleString(styleMap, "="));
-                            edge = graph.addEdge(edge, parent, null, null, edgeShape.getShapeIndex() + this.shapeIndexShift++);
-                        }
-                        var label = edgeShape.createLabelSubShape(graph, edge);
-                        if (label != null) {
-                            label.setStyle(label.getStyle() + ";rotation=" + (rotation > 60 && rotation < 240 ? (rotation + 180) % 360 : rotation));
-                            var geo = label.getGeometry();
-                            geo.x = (0);
-                            geo.y = (0);
-                            geo.relative = (true);
-                            geo.offset = (new mxPoint(-geo.width / 2, -geo.height / 2));
-                        }
+                    var textLabel = "";
+                    var hasSubLabel = edgeShape.isDisplacedLabel() || edgeShape.isRotatedLabel() || rotation !== 0;
+                    var lblOffset = edgeShape.getLblEdgeOffset(graph.getView(), points);
+                    
+                    if (!hasSubLabel) 
+                    {
+                        textLabel = edgeShape.getTextLabel(true);
+                    }
+
+                    if (edgeShape.getShapeIndex() === 0) {
+                        edge = graph.insertEdge(parent, null, textLabel, null, null, com.mxgraph.io.vsdx.mxVsdxUtils.getStyleString(styleMap, "="));
                     }
                     else {
-                        if (edgeShape.getShapeIndex() === 0) {
-                            edge = graph.insertEdge(parent, null, edgeShape.getTextLabel(), null, null, com.mxgraph.io.vsdx.mxVsdxUtils.getStyleString(styleMap, "="));
-                        }
-                        else {
-                            edge = graph.createEdge(parent, null, edgeShape.getTextLabel(), null, null, com.mxgraph.io.vsdx.mxVsdxUtils.getStyleString(styleMap, "="));
-                            edge = graph.addEdge(edge, parent, null, null, edgeShape.getShapeIndex() + this.shapeIndexShift++);
-                        }
-                        var lblOffset = edgeShape.getLblEdgeOffset(graph.getView(), points);
-                        edge.getGeometry().offset = (lblOffset);
+                        edge = graph.createEdge(parent, null, textLabel, null, null, com.mxgraph.io.vsdx.mxVsdxUtils.getStyleString(styleMap, "="));
+                        edge = graph.addEdge(edge, parent, null, null, edgeShape.getShapeIndex() + this.shapeIndexShift++);
                     }
+
+                    if (hasSubLabel) 
+                    {
+                        addEdgeSublabel(graph, edge, edgeShape, rotation, lblOffset);
+                    }
+                    else
+                    {
+                        edge.getGeometry().offset = lblOffset;
+                    }
+
                     this.rotateChildEdge(graph.getModel(), parent, beginXY, endXY, points);
                     var edgeGeometry = graph.getModel().getGeometry(edge);
                     //remove begin/end points from points array
@@ -3652,6 +3717,12 @@ var com;
                             			 {
                             				 layerObj[layerAtts[i136].getAttribute("N")] = layerAtts[i136].getAttribute("V");
                             			 }
+
+                                         if (layerObj.Name == null)
+                                         {
+                                            layerObj.Name = 'Layer ' + i135;
+                                         }
+                                         
                             			 this.layers[parseInt(layers[i135].getAttribute("IX"))] = layerObj;
                         			 }
                         		}
@@ -9477,13 +9548,13 @@ var com;
                     Shape.prototype.getTextParagraphFormated = function (para) {
                         var ret = "";
                         var styleMap = ({});
-                        /* put */ (styleMap["align"] = this.getHorizontalAlign(this.pp, true));
+                        /* put */ (styleMap["text-align"] = this.getHorizontalAlign(this.pp, true));
                         /* put */ (styleMap["margin-left"] = this.getIndentLeft(this.pp));
                         /* put */ (styleMap["margin-right"] = this.getIndentRight(this.pp));
                         /* put */ (styleMap["margin-top"] = this.getSpBefore(this.pp) + "px");
                         /* put */ (styleMap["margin-bottom"] = this.getSpAfter(this.pp) + "px");
                         /* put */ (styleMap["text-indent"] = this.getIndentFirst(this.pp));
-                        /* put */ (styleMap["valign"] = this.getAlignVertical());
+                        /* put */ (styleMap["vertical-align"] = this.getAlignVertical());
                         /* put */ (styleMap["direction"] = this.getTextDirection(this.pp));
                         ret += this.insertAttributes(para, styleMap);
                         return ret;
@@ -10002,7 +10073,12 @@ var com;
                                 return m.entries[i].value;
                             } return null; })(model.getThemes(), themeIndex);
                         if (theme == null) {
-                            theme = model.getDefaultTheme();
+                            if (urlParams['dev'] == '1')
+                            {
+                                console.log('No theme found for index ' + themeIndex);
+                            }
+                            // Using a default theme doesn't work well with all cases. Maybe give users an option to choose a default theme?
+                            // theme = model.getDefaultTheme();
                         }
                         var variant = page.getCellIntValue("VariationColorIndex", 0);
                         _this.setThemeAndVariant(theme, variant);
@@ -10361,7 +10437,7 @@ var com;
                      * If the shape has no text, it is obtained from the master shape.
                      * @return {string} Text label of the shape.
                      */
-                    VsdxShape.prototype.getTextLabel = function () {
+                    VsdxShape.prototype.getTextLabel = function (noOverflow) {
                         var hideText = this.getValue(this.getCellElement$java_lang_String(com.mxgraph.io.vsdx.mxVsdxConstants.HIDE_TEXT), "0");
                         if ((function (o1, o2) { if (o1 && o1.equals) {
                             return o1.equals(o2);
@@ -10379,6 +10455,10 @@ var com;
                             if (txtChildren != null) {
                                 /* put */ (this.styleMap[mxConstants.STYLE_VERTICAL_ALIGN] = this.getAlignVertical());
                                 /* put */ (this.styleMap[mxConstants.STYLE_ALIGN] = this.getHorizontalAlign("0", false));
+                                if (!noOverflow)
+                                {
+                                    this.styleMap['overflow'] = 'width';
+                                }
                                 return this.getHtmlTextContent(txtChildren);
                             }
                         }
@@ -11654,7 +11734,8 @@ var com;
                                     var width = parseFloat(this.getValue(this.getCellElement$java_lang_String('Width'), "0"));
                                     var height = parseFloat(this.getValue(this.getCellElement$java_lang_String('Height'), "0"));
                                     
-                                    if (imgOffsetX != 0 || imgOffsetY != 0)
+                                    if (imgOffsetX != 0 || imgOffsetY != 0 ||
+                                        imgWidth != width || imgHeight != height)
                                 	{
                                     	this.toBeCroppedImg = {
                                 			imgOffsetX: imgOffsetX, 
@@ -12233,7 +12314,7 @@ var com;
                         var txtPinXV = this.getScreenNumericalValue$org_w3c_dom_Element$double(this.getShapeNode(com.mxgraph.io.vsdx.mxVsdxConstants.TXT_PIN_X), txtLocPinXV);
                         var txtPinYV = this.getScreenNumericalValue$org_w3c_dom_Element$double(this.getShapeNode(com.mxgraph.io.vsdx.mxVsdxConstants.TXT_PIN_Y), txtLocPinYV);
                         var txtAngleV = this.getValueAsDouble(this.getShapeNode(com.mxgraph.io.vsdx.mxVsdxConstants.TXT_ANGLE), 0);
-                        var textLabel = this.getTextLabel();
+                        var textLabel = this.getTextLabel(txtWV < 1 || txtHV < 1);
                         if (textLabel != null && !(textLabel.length === 0)) {
                         	var styleMap = mxUtils.clone(this.getStyleMap()) || {};
                             /* put */ (styleMap[mxConstants.STYLE_FILLCOLOR] = mxConstants.NONE);

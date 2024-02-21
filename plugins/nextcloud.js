@@ -389,19 +389,15 @@ Draw.loadPlugin(function(ui)
     {
         return true;
     };
-
-    /**
-     * Enabling fast syncin
-     */
-    EmbedFile.prototype.isSyncEnabled = function()
-    {
-        return true;
-    };
-
-    OneDriveFile.prototype.getSize = function()
+    EmbedFile.prototype.getSize = function()
     {
         return this.desc.size;
     };
+
+    EmbedFile.prototype.isEditable = function()
+	{
+		return this.desc != null && this.desc.writeable;
+	};
 
     /**
      * 
@@ -425,7 +421,7 @@ Draw.loadPlugin(function(ui)
         return 'C-' + DrawioFile.prototype.getChannelId.apply(this, arguments);
     };
 
-    OneDriveFile.prototype.getHash = function()
+    EmbedFile.prototype.getHash = function()
     {
         return 'C' + encodeURIComponent(this.getId());
     };
@@ -547,21 +543,27 @@ Draw.loadPlugin(function(ui)
     
     ui.installMessageHandler = function(callback)
     {
-        origInstallMessageHandler.call(this, function()
+        origInstallMessageHandler.call(this, function(xml, evt)
         {
+            try
+            {
+                // New empty files
+                if (JSON.parse(evt.data).xml == ' ') return;
+            }
+            catch (e) {} // Ignore
+
             callback.apply(this, arguments);
             
             var file = ui.getCurrentFile();
             loadDescriptor = loadDescriptor || {};
-            
+
             // New files call this twice, so we need to check if the file is loaded
             if (!loadDescriptor.isLoaded)
             {
+                loadDescriptor.isLoaded = true;
                 file.setDescriptor(loadDescriptor);
                 ui.fileLoaded(file, true);
             }
-
-            loadDescriptor.isLoaded = true;
         });
     }
     

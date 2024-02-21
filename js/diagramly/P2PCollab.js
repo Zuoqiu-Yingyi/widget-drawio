@@ -123,6 +123,13 @@ function P2PCollab(ui, sync, channelId)
 				sync.objectToString(msg))});
 	};
 
+	this.sendNotification = function(msg)
+	{
+		this.sendMessage('notify', (encrypted) ?
+			{msg: msg} : {data: encodeURIComponent(
+				sync.objectToString(msg))});
+	};
+
 	this.getState = function()
 	{
 		return socket != null ? socket.readyState : 3 /* CLOSED */;
@@ -204,6 +211,11 @@ function P2PCollab(ui, sync, channelId)
 	};
 
 	ui.addListener('shareCursorPositionChanged', this.shareCursorPositionListener);
+
+	// Clears remote selection state for large selections
+	var selectionLimit = mxGraphHandler.prototype.maxCells;
+	var updateThread = null;
+	var lastSelection = {};
 	
 	this.selectionChangeListener = function(sender, evt)
 	{
@@ -211,17 +223,51 @@ function P2PCollab(ui, sync, channelId)
 		{
 			return (c != null) ? c.id : null;
 		};
+		
+		if (updateThread != null)
+		{
+			window.clearTimeout(updateThread);
+		}
 
-		var pageId = (ui.currentPage != null) ?
-			ui.currentPage.getId() : null;
-		var added = evt.getProperty('added');
-		var removed = evt.getProperty('removed');
+		updateThread = window.setTimeout(function()
+		{
+			var selection = (graph.getSelectionCount() > selectionLimit) ?
+				[] : graph.getSelectionCells().map(mapToIds)
+			var pageId = (ui.currentPage != null) ?
+				ui.currentPage.getId() : null;
 
-		// Added/removed are inverted
-		sendMessage('selectionChange', {pageId: pageId,
-			removed: added? added.map(mapToIds) : [],
-			added: removed? removed.map(mapToIds) : []
-		});
+			// Computes diff between last and current selection
+			var newSelection = {};
+			var removed = [];
+			var added = [];
+
+			for (var i = 0; i < selection.length; i++)
+			{
+				var id = selection[i];
+
+				if (id != null)
+				{
+					newSelection[id] = true;
+
+					if (lastSelection[id] == null)
+					{
+						added.push(id);
+					}
+				}
+			}
+
+			for (var id in lastSelection)
+			{
+				if (!newSelection[id])
+				{
+					removed.push(id);
+				}
+			}
+			
+			lastSelection = newSelection;
+			sendMessage('selectionChange', {pageId: pageId,
+				removed: removed, added: added});
+		}, 300);
 	};
 
 	graph.getSelectionModel().addListener(mxEvent.CHANGE, this.selectionChangeListener);
@@ -471,6 +517,18 @@ function P2PCollab(ui, sync, channelId)
 						}
 					}
 				break;
+				case 'notify':
+					if (msgData.data != null)
+					{
+						msg = sync.stringToObject(decodeURIComponent(msgData.data));
+					}
+					else
+					{
+						msg = msgData.msg;
+					}
+
+					sync.handleMessageData(msg.d);
+				break;
 			}
 
 			sync.file.fireEvent(new mxEventObject('realtimeMessage', 'message', msg));
@@ -653,6 +711,15 @@ function P2PCollab(ui, sync, channelId)
 				joinInProgress = false;
 				sync.file.fireEvent(new mxEventObject('realtimeStateChanged'));
 				EditorUi.debug('P2PCollab: open socket', socket.joinId);
+
+				// Send join message
+				if (!Editor.enableRealtimeCache)
+				{
+					window.setTimeout(function()
+					{
+						sync.sendJoinMessage();
+					}, 0);
+				}
 
 				if (check)
 				{

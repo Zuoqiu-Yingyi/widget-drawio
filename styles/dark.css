@@ -1,12 +1,15 @@
 :root {
 	--dark-color: #18141D;
-	--header-color: #363238;
-	--panel-color: #2A252F;
-	--text-color: #888888;
+	--header-color: #1B1D1E;
+	--panel-color: #1B1D1E;
+	--text-color: #8D8D8D;
 	--border-color: #505759;
 }
 .geEditor * {
 	border-color:#000;
+}
+html body .geBackground {
+	background:var(--dark-color);
 }
 html body .geStatus > *, html body .geUser {
 	color:var(--text-color);
@@ -96,7 +99,7 @@ html body.geEditor .gePrimaryBtn:not([disabled]),
 html body.geEditor .geBigButton:not([disabled]) {
 	background:var(--header-color);
 	border: 1px solid var(--border-color);
-	color:#aaaaaa;
+	color:#EDEDED;
 }
 html body.geEditor .geBtn, html body.geEditor button,
 html body.geEditor button:hover:not([disabled]),
@@ -104,12 +107,18 @@ html body.geEditor button:focus, html body.geEditor select,
 html body.geEditor .geColorBtn {
 	background:none;
 	border: 1px solid var(--border-color);
-	color:#aaaaaa;
+	color:#EDEDED;
 }
 html body .geBtn:hover:not([disabled]) {
 	color: #c0c0c0;
 }
-html body.geEditor button:hover:not([disabled]),
+html body.geEditor button.geAdaptiveAsset:hover:not([disabled]) {
+	background:#fff;
+}
+html body.geEditor button.geAdaptiveAsset:not([disabled]) {
+	border-color:#a2a2a2;
+}
+html body.geEditor button:hover:not([disabled]):not(.geAdaptiveAsset),
 html body.geEditor select:hover:not([disabled]),
 html body.geEditor .geColorBtn:hover:not([disabled]) {
 	background:var(--dark-color);
@@ -120,8 +129,12 @@ html body.geEditor .geBaseButton, html body.geEditor .geSidebarTooltip, html bod
 html body.geEditor .geSidebarContainer .geDropTarget, html body.geEditor .geToolbarContainer {
 	background:var(--panel-color);
 	border-color:var(--dark-color);
+	color:#EDEDED;
+}
+html body.geEditor .geSidebar, html body.geEditor .geSidebarContainer .geTitle, html body.geEditor input, html body.geEditor textarea,
+html body.geEditor .geBaseButton, html body.geEditor .geSidebarTooltip, html body.geEditor .geBaseButton, html body.geEditor select,
+html body.geEditor .geSidebarContainer .geDropTarget {
 	box-shadow:none;
-	color:#aaaaaa;
 }
 html body.geEditor button, html body.geEditor input,
 html body.geEditor textarea, html body.geEditor select,
@@ -161,7 +174,7 @@ html body .geDiagramContainer {
 	border-color:var(--border-color);
 }
 html body .geSidebarContainer a, html body .geMenubarContainer a, html body .geToolbar a {
-	color:#cccccc;
+	color:#c0c0c0;
 }
 html body .geMenubarMenu {
 	border-color:var(--border-color) !important;

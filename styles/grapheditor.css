@@ -3,6 +3,31 @@
 	--border-color: #dadce0;
 	--text-color: #707070;
 }
+.geDarkMode {
+	filter: invert(93%) hue-rotate(180deg);
+	background:#151515;
+}
+.geDarkMode image, .geDarkMode img:not(.geAdaptiveAsset), .geDarkMode iframe {
+	filter: invert(100%) hue-rotate(180deg) saturate(1.25);
+}
+.geDarkMode div.mxWindow {
+	border-color: darkgray;
+}
+.geDarkMode div.mxRubberband {
+	border:1px dashed #202020 !important;
+	background:#a0a0a0 !important;
+}
+.geDarkMode .geAdaptiveAsset {
+	filter:none !important
+}
+.geDarkMode .geColorBtn > div {
+	border-color: #ffffff !important;
+}
+.geEditor {
+	position:absolute;
+	width:100%;
+	height:100%;
+}
 .geEditor *, div.mxWindow, .mxWindowTitle,
 .geEditor .geToolbarContainer .geColorButton {
 	border-color:var(--border-color);
@@ -25,6 +50,9 @@ div td.mxWindowTitle {
 	font-size:14px;
 	border:none;
 	margin:0px;
+}
+.geBackground {
+	background:white;
 }
 .geEditor input[type=text]::-ms-clear {
 	display: none;
@@ -139,6 +167,13 @@ html > body > div > div.geToolbarContainer.geSimpleMainMenu .geToolbarContainer{
 	opacity:0.8;
 	font-size:9pt;
 }
+.geHint img {
+	opacity: 0.7;
+}
+.geHint img:hover
+{
+	opacity: 1;
+}
 .geUser {
 	color:var(--text-color);
 	display:inline-block;
@@ -237,6 +272,10 @@ a.geStatus .geStatusMessage {
 .geEditor button:hover:not([disabled], .geBigButton, .geShareBtn),
 .geEditor select:hover:not([disabled]), .geColorBtn:hover:not([disabled]) {
 	background:#e5e5e5;
+}
+.geEditor button:active:not([disabled], .geBigButton, .geShareBtn),
+.geColorBtn:active:not([disabled]) {
+	opacity:0.7;
 }
 .geColorDropper {
 	cursor:pointer;
@@ -533,6 +572,7 @@ html body div.geActivePage, .geRuler {
 	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
+	cursor: move;
 }
 .gePageTab {
 	padding: 0px 12px 0px 12px;

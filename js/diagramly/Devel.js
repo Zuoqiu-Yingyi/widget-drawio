@@ -17,19 +17,22 @@ if (!mxIsElectron && !mxIsSiyuan && location.protocol !== 'http:')
 			'script-src %script-src% \'self\' https://viewer.diagrams.net https://apis.google.com https://*.pusher.com ' +
 			// Below are the SHAs of the two script blocks in index.html.
 			// These must be updated here and in the CDN after changes.
+			// Note: Desktop app uses only the newest hashes (replace it in electron.js [The one in index.html needs to be changed only if the second script block changes])
 			//----------------------------------------------------------//
 			//------------- Bootstrap script in index.html -------------//
 			//----------------------------------------------------------//
+			// Version 21.7.0
+			'\'sha256-dLMFD7ijAw6AVaqecS7kbPcFFzkxQ+yeZSsKpOdLxps=\' ' +
+			// Version 21.6.7
+			'\'sha256-PDJOTCOfwIg8Ri7U2PH1pIpx+haCyKsJEbFxlW6hdSI=\' ' +
+			// Version 21.5.0
+			'\'sha256-6zAB96lsBZREqf0sT44BhH1T69sm7HrN34rpMOcWbNo=\' ' +
+			// Version 21.4.1
+			'\'sha256-3SkDBaLE+ouvAOfTmG2TGwmQ2EE9AT0F2YcHvZmEMeo=\' ' +
 			// Version 20.8.14
 			'\'sha256-vrEVJkYyBW9H4tt1lYZtK5fDowIeRwUgYZfFTT36YpE=\' ' +
 			// Version 20.8.12
 			'\'sha256-6g514VrT/cZFZltSaKxIVNFF46+MFaTSDTPB8WfYK+c=\' ' +
-			// Version 16.4.4
-			'\'sha256-AVuOIxynOo/05KDLjyp0AoBE+Gt/KE1/vh2pS+yfqes=\' ' +
-			// Version 15.8.3
-			'\'sha256-r/ILW7KMSJxeo9EYqCTzZyCT0PZ9gHN1BLgki7vpR+A=\' ' +
-			// Version 14.6.5
-			'\'sha256-5DtSB5mj34lxcEf+HFWbBLEF49xxJaKnWGDWa/utwQA=\' ' +
 			//---------------------------------------------------------//
 			//------------- App.main script in index.html -------------//
 			//---------------------------------------------------------//
@@ -70,11 +73,11 @@ if (!mxIsElectron && !mxIsSiyuan && location.protocol !== 'http:')
 		var csp = hashes + directives;
 		var devCsp = csp.
 			// Adds script tags and loads shapes with eval
-			replace(/%script-src%/g, 'https://www.dropbox.com https://api.trello.com https://devhost.jgraph.com \'unsafe-eval\'').
+			replace(/%script-src%/g, 'https://www.dropbox.com https://api.trello.com \'unsafe-eval\'').
 			// Adds Trello and Dropbox backend storage
 			replace(/%connect-src%/g, 'https://*.dropboxapi.com https://trello.com https://api.trello.com').
 			// Loads common.css from mxgraph
-			replace(/%style-src%/g, 'https://devhost.jgraph.com').
+			replace(/%style-src%/g, '').
 			replace(/%frame-src%/g, '').
 			replace(/  /g, ' ');
 
@@ -101,6 +104,9 @@ if (!mxIsElectron && !mxIsSiyuan && location.protocol !== 'http:')
 				'worker-src https://viewer.diagrams.net/service-worker.js;'
 			console.log('viewer.diagrams.net:', viewer_diagrams_net);
 
+			var teams_diagrams_net = app_diagrams_net.replace(/ 'sha256-[^']+'/g, '') + 'worker-src https://app.diagrams.net/service-worker.js;';
+			console.log('teams.diagrams.net:', teams_diagrams_net);
+
 			var ac_draw_io = csp.replace(/%script-src%/g, 'https://aui-cdn.atlassian.com https://connect-cdn.atl-paas.net').
 					replace(/%frame-src%/g, 'https://www.lucidchart.com https://app.lucidchart.com https://lucid.app blob:').
 					replace(/%style-src%/g, 'https://aui-cdn.atlassian.com https://*.atlassian.net').
@@ -120,29 +126,8 @@ if (!mxIsElectron && !mxIsSiyuan && location.protocol !== 'http:')
 			console.log('import.diagrams.net:', 'default-src \'self\'; worker-src blob:; img-src \'self\' blob: data: https://www.lucidchart.com ' +
 					'https://app.lucidchart.com https://lucid.app; style-src \'self\' \'unsafe-inline\'; frame-src https://www.lucidchart.com https://app.lucidchart.com https://lucid.app;');
 			console.log('Development:', devCsp);
-			
-			console.log('Header Worker:', 'let securityHeaders =', JSON.stringify({
-				online: {
-					"Content-Security-Policy" : app_diagrams_net,
-					"Permissions-Policy" : "microphone=()"
-				},
-				viewer: {
-					"Content-Security-Policy" : viewer_diagrams_net,
-					"Permissions-Policy" : "microphone=()",
-				},
-				teams: {
-					"Content-Security-Policy" : app_diagrams_net.replace(/ 'sha256-[^']+'/g, '') + 'worker-src https://app.diagrams.net/service-worker.js;',
-					"Permissions-Policy" : "microphone=()"
-				},
-				jira: {
-					"Content-Security-Policy" : aj_draw_io,
-					"Permissions-Policy" : "microphone=()"
-				},
-				conf: {
-					"Content-Security-Policy" : ac_draw_io,
-					"Permissions-Policy" : "microphone=()"
-				}
-			}, null, 4));
+
+			console.log('Remember to add index.html new hashes to Desktop app (electron.js). In desktop, only newest hashes are needed.');
 		}
 	})();
 }
@@ -218,6 +203,7 @@ mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Network.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Office.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-PID.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Rack.js');
+mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Salesforce.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Signs.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Sitemap.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Sysml.js');
@@ -286,6 +272,12 @@ mxscript(drawDevUrl + 'js/diagramly/mxFreehand.js');
 mxscript(drawDevUrl + 'js/diagramly/P2PCollab.js');
 mxscript(drawDevUrl + 'js/diagramly/DevTools.js');
 
+if (!window.DRAWIO_PUBLIC_BUILD)
+{
+	mxscript(drawDevUrl + 'js/diagramly/Simple.js');
+	mxscript(drawDevUrl + 'js/mermaid/mermaid2drawio.js');	
+}
+
 // Vsdx/vssx support
 mxscript(drawDevUrl + 'js/diagramly/vsdx/VsdxExport.js');
 mxscript(drawDevUrl + 'js/diagramly/vsdx/mxVsdxCanvas2D.js');
@@ -307,6 +299,3 @@ if (urlParams['orgChartDev'] == '1')
 
 // Miro Import
 mxscript(drawDevUrl + 'js/diagramly/miro/MiroImporter.js');
-
-// Mermaid to draw.io converter
-// mxscript(drawDevUrl + 'js/mermaid/mermaid2drawio.js');

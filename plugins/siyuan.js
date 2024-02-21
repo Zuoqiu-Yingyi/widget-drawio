@@ -6,7 +6,8 @@ Draw.loadPlugin(function (
     app, // window.sb.editorUi instanceof window.App
 ) {
     // console.debug(app);
-    window.app = app;
+    App.MODE_SIYUAN = "siyuan"; // 思源存储模式
+    app[App.MODE_SIYUAN] = {}; // 思源存储供应商
 
     /* Minimal 主题默认隐藏形状面板与格式面板 */
     window.addEventListener('load', async () => {
@@ -117,6 +118,8 @@ Draw.loadPlugin(function (
             }
         });
 
+        // TODO: 使用新页签打开
+
         /* 全屏切換 */
         app.actions.addAction('siyuanFullscreen', () => {
             if (document.fullscreenElement) {
@@ -165,14 +168,185 @@ Draw.loadPlugin(function (
 
     /* 挂载额外的属性与方法 */
     Object.assign(window.siyuan, {
+        app,
+        saved: true, // 文件是否已保存
         /* 设置块属性 */
-        setBlockAttrs: async (attrs, id = window.siyuan.id) => fetch('/api/attr/setBlockAttrs', {
-            body: JSON.stringify({
-                id,
-                attrs,
-            }),
-            method: 'POST',
-        }),
+        setBlockAttrs: async function (attrs, id = this.id) {
+            const response = await fetch('/api/attr/setBlockAttrs', {
+                body: JSON.stringify({
+                    id,
+                    attrs,
+                }),
+                method: 'POST',
+            });
+            const body = await response.json();
+            return body;
+        },
+        /* 保存数据到思源 */
+        saveDataToSiyuan: async function (filename, _format, filedata, mime, base64Encoded = false) {
+            const { name, ext } = filenameParse(filename);
+
+            const blob = base64Encoded
+                ? (() => {
+                    // base64 to Blob
+                    let bytes = atob(filedata);
+                    let ab = new ArrayBuffer(bytes.length);
+                    let ia = new Uint8Array(ab);
+                    for (let i = 0; i < bytes.length; i++) {
+                        ia[i] = bytes.charCodeAt(i);
+                    }
+                    return new Blob([ab], { type: mime });
+                })()
+                : new Blob([filedata], { type: mime });
+            const file = new File([blob], name, { lastModified: Date.now() });
+            const formdata = new FormData();
+            formdata.append("assetsDirPath", "/assets/drawio/");
+            formdata.append("file[]", file);
+
+            const response = await fetch("/api/asset/upload", {
+                body: formdata,
+                method: "POST",
+                // headers: { Authorization: "Token " + this.apitoken },
+            });
+            const body = await response.json();
+            if (body.code !== 0) {
+                throw new Error(body.msg);
+            }
+
+            let asset = body.data.succMap[name];
+            console.log(asset);
+            if (asset.startsWith('/assets/')) {
+                asset = asset.replace(/^\/assets\//, 'assets/')
+            }
+
+            const current_file = app.getCurrentFile();
+            if (!asset.endsWith(current_file.title)) { // 文件名更改
+                let markdown, html;
+                switch (ext) {
+                    case 'svg':
+                    case 'png':
+                        markdown = `![${filename}](${asset})`;
+                        break;
+                    case 'xml':
+                    case 'html':
+                    case 'drawio':
+                    default:
+                        markdown = `[${filename}](${asset})`;
+                        break;
+                }
+
+                // console.log(filename, asset);
+                const body = await this.setBlockAttrs(
+                    {
+                        'custom-data-assets': asset,
+                        'data-export-md': markdown,
+                        'data-export-html': html,
+                    },
+                    this.id,
+                );
+                if (body.code !== 0) {
+                    throw new Error(body.msg);
+                }
+
+                const file_name = asset.split('/').pop();
+                const url = new URL(window.location);
+                const url_asset = new URL(window.location.origin);
+
+                url_asset.pathname = `/${asset}`;
+                url_asset.searchParams.set("t", Date.now());
+
+                url.searchParams.set("url", url_asset.href);
+                url.searchParams.set("title", file_name);
+                console.log(url.href);
+
+                // REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
+                history.pushState(null, null, url.href)
+
+                current_file.rename(file_name) // 更改标题
+            }
+
+            current_file.modified = false;
+            app.hideDialog();
+            app.editor.setStatus(mxResources.get('allChangesSaved'));
+            this.saved = true;
+        },
+        /* 保存数据 */
+        saveData: async function (
+            title,
+            success,
+            error,
+        ) {
+            // console.log(title);
+
+            if (this.regs.id.test(this.id)) {
+                // change(App.MODE_DEVICE);
+                let filename = filenameParse(title);
+                // console.log(filename);
+
+                file_name = filename.name;
+                file_name_main = filename.main;
+                file_name_ext = filename.ext;
+
+                // 根据文件扩展名调用不同的保存方法
+                switch (file_name_ext) {
+                    case 'jpg':
+                    case 'pdf':
+                    case 'vsdx':
+                    default:
+                        return;
+                    case 'drawio': {
+                        /**
+                         * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.getFileData
+                         */
+                        const file_content = app.getFileData(
+                            true,
+                            undefined,
+                            undefined,
+                            undefined,
+                            true, // ignoreSelection, // 是否仅保存选中内容
+                            false, // currentPage, // 是否仅保存当前页面
+                            undefined,
+                            undefined,
+                            undefined,
+                            true, // uncompressed, // 是否格式化 XML 文本
+                        );
+                        // console.log(file_content);
+                        const file_type = "application/xml";
+                        this.saveDataToSiyuan(file_name, undefined, file_content, file_type, undefined);
+                        break;
+                    }
+
+                    case 'png':
+                        setTimeout(() => {
+                            this.saved = false;
+                            app.actions.get('exportPng').funct();
+                        });
+                        break;
+
+                    case 'svg':
+                        setTimeout(() => {
+                            this.saved = false;
+                            app.actions.get('exportSvg').funct();
+                        });
+                        break;
+
+                    case 'html':
+                        setTimeout(() => {
+                            this.saved = false;
+                            app.actions.get('exportHtml').funct();
+                        });
+                        break;
+
+                    case 'xml':
+                        setTimeout(() => {
+                            this.saved = false;
+                            app.actions.get('exportXml').funct();
+                        });
+                        break;
+
+                }
+            }
+        },
         /* 添加保存按钮 */
         addSaveButton: function (
             nameInput,
@@ -209,461 +383,8 @@ Draw.loadPlugin(function (
             mxUtils.write(label, title);
 
             function initButton() {
-                mxEvent.addListener(button, 'click', async () => {
-                    const id = window.siyuan.id;
-                    // console.log(id);
-
-                    /* 提取主文件名与文件扩展名 */
-                    function filenameParse(filename) {
-                        const idx2 = filename.lastIndexOf('.drawio.');
-                        const idx = (idx2 > 0) ? idx2 : filename.lastIndexOf('.');
-                        const file_name_main = idx > 0 ? filename.substring(0, idx) : filename;
-                        const file_name_ext = idx > 0 ? filename.substring(filename.lastIndexOf('.') + 1) : 'drawio';
-                        filename = `${file_name_main}.${file_name_ext}`;
-                        return { name: filename, main: file_name_main, ext: file_name_ext };
-                    }
-
-                    /* 上传至资源文件夹 */
-                    async function saveDataToSiyuan(filename, _format, filedata, mime, base64Encoded = false) {
-                        const { name, ext } = filenameParse(filename);
-
-                        const blob = base64Encoded
-                            ? (() => {
-                                // base64 to Blob
-                                let bytes = atob(filedata);
-                                let ab = new ArrayBuffer(bytes.length);
-                                let ia = new Uint8Array(ab);
-                                for (let i = 0; i < bytes.length; i++) {
-                                    ia[i] = bytes.charCodeAt(i);
-                                }
-                                return new Blob([ab], { type: mime });
-                            })()
-                            : new Blob([filedata], { type: mime });
-                        const file = new File([blob], name, { lastModified: Date.now() });
-                        const formdata = new FormData();
-                        formdata.append("assetsDirPath", "/assets/drawio/");
-                        formdata.append("file[]", file);
-                        fetch("/api/asset/upload", {
-                            body: formdata,
-                            method: "POST",
-                            // headers: { Authorization: "Token " + this.apitoken },
-                        }).then(response => {
-                            return response.json();
-                        }).then(data => {
-                            // console.log(data);
-                            let asset = data.data.succMap[name];
-                            console.log(asset);
-                            if (asset.startsWith('/assets/'))
-                                asset = asset.replace(/^\/assets\//, 'assets/')
-                            if (!asset.endsWith(name)) {
-                                // 文件名更改
-                                let markdown, html;
-                                switch (ext) {
-                                    case 'svg':
-                                    case 'png':
-                                        markdown = `![${filename}](${asset})`;
-                                        break;
-                                    case 'xml':
-                                    case 'html':
-                                    case 'drawio':
-                                    default:
-                                        markdown = `[${filename}](${asset})`;
-                                        break;
-                                }
-                                // console.log(filename, asset);
-                                window.siyuan.setBlockAttrs(
-                                    {
-                                        'custom-data-assets': asset,
-                                        'data-export-md': markdown,
-                                        'data-export-html': html,
-                                    },
-                                    id,
-                                ).then((response) => {
-                                    return response.json();
-                                }).then((data) => {
-                                    if (data.code == 0) {
-                                        // console.log(editorUi);
-                                        const file_name = asset.split('/').pop();
-                                        const url = new URL(window.location);
-                                        const url_asset = new URL(window.location.origin);
-
-                                        url_asset.pathname = `/${asset}`;
-                                        url_asset.searchParams.set("t", Date.now());
-
-                                        url.searchParams.set("url", url_asset.href);
-                                        url.searchParams.set("title", file_name);
-                                        console.log(url.href);
-
-                                        // REF [js修改url参数，无刷新更换页面url - 放飞的回忆 - 博客园](https://www.cnblogs.com/ziyoublog/p/9776764.html)
-                                        history.pushState(null, null, url.href)
-
-                                        const current_file = app.getCurrentFile();
-                                        current_file.rename(file_name) // 更改标题
-                                        current_file.modified = false;
-                                        app.hideDialog();
-                                        app.editor.setStatus(mxResources.get('allChangesSaved'));
-                                    }
-                                })
-                            } else {
-                                const current_file = app.getCurrentFile();
-                                current_file.modified = false;
-                                app.hideDialog();
-                                app.editor.setStatus(mxResources.get('allChangesSaved'));
-                            }
-                        });
-                    };
-
-                    if (window.siyuan.regs.id.test(id)) {
-                        // change(App.MODE_DEVICE);
-                        let filename = filenameParse(nameInput.value);
-                        file_name = filename.name;
-                        file_name_main = filename.main;
-                        file_name_ext = filename.ext;
-
-                        let file_content = null;
-                        let file_type = null;
-                        // 根据文件扩展名调用不同的保存方法
-                        switch (file_name_ext) {
-                            case 'jpg':
-                            case 'pdf':
-                            case 'vsdx':
-                            default:
-                                return;
-                            case 'drawio':
-                                {
-                                    /**
-                                     * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.getFileData
-                                     */
-                                    file_content = app.getFileData(
-                                        true,
-                                        undefined,
-                                        undefined,
-                                        undefined,
-                                        true, // ignoreSelection, // 是否仅保存选中内容
-                                        false, // currentPage, // 是否仅保存当前页面
-                                        undefined,
-                                        undefined,
-                                        undefined,
-                                        true, // uncompressed, // 是否格式化 XML 文本
-                                    );
-                                    // console.log(file_content);
-                                    file_type = "application/xml";
-                                    saveDataToSiyuan(file_name, undefined, file_content, file_type, undefined);
-                                }
-
-                                break;
-                            case 'png':
-                                /**
-                                 * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.showExportDialog
-                                 *   👉~/js/diagramly/EditorUi.js -> EditorUi.prototype.exportImage
-                                 *     👉~/js/diagramly/EditorUi.js -> EditorUi.prototype.exportToCanvas
-                                 *       👉~/js/diagramly/EditorUi.js -> EditorUi.prototype.saveCanvas
-                                 */
-                                app.showExportDialog(
-                                    mxResources.get('formatPng'),
-                                    false,
-                                    mxResources.get('save'),
-                                    'https://www.diagrams.net/doc/faq/export-diagram',
-                                    mxUtils.bind(
-                                        this,
-                                        function (
-                                            scale,
-                                            transparentBackground,
-                                            ignoreSelection,
-                                            addShadow,
-                                            editable,
-                                            embedImages,
-                                            border,
-                                            cropImage,
-                                            currentPage,
-                                            dummy,
-                                            grid,
-                                            keepTheme,
-                                            exportType,
-                                        ) {
-                                            var val = parseInt(scale);
-
-                                            if (!isNaN(val) && val > 0) {
-                                                /* 劫持保存文件方法 */
-                                                let temp_saveData = app.saveData;
-
-                                                app.saveData = (
-                                                    filename,
-                                                    ext,
-                                                    filedata,
-                                                    mime,
-                                                    base64Encoded,
-                                                ) => {
-                                                    saveDataToSiyuan(
-                                                        filename,
-                                                        ext,
-                                                        filedata,
-                                                        mime,
-                                                        base64Encoded,
-                                                    );
-
-                                                    app.saveData = temp_saveData;
-                                                };
-
-                                                app.exportImage(
-                                                    val / 100,
-                                                    transparentBackground,
-                                                    ignoreSelection,
-                                                    addShadow,
-                                                    editable,
-                                                    border,
-                                                    !cropImage,
-                                                    false,
-                                                    null,
-                                                    grid,
-                                                    null,
-                                                    keepTheme,
-                                                    exportType,
-                                                );
-                                            }
-                                        }),
-                                    true,
-                                    Editor.defaultIncludeDiagram,
-                                    'png',
-                                    true,
-                                );
-
-                                break;
-                            case 'svg':
-                                /**
-                                 * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.showExportDialog
-                                 * REF ~/js/diagramly/Menus.js -> editorUi.showExportDialog(mxResources.get('formatSvg')
-                                 */
-                                app.showExportDialog(
-                                    mxResources.get('formatSvg'),
-                                    true,
-                                    mxResources.get('save'),
-                                    'https://www.diagrams.net/doc/faq/export-diagram',
-                                    mxUtils.bind(
-                                        this,
-                                        function (
-                                            scale,
-                                            transparentBackground,
-                                            ignoreSelection,
-                                            addShadow,
-                                            editable,
-                                            embedImages,
-                                            border,
-                                            cropImage,
-                                            currentPage,
-                                            linkTarget,
-                                            grid,
-                                            keepTheme,
-                                            exportType,
-                                            embedFonts,
-                                            lblToSvg,
-                                        ) {
-                                            var val = parseInt(scale);
-
-                                            if (!isNaN(val) && val > 0) {
-                                                /* 劫持保存文件方法 */
-                                                let temp_isLocalFileSave = app.isLocalFileSave;
-                                                let temp_getBaseFilename = app.getBaseFilename;
-                                                let temp_saveData = app.saveData;
-
-                                                app.isLocalFileSave = (..._args) => true;
-                                                app.getBaseFilename = (..._args) => file_name_main;
-                                                app.saveData = (...args) => {
-                                                    saveDataToSiyuan(...args);
-
-                                                    app.isLocalFileSave = temp_isLocalFileSave;
-                                                    app.getBaseFilename = temp_getBaseFilename;
-                                                    app.saveData = temp_saveData;
-                                                };
-
-                                                app.exportSvg(
-                                                    val / 100,
-                                                    transparentBackground,
-                                                    ignoreSelection,
-                                                    addShadow,
-                                                    editable,
-                                                    embedImages,
-                                                    border,
-                                                    !cropImage,
-                                                    false,
-                                                    linkTarget,
-                                                    keepTheme,
-                                                    exportType,
-                                                    embedFonts,
-                                                );
-                                            }
-                                        }),
-                                    true,
-                                    null,
-                                    'svg',
-                                    true,
-                                );
-
-                                break;
-                            case 'html':
-                                /**
-                                 * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.showHtmlDialog
-                                 * REF ~/js/diagramly/Menus.js -> editorUi.showHtmlDialog(mxResources.get('export')
-                                 */
-                                app.showHtmlDialog(
-                                    mxResources.get('save'),
-                                    'https://www.diagrams.net/doc/faq/embed-html-options',
-                                    undefined,
-                                    function (
-                                        publicUrl,
-                                        zoomEnabled,
-                                        initialZoom,
-                                        linkTarget,
-                                        linkColor,
-                                        fit,
-                                        allPages,
-                                        layers,
-                                        tags,
-                                        lightbox,
-                                        editLink,
-                                    ) {
-                                        /**
-                                         * ~/js/diagramly/EditorUi.js -> EditorUi.prototype.createHtml
-                                         * REF ~/js/diagramly/Menus.js -> editorUi.showHtmlDialog(mxResources.get('export')
-                                         */
-                                        app.createHtml(
-                                            publicUrl,
-                                            zoomEnabled,
-                                            initialZoom,
-                                            linkTarget,
-                                            linkColor,
-                                            fit,
-                                            allPages,
-                                            layers,
-                                            tags,
-                                            lightbox,
-                                            editLink,
-                                            mxUtils.bind(
-                                                this,
-                                                function (
-                                                    html,
-                                                    scriptTag,
-                                                ) {
-                                                    var basename = app.getBaseFilename(allPages);
-                                                    var result = '<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=5,IE=9" ><![endif]-->\n'
-                                                        + '<!DOCTYPE html>\n<html>\n<head>\n<title>'
-                                                        + mxUtils.htmlEntities(basename)
-                                                        + '</title>\n'
-                                                        + '<meta charset="utf-8"/>\n</head>\n<body>'
-                                                        + html
-                                                        + '\n'
-                                                        + scriptTag
-                                                        + '\n</body>\n</html>';
-
-                                                    saveDataToSiyuan(
-                                                        file_name,
-                                                        'html',
-                                                        result,
-                                                        'text/html',
-                                                    );
-                                                },
-                                            ),
-                                        );
-                                    },
-                                );
-
-                                break;
-                            case 'xml':
-                                {
-                                    /**
-                                     * REF ~/js/diagramly/Menus.js -> editorUi.actions.put('exportXml'
-                                     */
-                                    let div = document.createElement('div');
-                                    div.style.whiteSpace = 'nowrap';
-                                    let noPages = app.pages == null || app.pages.length <= 1;
-
-                                    let hd = document.createElement('h3');
-                                    mxUtils.write(
-                                        hd,
-                                        mxResources.get('formatXml'),
-                                    );
-                                    hd.style.cssText = 'width:100%;text-align:center;margin-top:0px;margin-bottom:4px';
-                                    div.appendChild(hd);
-
-                                    let selection = app.addCheckbox(
-                                        div,
-                                        mxResources.get('selectionOnly'),
-                                        false,
-                                        app.editor.graph.isSelectionEmpty(),
-                                    );
-                                    let compressed = app.addCheckbox(
-                                        div,
-                                        mxResources.get('compressed'),
-                                        false,
-                                    );
-                                    let pages = app.addCheckbox(
-                                        div,
-                                        mxResources.get('allPages'),
-                                        !noPages,
-                                        noPages,
-                                    );
-                                    pages.style.marginBottom = '16px';
-
-                                    mxEvent.addListener(
-                                        selection,
-                                        'change',
-                                        function () {
-                                            if (selection.checked) {
-                                                pages.setAttribute(
-                                                    'disabled',
-                                                    'disabled',
-                                                );
-                                            }
-                                            else {
-                                                pages.removeAttribute('disabled');
-                                            }
-                                        });
-
-                                    let dlg = new CustomDialog(
-                                        app,
-                                        div,
-                                        mxUtils.bind(
-                                            this,
-                                            function () {
-                                                /* 劫持保存文件方法 */
-                                                let temp_isLocalFileSave = app.isLocalFileSave;
-                                                let temp_getBaseFilename = app.getBaseFilename;
-                                                let temp_saveData = app.saveData;
-
-                                                app.isLocalFileSave = (..._args) => true;
-                                                app.getBaseFilename = (..._args) => file_name_main;
-                                                app.saveData = (...args) => {
-                                                    saveDataToSiyuan(...args);
-
-                                                    app.isLocalFileSave = temp_isLocalFileSave;
-                                                    app.getBaseFilename = temp_getBaseFilename;
-                                                    app.saveData = temp_saveData;
-                                                };
-
-                                                app.downloadFile(
-                                                    'xml',
-                                                    !compressed.checked,
-                                                    null,
-                                                    !selection.checked,
-                                                    noPages || !pages.checked,
-                                                );
-                                            }),
-                                        null,
-                                        mxResources.get('save'),
-                                    );
-
-                                    app.showDialog(
-                                        dlg.container,
-                                        300,
-                                        200,
-                                        true,
-                                        true,
-                                    );
-                                }
-
-                                break;
-                        }
-                    }
+                mxEvent.addListener(button, 'click', () => {
+                    this.saveData(nameInput.value);
                 });
             };
 
@@ -679,5 +400,33 @@ Draw.loadPlugin(function (
             return count;
         },
     });
+
+    /* 提取主文件名与文件扩展名 */
+    function filenameParse(filename) {
+        const idx2 = filename.lastIndexOf('.drawio.');
+        const idx = (idx2 > 0) ? idx2 : filename.lastIndexOf('.');
+        const file_name_main = idx > 0 ? filename.substring(0, idx) : filename;
+        const file_name_ext = idx > 0 ? filename.substring(filename.lastIndexOf('.') + 1) : 'drawio';
+        filename = `${file_name_main}.${file_name_ext}`;
+        return { name: filename, main: file_name_main, ext: file_name_ext };
+    }
+
+    /* 上传文件至资源文件夹 */
+
+    /* 劫持原方法 */
+    const saveData = app.saveData;
+    const hideDialog = app.hideDialog;
+    app.saveData = function (...args) {
+        if (window.siyuan.saved) {
+            saveData.apply(app, args);
+        }
+        else {
+            window.siyuan.saveDataToSiyuan(...args);
+        }
+    }
+    app.hideDialog = function (...args) {
+        window.siyuan.saved = true;
+        hideDialog.apply(app, args);
+    }
 });
 /* 👆 SIYUAN 👆 */

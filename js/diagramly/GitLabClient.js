@@ -75,7 +75,7 @@ GitLabClient.prototype.authenticateStep2 = function(state, success, error)
 			
 			if (authRemembered != null)
 			{
-				var req = new mxXmlRequest(this.redirectUri + '?state=' + encodeURIComponent('cId=' + this.clientId + '&domain=' + window.location.hostname + '&token=' + state), null, 'GET'); //To identify which app/domain is used
+				var req = new mxXmlRequest(this.redirectUri + '?state=' + encodeURIComponent('cId=' + this.clientId + '&domain=' + window.location.host + '&token=' + state), null, 'GET'); //To identify which app/domain is used
 				
 				req.send(mxUtils.bind(this, function(req)
 				{
@@ -112,7 +112,7 @@ GitLabClient.prototype.authenticateStep2 = function(state, success, error)
 						this.clientId + '&scope=' + this.scope + 
 						'&redirect_uri=' + encodeURIComponent(this.redirectUri) +
 						'&response_type=code&state=' + encodeURIComponent('cId=' + this.clientId + //To identify which app/domain is used
-							'&domain=' + window.location.hostname + '&token=' + state) , 'gitlabauth'); 
+							'&domain=' + window.location.host + '&token=' + state) , 'gitlabauth'); 
 					
 					if (win != null)
 					{
@@ -260,11 +260,6 @@ GitLabClient.prototype.executeRequest = function(req, success, error, ignoreNotF
 				else if (req.getStatus() === 404)
 				{
 					error({message: this.getErrorMessage(req, mxResources.get('fileNotFound'))});
-				}
-				else if (req.getStatus() === 400)
-				{
-					// Special case: flag to the caller that there was a conflict
-					error({status: 400});
 				}
 				else
 				{
@@ -954,7 +949,7 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn, hideNoFilesErr
 					
 					div.appendChild(createLink('../ [Up]', mxUtils.bind(this, function()
 					{
-						if (path == '')
+						if (path == '' || path == null)
 						{
 							path = null;
 							selectRepo();
@@ -1274,7 +1269,8 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn, hideNoFilesErr
 							{
 								if (inFlightRequests === 0)
 								{
-									var dlg = new FilenameDialog(this.ui, 'org/repo/ref', mxResources.get('ok'), mxUtils.bind(this, function(value)
+									var dlg = new FilenameDialog(this.ui, 'org/repo/ref', mxResources.get('ok'),
+										mxUtils.bind(this, function(value)
 									{
 										if (value != null)
 										{
@@ -1426,7 +1422,7 @@ GitLabClient.prototype.showGitLabDialog = function(showFiles, fn, hideNoFilesErr
 GitLabClient.prototype.logout = function()
 {
 	//Send to server to clear refresh token cookie
-	this.ui.editor.loadUrl(this.redirectUri + '?doLogout=1&state=' + encodeURIComponent('cId=' + this.clientId + '&domain=' + window.location.hostname));
+	this.ui.editor.loadUrl(this.redirectUri + '?doLogout=1&state=' + encodeURIComponent('cId=' + this.clientId + '&domain=' + window.location.host));
 	this.clearPersistentToken();
 	this.setUser(null);
 	_token = null;

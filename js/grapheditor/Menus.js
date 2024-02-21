@@ -1162,8 +1162,9 @@ Menus.prototype.edgeStyleChange = function(menu, label, keys, values, sprite, pa
 			}
 			
 			this.editorUi.fireEvent(new mxEventObject(
-				'styleChanged', 'keys', keys,
-				'values', values, 'cells', edges));
+				'styleChanged', 'cells', edges,
+				'keys', keys, 'values', values,
+				'force', cells.length == 0));
 		}
 		finally
 		{
@@ -1301,7 +1302,8 @@ Menus.prototype.promptChange = function(menu, label, hint, defaultValue, key, pa
 
 		var doStopEditing = (beforeFn != null) ? beforeFn() : true;
     	
-		var dlg = new FilenameDialog(this.editorUi, value, mxResources.get('apply'), mxUtils.bind(this, function(newValue)
+		var dlg = new FilenameDialog(this.editorUi, value, mxResources.get('apply'),
+			mxUtils.bind(this, function(newValue)
 		{
 			if (newValue != null && newValue.length > 0)
 			{
@@ -1340,7 +1342,7 @@ Menus.prototype.promptChange = function(menu, label, hint, defaultValue, key, pa
 /**
  * Adds a handler for showing a menu in the given element.
  */
-Menus.prototype.pickColor = function(key, cmd, defaultValue)
+Menus.prototype.pickColor = function(key, cmd, defaultValue, defaultColor, defaultColorValue)
 {
 	var ui = this.editorUi;
 	
@@ -1355,7 +1357,8 @@ Menus.prototype.pickColor = function(key, cmd, defaultValue)
 			// Saves and restores text selection for in-place editor
 			var selState = graph.cellEditor.saveSelection();
 			
-			var dlg = new ColorDialog(this.editorUi, defaultValue || graph.shapeForegroundColor, mxUtils.bind(this, function(color)
+			var dlg = new ColorDialog(this.editorUi, defaultValue || graph.shapeForegroundColor,
+				mxUtils.bind(this, function(color)
 			{
 				graph.cellEditor.restoreSelection(selState);
 				document.execCommand(cmd, false, (color != mxConstants.NONE) ? color : 'transparent');
@@ -1383,12 +1386,6 @@ Menus.prototype.pickColor = function(key, cmd, defaultValue)
 		}
 		else
 		{
-			if (this.colorDialog == null)
-			{
-				this.colorDialog = new ColorDialog(this.editorUi);
-			}
-		
-			this.colorDialog.currentColorKey = key;
 			var state = graph.getView().getState(graph.getSelectionCell());
 			var color = mxConstants.NONE;
 			
@@ -1397,19 +1394,37 @@ Menus.prototype.pickColor = function(key, cmd, defaultValue)
 				color = state.style[key] || color;
 			}
 			
-			if (color == mxConstants.NONE)
+			if (defaultColor != null)
 			{
-				color = graph.shapeBackgroundColor.substring(1);
-				this.colorDialog.picker.fromString(color);
-				this.colorDialog.colorInput.value = mxConstants.NONE;
+				color = (/(^#?[a-zA-Z0-9]*$)/.test(color)) ? color : defaultColor;
+
+				this.editorUi.pickColor(color, ColorDialog.createApplyFunction(
+					this.editorUi, key), defaultColor, defaultColorValue);
 			}
 			else
 			{
-				this.colorDialog.picker.fromString(mxUtils.rgba2hex(color));
+				if (this.colorDialog == null)
+				{
+					this.colorDialog = new ColorDialog(this.editorUi);
+				}
+			
+				this.colorDialog.currentColorKey = key;
+
+				
+				if (color == mxConstants.NONE)
+				{
+					color = graph.shapeBackgroundColor.substring(1);
+					this.colorDialog.picker.fromString(color);
+					this.colorDialog.colorInput.value = mxConstants.NONE;
+				}
+				else
+				{
+					this.colorDialog.picker.fromString(mxUtils.rgba2hex(color));
+				}
+			
+				this.editorUi.showDialog(this.colorDialog.container, 230, h, true, true);
+				this.colorDialog.init();
 			}
-		
-			this.editorUi.showDialog(this.colorDialog.container, 230, h, true, true);
-			this.colorDialog.init();
 		}
 	}));
 };
@@ -1434,10 +1449,17 @@ Menus.prototype.addMenuItem = function(menu, key, parent, trigger, sprite, label
 
 	if (action != null && (menu.showDisabled || action.isEnabled()) && action.visible)
 	{
-		var item = menu.addItem(label || action.label, null, function(evt)
+		var item = menu.addItem(label || action.label, null, mxUtils.bind(this, function(evt)
 		{
-			action.funct(trigger, evt);
-		}, parent, sprite, action.isEnabled());
+			try
+			{
+				action.funct(trigger, evt);
+			}
+			catch (e)
+			{
+				this.editorUi.handleError(e);
+			}
+		}), parent, sprite, action.isEnabled());
 		
 		// Adds checkmark image
 		if (action.toggleAction && action.isSelected())
@@ -1545,6 +1567,28 @@ Menus.prototype.addPopupMenuHistoryItems = function(menu, cell, evt)
 	if (this.editorUi.editor.graph.isSelectionEmpty())
 	{
 		this.addMenuItems(menu, ['undo', 'redo'], null, evt);
+	}
+};
+
+/**
+ * Creates the keyboard event handler for the current graph and history.
+ */
+Menus.prototype.addPopupDeleteItem = function(menu, cell, evt)
+{
+	var item = this.addMenuItem(menu, 'delete');
+
+	if (item != null && item.firstChild != null &&
+		item.firstChild.nextSibling != null)
+	{
+		item.firstChild.nextSibling.style.color = 'red';
+		var graph = this.editorUi.editor.graph;
+
+		if (graph.getSelectionCount() > 1)
+		{
+			item.firstChild.nextSibling.innerHTML =
+				mxUtils.htmlEntities(mxResources.get('delete') +
+				' (' + graph.getSelectionCount() + ')');
+		}
 	}
 };
 
@@ -1726,8 +1770,7 @@ Menus.prototype.addPopupMenuCellEditItems = function(menu, cell, evt, parent)
 		this.addMenuItem(menu, 'crop', parent, evt);
 	}
 
-	if ((graph.getModel().isVertex(cell) && graph.getModel().getChildCount(cell) == 0)
-			|| graph.isContainer(cell)) //Allow vertex only excluding group (but allowing container [e.g, swimlanes])
+	if (graph.getModel().isVertex(cell) && graph.isCellConnectable(cell))
 	{
 		this.addMenuItem(menu, 'editConnectionPoints', parent, evt);
 	}

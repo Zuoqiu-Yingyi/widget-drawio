@@ -30,6 +30,7 @@ function mxFreehand(graph)
 	var enabled = false;
 	var stopClickEnabled = false;
 	var selectInserted = false;
+	var currentStrokeColor = 'default';
 	var perfectFreehandOptions = {
 		size: 5,
 		thinning: 0.5,
@@ -110,6 +111,16 @@ function mxFreehand(graph)
 		return perfectFreehandOptions.size;
 	};
 
+	this.setOptions = function(value)
+	{
+		perfectFreehandOptions = value;
+	};
+
+	this.getOptions = function()
+	{
+		return perfectFreehandOptions;
+	};
+
 	var setEnabled = function(isEnabled)
 	{
 		enabled = isEnabled;
@@ -168,18 +179,24 @@ function mxFreehand(graph)
 	var edge = new mxCell();
 	edge.edge = true;
 
-	var getStrokeColor = function()
+	this.getStrokeColor = function(allowDefault)
 	{
-		var defaultStyle = graph.getCurrentCellStyle(edge);
-		var strokeColor = mxUtils.getValue(graph.currentVertexStyle, mxConstants.STYLE_STROKECOLOR,
-			mxUtils.getValue(defaultStyle, mxConstants.STYLE_STROKECOLOR, '#000'))
+		var strokeColor = (currentStrokeColor != null) ? currentStrokeColor :
+			mxUtils.getValue(graph.currentVertexStyle, mxConstants.STYLE_STROKECOLOR,
+			mxUtils.getValue(graph.getCurrentCellStyle(edge),
+			mxConstants.STYLE_STROKECOLOR, '#000'))
 
-		if (strokeColor == 'default')
+		if (strokeColor == 'default' && !allowDefault)
 		{
 			strokeColor = graph.shapeForegroundColor;
 		}
 
 		return strokeColor;
+	};
+
+	this.setStrokeColor = function(value)
+	{
+		currentStrokeColor = value;
 	};
 
 	this.createStyle = function(stencil)
@@ -190,6 +207,8 @@ function mxFreehand(graph)
 		{
 			style = ';lineShape=1;';
 		}
+
+		style += 'strokeColor=' + this.getStrokeColor(true) + ';';
 
 		return mxConstants.STYLE_SHAPE + '=' + stencil + style;
 	};
@@ -366,7 +385,7 @@ function mxFreehand(graph)
 				
 				var strokeWidth = parseFloat(graph.currentVertexStyle[mxConstants.STYLE_STROKEWIDTH] || 1);
 				strokeWidth = Math.max(1, strokeWidth * graph.view.scale);
-				var strokeColor = getStrokeColor();
+				var strokeColor = this.getStrokeColor();
 
 			    path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 			    path.setAttribute('fill', perfectFreehandMode? strokeColor : 'none');
@@ -520,10 +539,3 @@ function mxFreehand(graph)
 	    }
 	};
 };
-
-mxFreehand.prototype.NO_SMOOTHING = 1;
-mxFreehand.prototype.MILD_SMOOTHING = 4;
-mxFreehand.prototype.NORMAL_SMOOTHING = 8;
-mxFreehand.prototype.VERY_SMOOTH_SMOOTHING = 12;
-mxFreehand.prototype.SUPER_SMOOTH_SMOOTHING = 16;
-mxFreehand.prototype.HYPER_SMOOTH_SMOOTHING = 20;
