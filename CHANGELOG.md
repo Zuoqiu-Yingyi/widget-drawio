@@ -7,6 +7,7 @@
 - 修复在新窗口中保存文件后无法正常关闭窗口问题 | Fixed an issue where the window could not be closed normally after saving the file in a new window.
 - 优化全局属性 `window.siyuan` 注入方案 | Optimize the global attribute `window.siyuan` injection scheme.
 - 更新 draw.io 至 [v22.1.22](https://github.com/jgraph/drawio/releases/tag/v22.1.22) | Update draw.io to [v22.1.22](https://github.com/jgraph/drawio/releases/tag/v22.1.22).
+- 新增在新标签页中打开的功能 | Add the function of opening in a new tab.
 
 ## v0.2.0/2023-06-05
 

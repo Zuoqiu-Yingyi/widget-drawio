@@ -1,29 +1,38 @@
 /* 👇 SIYUAN 👇 */
 /* 启用开发模式 */
-(() => {
+(async () => {
     const SIYUAN_PLUGIN_ID = 'siyuan'; // 思源插件 ID
-    const url = new URL(window.location);
+    window.siyuan = {};
+    window.siyuan.url = new URL(window.location);
 
-    if (url.searchParams.get('dev') !== '1') {
-        url.searchParams.set('dev', 1);
-        window.location.href = url.href;
+    /* 切换至开发模式 */
+    if (window.siyuan.url.searchParams.get('dev') !== '1') {
+        window.siyuan.url.searchParams.set('dev', 1);
+        window.location.href = window.siyuan.url.href;
     }
 
-    const regs = {
+    window.siyuan.regs = {
         id: /^\d{14}\-[0-9a-z]{7}$/,
     };
-    const node = window.frameElement?.parentElement?.parentElement;
+    window.siyuan.node = window.frameElement?.parentElement?.parentElement;
     // console.log(urlParams);
     // console.log(window.location);
 
-    let id = url.searchParams.get('id');
+    window.siyuan.id = window.siyuan.url.searchParams.get('id');
 
     /* 移除字符串后缀 */
     function trimSuffix(str, suffix) {
         return str.endsWith(suffix) ? str.slice(0, -suffix.length) : str;
     }
 
-    function init(url, id, asset = null, params = {}) {
+    function init(
+        id,
+        url,
+        asset = null,
+        params = {},
+    ) {
+        url.searchParams.set('siyuan-inited', 1); // 初始化完成标志
+
         url.searchParams.set('id', id); // 块 ID
         url.searchParams.set('client', 1); // 跳过新建时选择储存位置
         url.searchParams.set('stealth', 1); // 静默模式
@@ -61,53 +70,21 @@
             }
         }
 
-        if (url.searchParams.get('siyuan-inited') !== '1') {
-            url.searchParams.set('siyuan-inited', 1);
-            // console.log(url.href);
-            window.location.href = url.href;
-        }
+        window.location.href = url.href;
     }
 
-    if (!regs.id.test(id)) {
-        if (node) {
-            if (node.dataset.type === 'NodeIFrame') {
+    if (!window.siyuan.regs.id.test(window.siyuan.id)) {
+        if (window.siyuan.node) {
+            if (window.siyuan.node.dataset.type === 'NodeIFrame') {
                 alert('在 iframe 块中无法保存资源文件至思源笔记！\nUnable to save resource file to SiYuan Note in an iframe block.');
                 return;
             }
-            id = node.dataset.nodeId;
+            window.siyuan.id = window.siyuan.node.dataset.nodeId;
         }
     }
 
-    if (regs.id.test(id)) {
-        fetch("/api/attr/getBlockAttrs", {
-            body: JSON.stringify({
-                id: id,
-            }),
-            method: "POST",
-            // headers: { Authorization: "Token " + this.apitoken },
-        }).then((response) => {
-            return response.json();
-        }).then((data) => {
-            // console.log(data);
-            const asset = data.data['custom-data-assets'];
-            const lightbox = data.data['custom-lightbox'];
-            const dark = data.data['custom-dark'];
-            const ui = data.data['custom-ui'];
-            init(
-                url,
-                id,
-                asset,
-                {
-                    lightbox,
-                    dark,
-                    ui,
-                },
-            );
-        });
-    }
-
     /* 获取同源的思源全局属性 */
-    const siyuan = (() => {
+    window.siyuan.global = (() => {
         var frame = window.self;
         switch (frame) {
             case window.top:
@@ -116,26 +93,29 @@
 
             default:
                 while (frame !== window.top) {
-                    if (!!frame.siyuan) break;
+                    if (!!frame.siyuan && frame.siyuan !== window.siyuan) break;
                     frame = frame.parent;
                 }
                 return frame?.siyuan;
         }
     })();
+    console.log(window.siyuan.global);
+    window.siyuan.config = window.siyuan.global?.config;
+    window.mxIsSiyuan = !!window.siyuan.global;
 
     /* 模式 */
-    const mode = (() => {
-        if (node) {
-            switch (node.dataset.type) {
+    window.siyuan.mode = (() => {
+        if (window.siyuan.node) {
+            switch (window.siyuan.node.dataset.type) {
                 case 'NodeIFrame':
                     return 'iframe';
                 case 'NodeWidget':
                     return 'widget';
                 default:
-                    return node.dataset.type;
+                    return window.siyuan.node.dataset.type;
             }
         }
-        else if (regs.id.test(url.searchParams.get('id'))) {
+        else if (window.siyuan.regs.id.test(window.siyuan.url.searchParams.get('id'))) {
             return 'window';
         }
         else {
@@ -143,14 +123,59 @@
         }
     })();
 
-    window.mxIsSiyuan = !!siyuan;
-    window.siyuan = {
-        id,
-        url,
-        regs,
-        mode,
-        global: siyuan,
-        config: siyuan?.config,
-    };
+    window.siyuan.ready = new Promise(resolve => {
+        window.siyuan.resolve = resolve;
+    });
+
+
+    /* 设置块属性 */
+    window.siyuan.setBlockAttrs = async function (attrs = this.attrs, id = this.id) {
+        const response = await fetch('/api/attr/setBlockAttrs', {
+            body: JSON.stringify({
+                id,
+                attrs,
+            }),
+            method: 'POST',
+        });
+        const body = await response.json();
+        return body;
+    }
+
+    /* 获取块属性 */
+    window.siyuan.getBlockAttrs = async function (id = this.id) {
+        const response = await fetch('/api/attr/getBlockAttrs', {
+            body: JSON.stringify({
+                id,
+            }),
+            method: 'POST',
+        });
+        const body = await response.json();
+        return body;
+    }
+
+    if (window.siyuan.regs.id.test(window.siyuan.id)) {
+        const response = await window.siyuan.getBlockAttrs();
+        window.siyuan.attrs = response.data;
+
+        if (window.siyuan.url.searchParams.get('siyuan-inited') !== '1') {
+            const asset = window.siyuan.attrs['custom-data-assets'];
+            const lightbox = window.siyuan.attrs['custom-lightbox'];
+            const dark = window.siyuan.attrs['custom-dark'];
+            const ui = window.siyuan.attrs['custom-ui'];
+
+            init(
+                window.siyuan.id,
+                window.siyuan.url,
+                asset,
+                {
+                    lightbox,
+                    dark,
+                    ui,
+                },
+            );
+        }
+
+        window.siyuan.resolve();
+    }
 })();
 /* 👆 SIYUAN 👆 */

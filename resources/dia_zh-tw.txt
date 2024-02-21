@@ -1,11 +1,9 @@
 # *DO NOT DIRECTLY EDIT THIS FILE, IT IS AUTOMATICALLY GENERATED AND IT IS BASED ON:*
 # https://docs.google.com/spreadsheet/ccc?key=0AmQEO36liL4FdDJLWVNMaVV2UmRKSnpXU09MYkdGbEE
 siyuan=思源
-siyuanFullscreen=全螢幕切換
 siyuanImport=匯入本地圖紙
-siyuanLightbox=光箱模式
 siyuanNote=思源筆記
-siyuanOpenByNewWindow=使用新窗口打開
+siyuanOpenInNewTab=在新頁簽中打開
 about=關於
 aboutDrawio=關於 draw.io
 accessDenied=存取遭拒

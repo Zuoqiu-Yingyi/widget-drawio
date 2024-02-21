@@ -2,18 +2,24 @@
  * SiYuan Note plugin.
  */
 /* 👇 SIYUAN 👇 */
-Draw.loadPlugin(function (
+Draw.loadPlugin(async function (
     app, // window.sb.editorUi instanceof window.App
 ) {
     // console.debug(app);
+    await window.siyuan.ready;
+
     App.MODE_SIYUAN = "siyuan"; // 思源存储模式
     app[App.MODE_SIYUAN] = {}; // 思源存储供应商
 
     /* Minimal 主题默认隐藏形状面板与格式面板 */
     window.addEventListener('load', async () => {
         if (window.uiTheme === 'min') {
-            app.toggleFormatPanel(false);
-            app.sidebarWindow.window.setVisible(false);
+            if (app.formatWindow?.window.isVisible()) {
+                app.formatWindow.window.setVisible(false);
+            }
+            if (app.sidebarWindow?.window.isVisible()) {
+                app.sidebarWindow.window.setVisible(false);
+            }
         }
     });
 
@@ -26,120 +32,157 @@ Draw.loadPlugin(function (
         });
 
         /* 使用新窗口打开 */
-        app.actions.addAction('siyuanOpenByNewWindow', () => {
-            try {
-                const {
-                    BrowserWindow,
-                    Menu,
-                } = window.top.require('@electron/remote');
+        const action_openInNewWindow = new Action(
+            mxResources.get('openInNewWindow'),
+            () => {
+                try {
+                    const {
+                        BrowserWindow,
+                        Menu,
+                    } = window.top.require('@electron/remote');
 
-                /* 新窗口菜单 */
-                const menu = Menu.buildFromTemplate([
-                    // REF [菜单项 | Electron](https://www.electronjs.org/zh/docs/latest/api/menu-item)
-                    {
-                        label: 'SiYuan',
-                        submenu: [
-                            {
-                                label: 'About SiYuan',
-                                role: 'about',
-                            },
-                            { type: 'separator' },
-                            {
-                                label: 'Quit SiYuan',
-                                role: 'quit',
-                            },
-                        ],
-                    },
-                    {
-                        role: 'editMenu',
-                        submenu: [
-                            { role: 'selectAll' },
-                            { role: 'cut' },
-                            { role: 'copy' },
-                            { role: 'paste' },
-                            { role: 'pasteAndMatchStyle', accelerator: 'CmdOrCtrl+Shift+V' },
-                            { type: 'separator' },
-                            { role: 'toggleSpellChecker' },
-                        ],
-                    },
-                    {
-                        role: 'viewMenu',
-                        submenu: [
-                            { role: 'resetZoom' },
-                            { role: 'zoomIn', accelerator: 'CmdOrCtrl+=' },
-                            { role: 'zoomOut' },
-                        ],
-                    },
-                    {
-                        role: 'windowMenu',
-                        submenu: [
-                            { role: 'minimize' },
-                            { role: 'zoom' },
-                            { role: 'togglefullscreen' },
-                            { type: 'separator' },
-                            { role: 'toggledevtools' },
-                            { type: 'separator' },
-                            { role: 'front' },
-                            { type: 'separator' },
-                            { role: 'reload', accelerator: 'F5' },
-                            { role: 'forcereload', accelerator: 'CmdOrCtrl+F5' },
-                            { role: 'close' },
-                            { type: 'separator' },
-                            {
-                                label: 'Pinned',
-                                click: (menuItem, browserWindow, event) => {
-                                    if (browserWindow) browserWindow.setAlwaysOnTop(!browserWindow.isAlwaysOnTop());
+                    /* 新窗口菜单 */
+                    const menu = Menu.buildFromTemplate([
+                        // REF [菜单项 | Electron](https://www.electronjs.org/zh/docs/latest/api/menu-item)
+                        {
+                            label: 'SiYuan',
+                            submenu: [
+                                {
+                                    label: 'About SiYuan',
+                                    role: 'about',
                                 },
-                                type: 'checkbox',
-                                checked: false,
-                                // REF [快捷键 | Electron](https://www.electronjs.org/zh/docs/latest/api/accelerator)
-                                accelerator: 'Alt+Shift+P',
-                            },
-                        ],
-                    },
-                ]);
+                                { type: 'separator' },
+                                {
+                                    label: 'Quit SiYuan',
+                                    role: 'quit',
+                                },
+                            ],
+                        },
+                        {
+                            role: 'editMenu',
+                            submenu: [
+                                { role: 'selectAll' },
+                                { role: 'cut' },
+                                { role: 'copy' },
+                                { role: 'paste' },
+                                { role: 'pasteAndMatchStyle', accelerator: 'CmdOrCtrl+Shift+V' },
+                                { type: 'separator' },
+                                { role: 'toggleSpellChecker' },
+                            ],
+                        },
+                        {
+                            role: 'viewMenu',
+                            submenu: [
+                                { role: 'resetZoom' },
+                                { role: 'zoomIn', accelerator: 'CmdOrCtrl+=' },
+                                { role: 'zoomOut' },
+                            ],
+                        },
+                        {
+                            role: 'windowMenu',
+                            submenu: [
+                                { role: 'minimize' },
+                                { role: 'zoom' },
+                                { role: 'togglefullscreen' },
+                                { type: 'separator' },
+                                { role: 'toggledevtools' },
+                                { type: 'separator' },
+                                { role: 'front' },
+                                { type: 'separator' },
+                                { role: 'reload', accelerator: 'F5' },
+                                { role: 'forcereload', accelerator: 'CmdOrCtrl+F5' },
+                                { role: 'close' },
+                                { type: 'separator' },
+                                {
+                                    label: 'Pinned',
+                                    click: (menuItem, browserWindow, event) => {
+                                        if (browserWindow) browserWindow.setAlwaysOnTop(!browserWindow.isAlwaysOnTop());
+                                    },
+                                    type: 'checkbox',
+                                    checked: false,
+                                    // REF [快捷键 | Electron](https://www.electronjs.org/zh/docs/latest/api/accelerator)
+                                    accelerator: 'Alt+Shift+P',
+                                },
+                            ],
+                        },
+                    ]);
 
-                /* 新窗口 */
-                const win = new BrowserWindow({
-                    autoHideMenuBar: true,
-                });
+                    /* 新窗口 */
+                    const win = new BrowserWindow({
+                        autoHideMenuBar: true,
+                    });
 
-                win.setMenu(menu);
-                win.loadURL(window.siyuan.url.href);
-            } catch (err) {
-                console.warn(err);
-                window.open(
-                    window.siyuan.url.href,
-                    undefined,
-                    `
+                    win.setMenu(menu);
+                    win.loadURL(location.href);
+                } catch (err) {
+                    console.warn(err);
+                    window.open(
+                        location.href,
+                        undefined,
+                        `
                         popup = true,
                     `,
-                );
-            }
-        });
+                    );
+                }
+            },
+        );
+        app.actions.put('openInNewWindow', action_openInNewWindow);
 
-        // TODO: 使用新页签打开
-
-        /* 全屏切換 */
-        app.actions.addAction('siyuanFullscreen', () => {
-            if (document.fullscreenElement) {
-                document.exitFullscreen()
-            } else {
-                document.documentElement.requestFullscreen()
-            }
+        /* 使用新页签打开 */
+        Object.defineProperty(window.siyuan, "webview", {
+            get: function () {
+                return this.global?.ws.app.plugins.find(plugin => plugin.name === "webview");
+            },
         });
+        const action_siyuanOpenInNewTab = new Action(
+            mxResources.get('siyuanOpenInNewTab'),
+            () => {
+                const webview = window.siyuan.webview;
+                if (webview) {
+                    webview.openWebviewTab(location.href, document.title);
+                }
+            },
+            !!window.siyuan.webview,
+        );
+        action_siyuanOpenInNewTab.setToggleAction(true);
+        action_siyuanOpenInNewTab.setSelectedCallback(() => {
+            action_siyuanOpenInNewTab.setEnabled(!!window.siyuan.webview);
+            return false;
+        });
+        app.actions.put('siyuanOpenInNewTab', action_siyuanOpenInNewTab);
+
+        /* 全屏模式 */
+        const action_siyuanFullscreen = new Action(
+            mxResources.get('fullscreen'),
+            async () => {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen()
+                } else {
+                    document.documentElement.requestFullscreen()
+                }
+            },
+        )
+        action_siyuanFullscreen.setToggleAction(true);
+        action_siyuanFullscreen.setSelectedCallback(() => document.fullscreenElement);
+        app.actions.put('siyuanFullscreen', action_siyuanFullscreen);
 
         /* 灯箱模式 */
-        app.actions.addAction('siyuanLightbox', () => {
-            window.siyuan.setBlockAttrs({
-                'custom-lightbox': '1',
-            }).then(response => {
-                if (response.ok) {
+        const action_siyuanLightbox = new Action(
+            mxResources.get('lightbox'),
+            async () => {
+                const lightbox = window.siyuan.attrs['custom-lightbox'] === '1';
+                window.siyuan.attrs['custom-lightbox'] = lightbox ? null : '1';
+                await window.siyuan.setBlockAttrs();
+
+                if (!lightbox) {
                     window.siyuan.url.searchParams.set('lightbox', 1);
                     window.location.href = window.siyuan.url.href;
                 }
-            })
-        });
+            },
+        );
+        action_siyuanLightbox.setToggleAction(true);
+        action_siyuanLightbox.setSelectedCallback(() => window.siyuan.attrs['custom-lightbox'] === '1');
+        app.actions.put('siyuanLightbox', action_siyuanLightbox);
 
         /* 添加菜单 */
         app.menubar?.addMenu(
@@ -150,9 +193,10 @@ Draw.loadPlugin(function (
                 app.menus.addMenuItem(menu, 'siyuanImport');
                 menu.addSeparator(parent);
                 app.menus.addMenuItem(menu, 'siyuanLightbox');
-                menu.addSeparator(parent);
-                app.menus.addMenuItem(menu, 'siyuanOpenByNewWindow');
                 app.menus.addMenuItem(menu, 'siyuanFullscreen');
+                menu.addSeparator(parent);
+                app.menus.addMenuItem(menu, 'siyuanOpenInNewTab');
+                app.menus.addMenuItem(menu, 'openInNewWindow');
             },
             document.querySelector('.geStatus'),
         );
@@ -170,18 +214,6 @@ Draw.loadPlugin(function (
     Object.assign(window.siyuan, {
         app,
         saved: true, // 文件是否已保存
-        /* 设置块属性 */
-        setBlockAttrs: async function (attrs, id = this.id) {
-            const response = await fetch('/api/attr/setBlockAttrs', {
-                body: JSON.stringify({
-                    id,
-                    attrs,
-                }),
-                method: 'POST',
-            });
-            const body = await response.json();
-            return body;
-        },
         /* 保存数据到思源 */
         saveDataToSiyuan: async function (filename, _format, filedata, mime, base64Encoded = false) {
             const { name, ext } = filenameParse(filename);
@@ -236,14 +268,12 @@ Draw.loadPlugin(function (
                 }
 
                 // console.log(filename, asset);
-                const body = await this.setBlockAttrs(
-                    {
-                        'custom-data-assets': asset,
-                        'data-export-md': markdown,
-                        'data-export-html': html,
-                    },
-                    this.id,
-                );
+                Object.assign(window.siyuan.attrs, {
+                    'custom-data-assets': asset,
+                    'data-export-md': markdown,
+                    'data-export-html': html,
+                });
+                const body = await this.setBlockAttrs();
                 if (body.code !== 0) {
                     throw new Error(body.msg);
                 }
