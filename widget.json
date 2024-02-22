@@ -2,7 +2,21 @@
     "name": "drawio",
     "author": "Zuoqiu-Yingyi",
     "url": "https://github.com/Zuoqiu-Yingyi/widget-drawio",
-    "version": "0.2.0",
+    "version": "0.2.1",
+    "keywords": [
+        "draw",
+        "绘图",
+        "繪圖",
+        "graph",
+        "图表",
+        "圖表",
+        "diagram",
+        "示意图",
+        "示意圖",
+        "flow",
+        "流程图",
+        "流程圖"
+    ],
     "displayName": {
         "default": "draw.io"
     },

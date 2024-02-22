@@ -84,7 +84,7 @@
     }
 
     /* 获取同源的思源全局属性 */
-    window.siyuan.global = (() => {
+    window.siyuan.frame = (() => {
         var frame = window.self;
         switch (frame) {
             case window.top:
@@ -99,6 +99,8 @@
                 return frame?.siyuan;
         }
     })();
+    window.siyuan.openAPI = window.siyuan.frame?.openAPI;
+    window.siyuan.global = window.siyuan.frame?.siyuan;
     window.siyuan.config = window.siyuan.global?.config;
     window.mxIsSiyuan = !!window.siyuan.global;
 

@@ -1,5 +1,8 @@
 # 更改日志 | CHANGE LOG
 
+## v0.2.1/2024-02-22
+
+- [v0.2.0 <=> v0.2.1](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.2.0...v0.2.1)
 - [#29](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/29) 优化资源文件加载方案 | Optimize resource file loading scheme.
 - [#23](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/23) 优化资源文件加载方案 | Optimize resource file loading scheme.
 - [#31](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/31) 修复自定义 URL 参数解析错误问题 | Fixed an issue where custom URL parameters were parsed incorrectly.

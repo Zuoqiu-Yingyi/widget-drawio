@@ -220,6 +220,8 @@ Draw.loadPlugin(async function (
         });
         app.actions.put('siyuanCopyFileLink', action_siyuanCopyFileLink);
 
+        // TODO: siyuanHoverPreview 鼠标悬浮预览思源链接
+
         /* 添加菜单 */
         app.menubar?.addMenu(
             mxResources.get('siyuan'),
@@ -236,6 +238,8 @@ Draw.loadPlugin(async function (
                 menu.addSeparator(parent);
                 app.menus.addMenuItem(menu, 'siyuanOpenInNewTab');
                 app.menus.addMenuItem(menu, 'openInNewWindow');
+                menu.addSeparator(parent);
+                app.menus.addMenuItem(menu, 'siyuanHoverPreview');
             },
             document.querySelector('.geStatus'),
         );
