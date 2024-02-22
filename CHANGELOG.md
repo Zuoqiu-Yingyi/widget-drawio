@@ -9,6 +9,7 @@
 - 更新 draw.io 至 [v22.1.22](https://github.com/jgraph/drawio/releases/tag/v22.1.22) | Update draw.io to [v22.1.22](https://github.com/jgraph/drawio/releases/tag/v22.1.22).
 - 新增在新标签页中打开的功能 | Add the function of opening in a new tab.
 - 新增 `复制文件引用链接` 与 `复制文件引用地址` 功能 | Add `Copy file reference link` and `Copy file reference address` functions.
+- 添加自动跳转思源访问认证页面功能 | Add the function of automatically jumping to the Siyuan access authentication page.
 
 ## v0.2.0/2023-06-05
 

@@ -120,8 +120,8 @@ Draw.loadPlugin(async function (
                         location.href,
                         undefined,
                         `
-                        popup = true,
-                    `,
+                            popup = true,
+                        `,
                     );
                 }
             },

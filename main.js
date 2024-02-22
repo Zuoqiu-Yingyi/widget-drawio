@@ -152,29 +152,41 @@
         return body;
     }
 
+    /* 跳转到认证页面 */
+    window.siyuan.auth = function (to = globalThis.location.href.slice(globalThis.location.origin.length)) {
+        const url = new URL(window.location.origin);
+        url.pathname = "/check-auth";
+        url.searchParams.set("to", to);
+        window.location.replace(url); // 当前页面不会保存到会话历史中
+    }
+
     if (window.siyuan.regs.id.test(window.siyuan.id)) {
-        const response = await window.siyuan.getBlockAttrs();
-        window.siyuan.attrs = response.data;
+        try {
+            const response = await window.siyuan.getBlockAttrs();
+            window.siyuan.attrs = response.data;
 
-        if (window.siyuan.url.searchParams.get('siyuan-inited') !== '1') {
-            const asset = window.siyuan.attrs['custom-data-assets'];
-            const lightbox = window.siyuan.attrs['custom-lightbox'];
-            const dark = window.siyuan.attrs['custom-dark'];
-            const ui = window.siyuan.attrs['custom-ui'];
+            if (window.siyuan.url.searchParams.get('siyuan-inited') !== '1') {
+                const asset = window.siyuan.attrs['custom-data-assets'];
+                const lightbox = window.siyuan.attrs['custom-lightbox'];
+                const dark = window.siyuan.attrs['custom-dark'];
+                const ui = window.siyuan.attrs['custom-ui'];
 
-            init(
-                window.siyuan.id,
-                window.siyuan.url,
-                asset,
-                {
-                    lightbox,
-                    dark,
-                    ui,
-                },
-            );
+                init(
+                    window.siyuan.id,
+                    window.siyuan.url,
+                    asset,
+                    {
+                        lightbox,
+                        dark,
+                        ui,
+                    },
+                );
+            }
+
+            window.siyuan.resolve();
+        } catch (err) {
+            window.siyuan.auth();
         }
-
-        window.siyuan.resolve();
     }
 })();
 /* 👆 SIYUAN 👆 */
