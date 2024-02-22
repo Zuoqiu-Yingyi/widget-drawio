@@ -33,7 +33,7 @@ For other URL parameters, please refer to [Supported URL parameters](https://www
 - Load and save.
   - The resource files set in the block attributes `custom-data-assets` and `data-assets` are automatically loaded on load.
   - Use `File` -> `Save` <kbd>Ctrl + S</kbd> or `Save As` <kbd>Ctrl + Shift + S</kbd> -> `SiYuan Note`  to save the resource file to the resource folder `data/assets`.
-    - The currently supported save formats are `*.drawio`, `*.png`, `*.svg`, `*.html`, `*.xml`, all of which can be loaded and edited again.
+    - The currently supported save formats are `*.drawio`, `*.png`, `*.svg`, `*.html`, all of which can be loaded and edited again.
       - `*.svg` files can be inserted to other locations in the notebook using `Insert image link` or `Insert IFrame link`, and can be updated synchronously when the source files change.
       - `*.png` files can be inserted to other locations in the notebook using `Insert image link` or `Insert IFrame link`, and can be updated synchronously when the source files change.
       - `*.html` files can be inserted to other locations in the notebook using `Insert IFrame link`, and can be updated synchronously when the source files change.
@@ -50,6 +50,7 @@ For other URL parameters, please refer to [Supported URL parameters](https://www
   - Theme
     - Set custom block attribute `ui`: `kennedy` | `min` | `atlas` | `dark` | `sketch` | `simple`.
     - The default is the last used theme.
+- The `Open in New Tab` feature needs to be used in conjunction with the plugin `Web Page View` (`webview`)
 
 ## START
 

@@ -8,6 +8,7 @@
 - 优化全局属性 `window.siyuan` 注入方案 | Optimize the global attribute `window.siyuan` injection scheme.
 - 更新 draw.io 至 [v22.1.22](https://github.com/jgraph/drawio/releases/tag/v22.1.22) | Update draw.io to [v22.1.22](https://github.com/jgraph/drawio/releases/tag/v22.1.22).
 - 新增在新标签页中打开的功能 | Add the function of opening in a new tab.
+- 新增 `复制文件引用链接` 与 `复制文件引用地址` 功能 | Add `Copy file reference link` and `Copy file reference address` functions.
 
 ## v0.2.0/2023-06-05
 

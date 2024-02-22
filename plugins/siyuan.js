@@ -184,6 +184,42 @@ Draw.loadPlugin(async function (
         action_siyuanLightbox.setSelectedCallback(() => window.siyuan.attrs['custom-lightbox'] === '1');
         app.actions.put('siyuanLightbox', action_siyuanLightbox);
 
+        /* 复制文件引用地址 */
+        const action_siyuanCopyFilePath = new Action(
+            mxResources.get('siyuanCopyFilePath'),
+            async () => {
+                const asset = window.siyuan.attrs['custom-data-assets'];
+                if (asset) {
+                    await window.navigator.clipboard.writeText(asset);
+                }
+            },
+            !!window.siyuan.attrs['custom-data-assets'],
+        );
+        action_siyuanCopyFilePath.setToggleAction(true);
+        action_siyuanCopyFilePath.setSelectedCallback(() => {
+            action_siyuanCopyFilePath.setEnabled(!!window.siyuan.attrs['custom-data-assets']);
+            return false;
+        });
+        app.actions.put('siyuanCopyFilePath', action_siyuanCopyFilePath);
+
+        /* 复制文件引用链接 */
+        const action_siyuanCopyFileLink = new Action(
+            mxResources.get('siyuanCopyFileLink'),
+            async () => {
+                const markdown = window.siyuan.attrs['data-export-md'];
+                if (markdown) {
+                    await window.navigator.clipboard.writeText(markdown);
+                }
+            },
+            !!window.siyuan.attrs['data-export-md'],
+        );
+        action_siyuanCopyFileLink.setToggleAction(true);
+        action_siyuanCopyFileLink.setSelectedCallback(() => {
+            action_siyuanCopyFileLink.setEnabled(!!window.siyuan.attrs['data-export-md']);
+            return false;
+        });
+        app.actions.put('siyuanCopyFileLink', action_siyuanCopyFileLink);
+
         /* 添加菜单 */
         app.menubar?.addMenu(
             mxResources.get('siyuan'),
@@ -191,6 +227,9 @@ Draw.loadPlugin(async function (
                 app.menus.addMenuItem(menu, 'save');
                 menu.addSeparator(parent);
                 app.menus.addMenuItem(menu, 'siyuanImport');
+                menu.addSeparator(parent);
+                app.menus.addMenuItem(menu, 'siyuanCopyFilePath');
+                app.menus.addMenuItem(menu, 'siyuanCopyFileLink');
                 menu.addSeparator(parent);
                 app.menus.addMenuItem(menu, 'siyuanLightbox');
                 app.menus.addMenuItem(menu, 'siyuanFullscreen');
@@ -440,8 +479,6 @@ Draw.loadPlugin(async function (
         filename = `${file_name_main}.${file_name_ext}`;
         return { name: filename, main: file_name_main, ext: file_name_ext };
     }
-
-    /* 上传文件至资源文件夹 */
 
     /* 劫持原方法 */
     const saveData = app.saveData;

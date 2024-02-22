@@ -99,7 +99,6 @@
                 return frame?.siyuan;
         }
     })();
-    console.log(window.siyuan.global);
     window.siyuan.config = window.siyuan.global?.config;
     window.mxIsSiyuan = !!window.siyuan.global;
 

@@ -1,10 +1,11 @@
 # *DO NOT DIRECTLY EDIT THIS FILE, IT IS AUTOMATICALLY GENERATED AND IT IS BASED ON:*
 # https://docs.google.com/spreadsheet/ccc?key=0AmQEO36liL4FdDJLWVNMaVV2UmRKSnpXU09MYkdGbEE
 siyuan=思源
+siyuanCopyFileLink=复制文件引用链接
+siyuanCopyFilePath=复制文件引用地址
 siyuanImport=导入本地绘图
 siyuanNote=思源笔记
-siyuanNote=思源笔记
-siyuanOpenInNewTab=在新页签中打开
+siyuanOpenInNewTab=在新页签打开
 about=关于
 aboutDrawio=关于 draw.io
 accessDenied=没有权限访问
