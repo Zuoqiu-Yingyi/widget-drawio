@@ -96,7 +96,7 @@
                     if (!!frame.siyuan && frame.siyuan !== window.siyuan) break;
                     frame = frame.parent;
                 }
-                return frame?.siyuan;
+                return frame;
         }
     })();
     window.siyuan.openAPI = window.siyuan.frame?.openAPI;

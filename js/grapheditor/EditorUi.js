@@ -3178,20 +3178,19 @@ EditorUi.prototype.initCanvas = function()
 
 			/* 👇 SIYUAN 👇 */
 			// 添加取消灯箱模式按钮
-			if (window.mxIsSiyuan) {
-				addButton(
-					mxUtils.bind(
-						this,
-						function (evt) {
-							const url = new URL(window.location);
-							url.searchParams.delete('lightbox');
-							window.location.href = url.href;
-						}
-					),
-					Editor.thinDesignImage,
-					mxResources.get('edit'),
-				);
-			}
+			addButton(
+				mxUtils.bind(
+					this,
+					function (evt) {
+						const url = new URL(window.location);
+						url.searchParams.delete('lightbox');
+						window.location.href = url.href;
+						mxEvent.consume(evt);
+					}
+				),
+				Editor.thinDesignImage,
+				mxResources.get('edit'),
+			);
 			/* 👆 SIYUAN 👆 */
 
 			// Changes toolbar opacity on hover

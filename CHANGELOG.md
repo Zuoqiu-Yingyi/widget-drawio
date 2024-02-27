@@ -1,5 +1,7 @@
 # 更改日志 | CHANGE LOG
 
+- [#36](https://github.com/Zuoqiu-Yingyi/widget-drawio/issues/36) 修复灯箱模式编辑按钮未显示问题 | Fixed an issue where the edit button in lightbox mode was not displayed.
+
 ## v0.2.1/2024-02-22
 
 - [v0.2.0 <=> v0.2.1](https:///github.com/Zuoqiu-Yingyi/widget-drawio/compare/v0.2.0...v0.2.1)
